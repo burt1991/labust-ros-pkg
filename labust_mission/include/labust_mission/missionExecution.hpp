@@ -141,20 +141,13 @@ namespace labust {
 
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
-			if(receivedPrimitive.event.onEventStop.empty()==0)
-				EE.checkEventState(*data, receivedPrimitive.event.onEventStop.c_str());
-//
-//			/* Read external states */
-//
-//			/* Events */
-//			if(0){
-//				mainEventQueue->riseEvent("/PRIMITIVE_FINSIHED");
-//
-//			} else if(0){
-//				mainEventQueue->riseEvent("/PRIMITIVE_FINSIHED");
-//
-//			}
+			if(receivedPrimitive.event.onEventStop.empty()==0){
+				if(EE.checkEventState(*data, receivedPrimitive.event.onEventStop.c_str())){
 
+					ROS_ERROR("Event active");
+					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+				}
+			}
 		}
 
 		void MissionExecution::onEventString(const std_msgs::String::ConstPtr& msg){

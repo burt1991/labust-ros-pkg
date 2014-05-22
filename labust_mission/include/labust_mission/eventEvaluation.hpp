@@ -112,14 +112,15 @@ namespace labust {
 						error.diagnostic.c_str(),
 						expression_str.c_str());
 			  }
-			  return 1;
+			  return -1;
 			}
 
 			double result = expression.value();
 
-			ROS_ERROR("Result: %10.5f\n",result);
+			//ROS_ERROR("Result: %10.5f\n",result);
 
-			return 0;
+			return (result)?1:0;
+			//return 0;
 
 
 //			/* Read external states */

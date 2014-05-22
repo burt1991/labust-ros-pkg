@@ -57,8 +57,6 @@ using namespace std;
 using namespace decision_making;
 using namespace tinyxml2;
 using namespace labust::mission;
-//using namespace labust::event;
-
 
 namespace ser = ros::serialization;
 

@@ -99,6 +99,57 @@ class ControlMainWindow(QtGui.QMainWindow):
         self.Xpos = msg.position.north
         self.Ypos = msg.position.east
         
+class NeptusTab():
+    def __init__(self, parent=ControlMainWindow):
+        print "bla"
+        
+class MissionTab():
+    def __init__(self, parent=ControlMainWindow):
+        print "bla"
+        
+    def browseFiles(self):
+        #fileName = QtGui.QFileDialog.getOpenFileName(self,
+        #str("Open Image"), str("/home/filip"), str("Image Files (*.png *.jpg *.bmp)"))
+        filename = QtGui.QFileDialog.getOpenFileName(self,
+        str("Open Neptus mission file"), str("/home/"), str(""))
+        print "Opened file: "+filename[0]
+        self.filename = filename[0]
+        self.ui.fileName.setText(str(filename[0]))
+        bashCmd = str(self.labustMissionPath+"scripts/unzipMission.bash "+filename[0])
+        subprocess.call(bashCmd,shell=True)
+
+    def startParse(self):
+        # Dodaj provjeru je li uspjelo unzipanje
+            
+        missionData = StartParser()
+        missionData.fileName = self.labustMissionPath+"data/extracted/mission.nmis"
+        
+        if self.ui.radioButtonRelative.isChecked():
+            missionData.relative = True
+            missionData.customStart = False
+            missionData.lat = self.Xpos
+            missionData.lon = self.Ypos
+        elif self.ui.radioButtonAbsolute.isChecked():
+            missionData.relative = False
+            missionData.customStart = False
+        else:
+            missionData.relative = False
+            missionData.customStart = True           
+            missionData.lat = self.startLat
+            missionData.lon = self.startLon
+    
+        self.pubStartParse.publish(missionData)
+        
+    def stopMission(self):
+        data = String()
+        data = "/STOP";
+        self.pubStopMission.publish(data)
+        
+class PrimitiveTab():
+    def __init__(self, parent=ControlMainWindow):
+        print "bla"
+
+        
 if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)

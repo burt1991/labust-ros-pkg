@@ -91,6 +91,8 @@ namespace labust {
 
 			void onEventString(const std_msgs::String::ConstPtr& msg);
 
+			void onReceiveXmlPath(const std_msgs::String::ConstPtr& msg);
+
 			/*****************************************************************
 			 ***  Helper functions
 			 ****************************************************************/
@@ -110,10 +112,12 @@ namespace labust {
 
 			int eventID;
 
+			string xmlFile;
+
 			std::vector<std::string> eventsContainer;
 
 			ros::Publisher pubSendPrimitive, pubRiseEvent;
-			ros::Subscriber subRequestPrimitive, subEventString;
+			ros::Subscriber subRequestPrimitive, subEventString, subReceiveXmlPath;
 		};
 
 
@@ -127,19 +131,21 @@ namespace labust {
 			/* Subscribers */
 			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1,&MissionParser::onEventString, this);
+			subReceiveXmlPath = nh.subscribe<std_msgs::String>("startParse",1,&MissionParser::onReceiveXmlPath, this);
+
 
 			/* Publishers */
 			pubSendPrimitive = nh.advertise<misc_msgs::SendPrimitive>("sendPrimitive",1);
 			pubRiseEvent = nh.advertise<std_msgs::String>("eventString",1);
 
-			/* Parse events */
+			/* Parse file path */
+			ros::NodeHandle ph("~");
+			xmlFile = "mission.xml";
+			ph.param("xml_save_path", xmlFile, xmlFile);
 		}
 
 		void MissionParser::sendPrimitve(){
 
-			ros::NodeHandle ph("~");
-			string xmlFile = "mission.xml";
-			ph.param("xml_save_path", xmlFile, xmlFile);
 
 			ROS_ERROR("%s",xmlFile.c_str());
 
@@ -185,6 +191,11 @@ namespace labust {
 					std_msgs::String tmp;
 					tmp.data = "/STOP";
 					pubRiseEvent.publish(tmp);
+
+					/* Reset file path */
+					ros::NodeHandle ph("~");
+					xmlFile = "mission.xml";
+					ph.param("xml_save_path", xmlFile, xmlFile);
 			}
 		}
 
@@ -446,9 +457,11 @@ namespace labust {
 
 			   } else {
 				   ROS_ERROR("No mission defined");
+				   return -1;
 			   }
 		   } else {
 			   ROS_ERROR("Cannot open XML file!");
+			   return -1;
 		   }
 		}
 
@@ -473,9 +486,11 @@ namespace labust {
 				   eventsFlag = true;
 			   } else {
 				   ROS_ERROR("No events defined");
+				   return -1;
 			   }
 		   } else {
 			   ROS_ERROR("Cannot open XML file!");
+			   return -1;
 		   }
 
 		   // debug PRINT
@@ -498,6 +513,14 @@ namespace labust {
 			if(strcmp(msg->data.c_str(),"/STOP") == 0)
 				ID = 0;
 		}
+
+		void MissionParser::onReceiveXmlPath(const std_msgs::String::ConstPtr& msg){
+
+			if(msg->data.empty() == 0){
+				xmlFile.assign(msg->data.c_str());
+			}
+		}
+
 
 		/*****************************************************************
 		 ***  Helper functions

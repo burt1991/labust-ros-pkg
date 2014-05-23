@@ -43,13 +43,14 @@
 #include <labust_mission/labustMission.hpp>
 #include <labust_mission/maneuverGenerator.hpp>
 
-#include <tf2_ros/transform_listener.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <misc_msgs/StartNeptusParser.h>
+
+#include <tf2_ros/transform_listener.h>
 #include <labust/tools/conversions.hpp>
 #include <labust/tools/GeoUtilities.hpp>
 #include <tinyxml2.h>
-#include <misc_msgs/StartParser.h>
 
 using namespace std;
 using namespace tinyxml2;
@@ -399,7 +400,7 @@ ROS_ERROR("width: %f, length: %f, hstep: %f, bearing: %f, alternationPercent: %f
 	string xmlSavePath;
 };
 
-void startParseCallback(ros::Publisher &pubStartDispatcher, const misc_msgs::StartParser::ConstPtr& msg){
+void startParseCallback(ros::Publisher &pubStartDispatcher, const misc_msgs::StartNeptusParser::ConstPtr& msg){
 
 	ros::NodeHandle ph("~");
 	NeptusParser NP;
@@ -436,7 +437,7 @@ int main(int argc, char** argv){
 	ros::Publisher pubStartDispatcher = nh.advertise<std_msgs::String>("eventString",1);
 
 	/* Subscribers */
-	ros::Subscriber subStartParse = nh.subscribe<misc_msgs::StartParser>("startParse",1, boost::bind(&startParseCallback, boost::ref(pubStartDispatcher), _1));
+	ros::Subscriber subStartParse = nh.subscribe<misc_msgs::StartNeptusParser>("startNeptusParse",1, boost::bind(&startParseCallback, boost::ref(pubStartDispatcher), _1));
 
 	ros::spin();
 	return 0;

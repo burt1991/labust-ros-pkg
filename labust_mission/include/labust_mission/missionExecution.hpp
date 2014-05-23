@@ -142,10 +142,14 @@ namespace labust {
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
 			if(receivedPrimitive.event.onEventStop.empty()==0){
-				if(EE.checkEventState(*data, receivedPrimitive.event.onEventStop.c_str())){
+				int flag = EE.checkEventState(*data, receivedPrimitive.event.onEventStop.c_str());
 
+				if(flag == 1){
 					ROS_ERROR("Event active");
 					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+				} else if(flag == -1){
+					ROS_ERROR("Event parser error");
+					mainEventQueue->riseEvent("/STOP");
 				}
 			}
 		}

@@ -7,6 +7,8 @@ from std_msgs.msg import Bool
 from std_msgs.msg import String
 from auv_msgs.msg import NavSts
 from misc_msgs.msg import StartParser 
+from misc_msgs.msg import StartNeptusParser 
+
 
 
 class ControlMainWindow(QtGui.QMainWindow):
@@ -16,11 +18,9 @@ class ControlMainWindow(QtGui.QMainWindow):
         self.loadUiWidget(os.path.join(
                         os.path.dirname(os.path.realpath(__file__)), "parsegui.ui"))
         
-        self.ui.browseButton.clicked.connect(self.browseFiles)
-        self.ui.startButton.clicked.connect(self.startParse)
-        self.ui.stopButton.clicked.connect(self.stopMission)
+        self.missionTab = MissionTab(self)
+        self.neptusTab = NeptusTab(self)
 
-        self.firstPass = True 
         self.initROS()
 
     def loadUiWidget(self,uifilename, parent=None):
@@ -33,8 +33,9 @@ class ControlMainWindow(QtGui.QMainWindow):
 
     def initROS(self):
         # Publishers
-        self.pubStartParse = rospy.Publisher('/startParse', StartParser)
-        self.pubStopMission = rospy.Publisher('/eventString', String)
+        self.pubStartNeptusParse = rospy.Publisher('/startNeptusParse', StartNeptusParser)
+        self.pubStartParse = rospy.Publisher('/startParse', String)
+        self.pubEventString = rospy.Publisher('/eventString', String)
 
         # Subscribers
         rospy.Subscriber("stateHat", NavSts, self.onStateHatCallback)
@@ -44,23 +45,42 @@ class ControlMainWindow(QtGui.QMainWindow):
         
         # Get parameters
         self.labustMissionPath = rospy.get_param('~labust_mission_path', '')
-
+    
+    def onStateHatCallback(self, msg):
+        
+        self.neptusTab.onStateHatCallback(msg)
+        
+######################################################################
+        
+class NeptusTab():
+    def __init__(self, parent):
+        
+        self.parent = parent
+        self.ui = parent.ui
+        self.ui.browseButton.clicked.connect(self.browseFiles)
+        self.ui.startButton.clicked.connect(self.startParse)
+        self.ui.stopButton.clicked.connect(self.stopMission)
+ #       self.ui.pauseButton.clicked.connect(self.pauseMission)
+ 
+        self.firstPass = True 
+      
+         
     def browseFiles(self):
         #fileName = QtGui.QFileDialog.getOpenFileName(self,
         #str("Open Image"), str("/home/filip"), str("Image Files (*.png *.jpg *.bmp)"))
-        filename = QtGui.QFileDialog.getOpenFileName(self,
+        filename = QtGui.QFileDialog.getOpenFileName(self.parent,
         str("Open Neptus mission file"), str("/home/"), str(""))
         print "Opened file: "+filename[0]
         self.filename = filename[0]
         self.ui.fileName.setText(str(filename[0]))
-        bashCmd = str(self.labustMissionPath+"scripts/unzipMission.bash "+filename[0])
+        bashCmd = str(self.parent.labustMissionPath+"scripts/unzipMission.bash "+filename[0])
         subprocess.call(bashCmd,shell=True)
 
     def startParse(self):
         # Dodaj provjeru je li uspjelo unzipanje
             
-        missionData = StartParser()
-        missionData.fileName = self.labustMissionPath+"data/extracted/mission.nmis"
+        missionData = StartNeptusParser()
+        missionData.fileName = self.parent.labustMissionPath+"data/extracted/mission.nmis"
         
         if self.ui.radioButtonRelative.isChecked():
             missionData.relative = True
@@ -76,12 +96,12 @@ class ControlMainWindow(QtGui.QMainWindow):
             missionData.lat = self.startLat
             missionData.lon = self.startLon
     
-        self.pubStartParse.publish(missionData)
+        self.parent.pubStartNeptusParse.publish(missionData)
         
     def stopMission(self):
         data = String()
         data = "/STOP";
-        self.pubStopMission.publish(data)
+        self.parent.pubEventString.publish(data)
         
     def onStateHatCallback(self, msg):
         
@@ -99,56 +119,53 @@ class ControlMainWindow(QtGui.QMainWindow):
         self.Xpos = msg.position.north
         self.Ypos = msg.position.east
         
-class NeptusTab():
-    def __init__(self, parent=ControlMainWindow):
-        print "bla"
+######################################################################
         
 class MissionTab():
-    def __init__(self, parent=ControlMainWindow):
-        print "bla"
+    def __init__(self, parent):
+        
+        self.parent = parent
+        self.ui = parent.ui
+        self.ui.browseButtonMission.clicked.connect(self.browseFiles)
+        self.ui.startButtonMission.clicked.connect(self.startParse)
+        self.ui.stopButtonMission.clicked.connect(self.stopMission)
+ #       self.ui.pauseButtonMission.clicked.connect(self.pauseMission)
         
     def browseFiles(self):
-        #fileName = QtGui.QFileDialog.getOpenFileName(self,
-        #str("Open Image"), str("/home/filip"), str("Image Files (*.png *.jpg *.bmp)"))
-        filename = QtGui.QFileDialog.getOpenFileName(self,
-        str("Open Neptus mission file"), str("/home/"), str(""))
+
+        filename = QtGui.QFileDialog.getOpenFileName(self.parent,
+        str("Select XML mission file"), str("/home/"), str(""))
         print "Opened file: "+filename[0]
         self.filename = filename[0]
-        self.ui.fileName.setText(str(filename[0]))
-        bashCmd = str(self.labustMissionPath+"scripts/unzipMission.bash "+filename[0])
-        subprocess.call(bashCmd,shell=True)
+        self.ui.fileNameMission.setText(str(filename[0]))
 
     def startParse(self):
-        # Dodaj provjeru je li uspjelo unzipanje
-            
-        missionData = StartParser()
-        missionData.fileName = self.labustMissionPath+"data/extracted/mission.nmis"
+             
+        missionData = String()
+        missionData.data = self.filename  
+        self.parent.pubStartParse.publish(missionData)
         
-        if self.ui.radioButtonRelative.isChecked():
-            missionData.relative = True
-            missionData.customStart = False
-            missionData.lat = self.Xpos
-            missionData.lon = self.Ypos
-        elif self.ui.radioButtonAbsolute.isChecked():
-            missionData.relative = False
-            missionData.customStart = False
-        else:
-            missionData.relative = False
-            missionData.customStart = True           
-            missionData.lat = self.startLat
-            missionData.lon = self.startLon
-    
-        self.pubStartParse.publish(missionData)
+        data = String()
+        data = "/START_DISPATCHER"
+        self.parent.pubEventString.publish(data)
         
     def stopMission(self):
         data = String()
         data = "/STOP";
-        self.pubStopMission.publish(data)
+        self.parent.pubEventString.publish(data)
+         
+#    def pauseMission(self):
+#         data = String()
+#         data = "/STOP";
+#         self.pubStopMission.publish(data)
+        
+######################################################################
         
 class PrimitiveTab():
-    def __init__(self, parent=ControlMainWindow):
+    def __init__(self, parent):
         print "bla"
 
+######################################################################
         
 if __name__ == "__main__":
     import sys

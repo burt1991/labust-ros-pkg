@@ -1,5 +1,3 @@
-//\todo vidjeti da li prebaciti ovo u controllerManager ili definirati posebnu klasu za prikupljanje mjerenja i generiranje eventa
-
 /*********************************************************************
  * missionExecution.hpp
  *

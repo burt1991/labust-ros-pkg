@@ -47,6 +47,7 @@
 *********************************************************************/
 
 #include <labust_mission/labustMission.hpp>
+#include <misc_msgs/StartParser.h>
 #include <tinyxml2.h>
 
 namespace ser = ros::serialization;
@@ -91,7 +92,7 @@ namespace labust {
 
 			void onEventString(const std_msgs::String::ConstPtr& msg);
 
-			void onReceiveXmlPath(const std_msgs::String::ConstPtr& msg);
+			void onReceiveXmlPath(const misc_msgs::StartParser::ConstPtr& msg);
 
 			/*****************************************************************
 			 ***  Helper functions
@@ -118,6 +119,8 @@ namespace labust {
 
 			ros::Publisher pubSendPrimitive, pubRiseEvent;
 			ros::Subscriber subRequestPrimitive, subEventString, subReceiveXmlPath;
+
+			auv_msgs::NED offset;
 		};
 
 
@@ -131,7 +134,7 @@ namespace labust {
 			/* Subscribers */
 			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1,&MissionParser::onEventString, this);
-			subReceiveXmlPath = nh.subscribe<std_msgs::String>("startParse",1,&MissionParser::onReceiveXmlPath, this);
+			subReceiveXmlPath = nh.subscribe<misc_msgs::StartParser>("startParse",1,&MissionParser::onReceiveXmlPath, this);
 
 
 			/* Publishers */
@@ -202,8 +205,8 @@ namespace labust {
 		void MissionParser::go2pointFA(double north, double east, double heading, double speed, double victoryRadius){
 
 			misc_msgs::Go2PointFA data;
-			data.point.north = north;
-			data.point.east = east;
+			data.point.north = north-offset.north;
+			data.point.east = east-offset.east;
 			data.point.depth = 0;
 			data.heading = heading;
 			data.speed = speed;
@@ -215,8 +218,8 @@ namespace labust {
 		void MissionParser::go2pointUA(double north, double east, double speed, double victoryRadius){
 
 			misc_msgs::Go2PointUA data;
-			data.point.north = north;
-			data.point.east = east;
+			data.point.north = north-offset.north;
+			data.point.east = east-offset.east;
 			data.point.depth = 0;
 			data.speed = speed;
 			data.victoryRadius = victoryRadius;
@@ -227,8 +230,8 @@ namespace labust {
 		void MissionParser::dynamicPositioning(double north, double east, double heading){
 
 			misc_msgs::DynamicPositioning data;
-			data.point.north = north;
-			data.point.east = east;
+			data.point.north = north-offset.north;
+			data.point.east = east-offset.east;
 			data.point.depth = 0;
 			data.heading = heading;
 
@@ -514,10 +517,17 @@ namespace labust {
 				ID = 0;
 		}
 
-		void MissionParser::onReceiveXmlPath(const std_msgs::String::ConstPtr& msg){
+		void MissionParser::onReceiveXmlPath(const misc_msgs::StartParser::ConstPtr& msg){
 
-			if(msg->data.empty() == 0){
-				xmlFile.assign(msg->data.c_str());
+			if(msg->fileName.empty() == 0){
+				xmlFile.assign(msg->fileName.c_str());
+
+				if(msg->relative){
+					offset.north = -msg->startPosition.north;
+					offset.east = -msg->startPosition.east;
+				} else {
+					offset.north = offset.east = 0;
+				}
 			}
 		}
 

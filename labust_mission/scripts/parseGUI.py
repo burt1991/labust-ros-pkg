@@ -34,7 +34,7 @@ class ControlMainWindow(QtGui.QMainWindow):
     def initROS(self):
         # Publishers
         self.pubStartNeptusParse = rospy.Publisher('/startNeptusParse', StartNeptusParser)
-        self.pubStartParse = rospy.Publisher('/startParse', String)
+        self.pubStartParse = rospy.Publisher('/startParse', StartParser)
         self.pubEventString = rospy.Publisher('/eventString', String)
 
         # Subscribers
@@ -49,6 +49,8 @@ class ControlMainWindow(QtGui.QMainWindow):
     def onStateHatCallback(self, msg):
         
         self.neptusTab.onStateHatCallback(msg)
+        self.missionTab.onStateHatCallback(msg)
+
         
 ######################################################################
         
@@ -141,8 +143,20 @@ class MissionTab():
 
     def startParse(self):
              
-        missionData = String()
-        missionData.data = self.filename  
+        missionData = StartParser()
+        missionData.fileName = self.filename 
+        
+        if self.ui.radioButtonMissionRelative.isChecked():
+            missionData.relative = True
+            missionData.startPosition.north = self.Xpos
+            missionData.startPosition.east = self.Ypos
+        elif self.ui.radioButtonMissionAbsolute.isChecked():
+            missionData.relative = False
+        else:
+            missionData.relative = True           
+            #missionData.lat = self.startLat
+            #missionData.lon = self.startLon
+             
         self.parent.pubStartParse.publish(missionData)
         
         data = String()
@@ -158,6 +172,10 @@ class MissionTab():
 #         data = String()
 #         data = "/STOP";
 #         self.pubStopMission.publish(data)
+
+    def onStateHatCallback(self, msg):      
+        self.Xpos = msg.position.north
+        self.Ypos = msg.position.east
         
 ######################################################################
         

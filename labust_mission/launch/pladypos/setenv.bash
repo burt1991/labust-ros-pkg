@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Vehicle variables
-export MODEL=`rospack find snippets`/data/models/pladypos.yaml
+export MODEL=`rospack find snippets`/data/models/pladypos_dvl.yaml
 export ALLOCATION_MODEL=`rospack find snippets`/data/allocations/x_horizontal.yaml
 
 #Input
@@ -29,6 +29,8 @@ export TF_PREFIX=pladypos
 export USE_USBL_MANAGER=0
 export USE_USBL=0
 
+#ROS variables
+ROS_LOG_DIR=/extern/ros_logs
 
 
 

@@ -3,7 +3,7 @@
 <!-- elementos oceanScene -->
 <!ELEMENT oceanState (windx?,windy?,windSpeed?,depth?,reflectionDamping?,waveScale?,isNotChoppy?,choppyFactor?,crestFoamHeight?,oceanSurfaceHeight?,fog?,color?,attenuation?)>
 <!ELEMENT simParams (disableShaders?,resw?,resh?,offsetp?,offsetr?,enablePhysics?,gravity?,physicsWater?)>
-<!ELEMENT vehicle (name,file,jointValues?,position?,orientation?,virtualCamera*, rangeSensor*, objectPicker*, imu*, pressureSensor*, gpsSensor*, dvlSensor*, virtualRangeImage*,multibeamSensor*)>
+<!ELEMENT vehicle (name,file,jointValues?,position?,orientation?,virtualCamera*, rangeSensor*, objectPicker*, imu*, pressureSensor*, gpsSensor*, dvlSensor*, virtualRangeImage*, usblSensor*)>
 <!ELEMENT virtualCamera (name,relativeTo,resw?,resh?,position?,orientation?,baseline?,frameId?, parameters?, showpath?)>
 <!ELEMENT virtualRangeImage (name,relativeTo,resw?,resh?,position?,orientation?,parameters?)>
 <!ELEMENT rangeSensor (name,relativeTo,range,visible?,position?,orientation?)>
@@ -12,10 +12,10 @@
 <!ELEMENT pressureSensor (name,relativeTo,position?,orientation?, std?)>
 <!ELEMENT gpsSensor (name,relativeTo,position?,orientation?, std?)>
 <!ELEMENT dvlSensor (name,relativeTo,position?,orientation?, std?)>
-<!ELEMENT multibeamSensor (name,relativeTo,position?,orientation?, initAngle,finalAngle, angleIncr,range)>
+<!ELEMENT usblSensor (name,relativeTo,position?,orientation?, std?, (transponder+))>
 <!ELEMENT camera (freeMotion?,objectToTrack?,fov?,aspectRatio?,near?,far?,position?,lookAt?) >
 <!ELEMENT object (name,file,position,orientation,offsetp?,offsetr?,physics?)>
-<!ELEMENT rosInterfaces ((ROSOdomToPAT*)?, (PATToROSOdom*)?, (ArmToROSJointState*)?, (ROSJointStateToArm*)?, (VirtualCameraToROSImage*)?, (ROSImageToHUD*)?,(ROSTwistToPAT*)?, (RangeSensorToROSRange*)?, (ROSPoseToPAT*)?, (ImuToROSImu*)?, (PressureSensorToROS*)?, (GPSSensorToROS*)?, (DVLSensorToROS*)?, (RangeImageSensorToROSImage*)?,(multibeamSensorToLaserScan*)?)>
+<!ELEMENT rosInterfaces ((ROSOdomToPAT*)?, (PATToROSOdom*)?, (ArmToROSJointState*)?, (ROSJointStateToArm*)?, (VirtualCameraToROSImage*)?, (ROSImageToHUD*)?,(ROSTwistToPAT*)?, (RangeSensorToROSRange*)?, (ROSPoseToPAT*)?, (ImuToROSImu*)?, (PressureSensorToROS*)?, (GPSSensorToROS*)?, (DVLSensorToROS*)?, (RangeImageSensorToROSImage*)?, (USBLSensorToROS*)?, (OceanInfoToROS*)?)>
 
 <!-- elementos comunes -->
 <!ELEMENT position (x,y,z)>
@@ -33,7 +33,9 @@
 <!ELEMENT b (#PCDATA)>
 <!ELEMENT p (#PCDATA)>
 <!ELEMENT std (#PCDATA)>
+<!ELEMENT id (#PCDATA)>
 
+<!ELEMENT transponder (name,id)>
 
 <!-- elementos oceanState -->
 <!ELEMENT windx (#PCDATA)>
@@ -96,11 +98,6 @@
 <!ELEMENT range (#PCDATA)>
 <!ELEMENT visible (#PCDATA)>
 
-<!--elementos multibeamSensor -->
-<!ELEMENT initAngle (#PCDATA)>
-<!ELEMENT finalAngle (#PCDATA)>
-<!ELEMENT angleIncr (#PCDATA)>
-
 <!-- elementos vehicle -->
 <!ELEMENT name (#PCDATA)>
 <!ELEMENT file (#PCDATA)>
@@ -110,10 +107,10 @@
 
 <!-- elementos rosinterfaces -->
 <!ELEMENT ROSOdomToPAT (topic,vehicleName, visualize?)>
-<!ELEMENT PATToROSOdom  (topic, vehicleName, rate?)>
-<!ELEMENT ArmToROSJointState  (topic, vehicleName, rate?)>
-<!ELEMENT ROSJointStateToArm  (topic,vehicleName)>
-<!ELEMENT VirtualCameraToROSImage (cameraName,imageTopic,infoTopic,rate?,depth?)>
+<!ELEMENT PATToROSOdom (topic, vehicleName, rate?)>
+<!ELEMENT ArmToROSJointState (topic, vehicleName, rate?)>
+<!ELEMENT ROSJointStateToArm (topic,vehicleName)>
+<!ELEMENT VirtualCameraToROSImage (cameraName,imageTopic,infoTopic,rate?)>
 <!ELEMENT RangeImageSensorToROSImage (cameraName,imageTopic,infoTopic,rate?)>
 <!ELEMENT RangeSensorToROSRange (name,topic,rate?)>
 <!ELEMENT ROSImageToHUD (width,height,posx?,posy?,scale?,blackWhite?,imageTopic,infoTopic?)>
@@ -123,7 +120,8 @@
 <!ELEMENT PressureSensorToROS (name, topic, rate?)>
 <!ELEMENT GPSSensorToROS (name, topic, rate?)>
 <!ELEMENT DVLSensorToROS (name, topic, rate?)>
-<!ELEMENT multibeamSensorToLaserScan (name, topic, rate?)>
+<!ELEMENT USBLSensorToROS (name, topic, rate?)>
+<!ELEMENT OceanInfoToROS (name, topic, rate?)>
 
 <!ELEMENT width (#PCDATA)>
 <!ELEMENT height (#PCDATA)>
@@ -144,12 +142,7 @@
 <!ELEMENT info (#PCDATA)>
 
 <!-- elementos physics -->
-<!ELEMENT physics (mass?,inertia?,collisionShapeType?,linearDamping?,angularDamping?,linearFactor?,angularFactor?,isKinematic?)>
+<!ELEMENT physics (mass,inertia,collisionShapeType)>
 <!ELEMENT mass (#PCDATA)>
 <!ELEMENT inertia (x,y,z)>
 <!ELEMENT collisionShapeType (#PCDATA)>
-<!ELEMENT linearDamping (#PCDATA)>
-<!ELEMENT angularDamping (#PCDATA)>
-<!ELEMENT linearFactor (x,y,z)>
-<!ELEMENT angularFactor (x,y,z)>
-<!ELEMENT isKinematic (#PCDATA)>

@@ -22,6 +22,7 @@ class ControlMainWindow(QtGui.QMainWindow):
 
         self.firstPass = True 
         self.initROS()
+        
 
     def loadUiWidget(self,uifilename, parent=None):
         loader = QtUiTools.QUiLoader()

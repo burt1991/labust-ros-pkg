@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Vehicle variables
-export MODEL=`rospack find snippets`/data/models/pladypos.yaml
+export MODEL=`rospack find snippets`/data/models/pladypos_dvl.yaml
 export ALLOCATION_MODEL=`rospack find snippets`/data/allocations/x_horizontal.yaml
 
 #Input
@@ -9,6 +9,7 @@ export JOYSTICK=/dev/input/js1
 
 #Simulation variables
 export IS_SIM=0
+export USE_SIM_TIME=1
 export USE_NOISE=0
 export USE_VISUALIZATION=1
 

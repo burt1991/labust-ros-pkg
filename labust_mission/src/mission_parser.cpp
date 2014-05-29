@@ -109,7 +109,7 @@ namespace labust {
 			double newXpos, newYpos, newVictoryRadius, newSpeed, newCourse, newHeading;
 			double newTimeout;
 
-			bool eventsFlag;
+			bool eventsFlag, primitiveHasEvent;
 
 			int eventID;
 
@@ -129,7 +129,7 @@ namespace labust {
 		 ****************************************************************/
 
 		MissionParser::MissionParser(ros::NodeHandle& nh):ID(0), newXpos(0), newYpos(0), newVictoryRadius(0), newSpeed(0),
-				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), eventID(0){
+				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), primitiveHasEvent(false), eventID(0){
 
 			/* Subscribers */
 			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
@@ -320,6 +320,11 @@ namespace labust {
 								   } else if(primitiveParamName.compare("heading") == 0){
 
 									   newHeading = atof(elem2->GetText());
+
+								   } else if(primitiveParamName.compare("onEventStop") == 0){
+
+									  eventID = atof(elem2->GetText());
+									  primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -349,6 +354,11 @@ namespace labust {
 								   } else if(primitiveParamName.compare("victory_radius") == 0){
 
 									   newVictoryRadius = atof(elem2->GetText());
+
+								   } else if(primitiveParamName.compare("onEventStop") == 0){
+
+									  eventID = atof(elem2->GetText());
+									  primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -382,6 +392,11 @@ namespace labust {
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
 									  newTimeout = atof(elem2->GetText());
+
+								   } else if(primitiveParamName.compare("onEventStop") == 0){
+
+									  eventID = atof(elem2->GetText());
+									  primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -415,6 +430,11 @@ namespace labust {
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
 									  newTimeout = atof(elem2->GetText());
+
+								   } else if(primitiveParamName.compare("onEventStop") == 0){
+
+									  eventID = atof(elem2->GetText());
+									  primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -448,6 +468,7 @@ namespace labust {
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
 									  eventID = atof(elem2->GetText());
+									  primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -513,8 +534,10 @@ namespace labust {
 
 		void MissionParser::onEventString(const std_msgs::String::ConstPtr& msg){
 
-			if(strcmp(msg->data.c_str(),"/STOP") == 0)
+			if(strcmp(msg->data.c_str(),"/STOP") == 0){
 				ID = 0;
+				eventsContainer.clear();
+			}
 		}
 
 		void MissionParser::onReceiveXmlPath(const misc_msgs::StartParser::ConstPtr& msg){
@@ -528,6 +551,8 @@ namespace labust {
 				} else {
 					offset.north = offset.east = 0;
 				}
+
+				parseEvents(xmlFile.c_str());
 			}
 		}
 
@@ -550,7 +575,9 @@ namespace labust {
 			sendContainer.primitiveData = buffer;
 
 			sendContainer.event.timeout = newTimeout;
-			sendContainer.event.onEventStop = (eventsFlag) ? eventsContainer.at(eventID-1).c_str():"";
+			sendContainer.event.onEventStop = (eventsFlag && primitiveHasEvent) ? eventsContainer.at(eventID-1).c_str():"";
+
+			primitiveHasEvent = false;
 
 			pubSendPrimitive.publish(sendContainer);
 		}

@@ -122,8 +122,8 @@ FSM(MissionSelect)
 				FSM_ON_EVENT("/GO2POINT_FA", FSM_NEXT(go2point_FA_state));
 				FSM_ON_EVENT("/GO2POINT_UA", FSM_NEXT(go2point_UA_state));
 				FSM_ON_EVENT("/DYNAMIC_POSITIONING", FSM_NEXT(dynamic_positioning_state));
-				FSM_ON_EVENT("/COURSE_KEEPING_FA", FSM_NEXT(go2point_FA_state));
-				FSM_ON_EVENT("/COURSE_KEEPING_UA", FSM_NEXT(go2point_FA_state));
+				FSM_ON_EVENT("/COURSE_KEEPING_FA", FSM_NEXT(course_keeping_FA_state));
+				FSM_ON_EVENT("/COURSE_KEEPING_UA", FSM_NEXT(course_keeping_UA_state));
 				FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 			}
 		}

@@ -116,13 +116,15 @@ namespace labust {
 			ros::Timer timer;
 
 			labust::event::EventEvaluation EE;
+
+			bool checkEventFlag;
 		};
 
 		/*****************************************************************
 		 ***  Class functions
 		 ****************************************************************/
 
-		MissionExecution::MissionExecution(ros::NodeHandle& nh){
+		MissionExecution::MissionExecution(ros::NodeHandle& nh):checkEventFlag(false){
 
 			/* Subscribers */
 			subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &MissionExecution::onStateHat, this);
@@ -139,14 +141,16 @@ namespace labust {
 
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
-			if(receivedPrimitive.event.onEventStop.empty()==0){
+			if(checkEventFlag){
 				int flag = EE.checkEventState(*data, receivedPrimitive.event.onEventStop.c_str());
 
 				if(flag == 1){
 					ROS_ERROR("Event active");
+					checkEventFlag = false;
 					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 				} else if(flag == -1){
 					ROS_ERROR("Event parser error");
+					checkEventFlag = false;
 					mainEventQueue->riseEvent("/STOP");
 				}
 			}
@@ -156,11 +160,18 @@ namespace labust {
 
 			mainEventQueue->riseEvent(msg->data.c_str());
 			ROS_INFO("EventString: %s",msg->data.c_str());
+			if(strcmp(msg->data.c_str(),"/STOP") == 0){
+				checkEventFlag = false;
+			}
 		}
 
 		void MissionExecution::onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data){
 
 			receivedPrimitive = *data;
+			if(receivedPrimitive.event.onEventStop.empty() == 0){
+				checkEventFlag = true;
+				ROS_ERROR("Check event state: %s", receivedPrimitive.event.onEventStop.c_str());
+			}
 
 			switch(data->primitiveID){
 
@@ -236,6 +247,7 @@ namespace labust {
 
 			ROS_ERROR("Timeout");
 			mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+			checkEventFlag = false;
 
 		}
 	}

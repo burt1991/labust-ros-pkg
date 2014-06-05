@@ -1,3 +1,4 @@
+//\todo omoguci overide external event descriptiona
 /*********************************************************************
  * eventEvaluation.hpp
  *
@@ -72,16 +73,28 @@ namespace labust {
 
 			void updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table);
 
+			void onReceiveExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data);
+
+			void setExternalEvents();
+
 			/*********************************************************************
 			 ***  Class variables
 			 ********************************************************************/
 
-			ros::NodeHandle nh_;
+			ros::Subscriber subExternalEvents_;
+
+			std::vector<misc_msgs::ExternalEvent> externalEventContainer;
 
 		};
 
 		EventEvaluation::EventEvaluation(){
 
+			ros::NodeHandle nh;
+			subExternalEvents_ = nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",1, &EventEvaluation::onReceiveExternalEvent, this);
+
+			externalEventContainer.resize(5); // 5 eksternih evenata
+
+			setExternalEvents();
 		}
 
 		int EventEvaluation::checkEventState(auv_msgs::NavSts data, std::string expression_str){
@@ -121,6 +134,12 @@ namespace labust {
 			symbol_table.add_variable("psi_var",psi_var);
 			symbol_table.add_variable("alt",alt);
 
+			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
+
+				double value = (*it).value;
+				symbol_table.add_variable((*it).description.c_str(),value);
+			}
+
 			expression_t expression;
 			expression.register_symbol_table(symbol_table);
 
@@ -150,19 +169,6 @@ namespace labust {
 				return 1;
 			else
 				return 0;
-
-
-//			/* Read external states */
-//
-//			/* Events */
-//			if(0){
-//				mainEventQueue->riseEvent("/PRIMITIVE_FINSIHED");
-//
-//			} else if(0){
-//				mainEventQueue->riseEvent("/PRIMITIVE_FINSIHED");
-//
-//			}
-
 		}
 
 		void EventEvaluation::updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table){
@@ -202,6 +208,33 @@ namespace labust {
 //			symbol_table->add_variable("alt",alt);
 
 
+		}
+
+		void EventEvaluation::onReceiveExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data){
+
+			misc_msgs::ExternalEvent tmp;
+			tmp = externalEventContainer.at((data->id)-1);
+			tmp.id = data->id;
+			tmp.description = data->description;
+			tmp.value = data->value;
+			externalEventContainer.at((data->id)-1) = tmp;
+
+		}
+
+		void EventEvaluation::setExternalEvents(){
+
+			int i = 0;
+			std::string externName = "event";
+
+			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
+
+				i++;
+				externName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
+
+				(*it).id = i;
+				(*it).description = externName.c_str();
+				(*it).value = 0;
+			}
 		}
 	}
 }

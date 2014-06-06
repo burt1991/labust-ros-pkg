@@ -60,7 +60,7 @@
 </offsetr>
 <enablePhysics> 1 </enablePhysics>
 <showTrajectory>
-	<target>pladypos</target>
+	<target>pladypos/base_link</target>
 	<!--<color>white</color>-->
 </showTrajectory>
 </simParams>
@@ -87,8 +87,8 @@
 <name>pladypos</name>
 <file>data/scenes/pladypos.urdf</file>
 <position>
-<x> 30</x>
-<y> 30 </y>
+<x> 0</x>
+<y> 0 </y>
 <z> 0 </z>
 </position>
 <orientation>
@@ -131,7 +131,7 @@
 
 </vehicle>
 
-<vehicle>
+<!--<vehicle>
 <name>diver</name>
 <file>data/scenes/diver.urdf</file>
 <position>
@@ -158,10 +158,10 @@
          <r>-1.57</r>
 <p>3.14159</p>
 <y>1.57</y>
-</orientation>
+</orientation>-->
 <!-- draws the FOV of the camera projected on the scene each 2 seconds -->
 <!-- <showpath>2</showpath> -->
-</virtualCamera>
+<!--</virtualCamera>
 
 <pressureSensor>
 <name>diverPressureSensor</name>
@@ -179,7 +179,7 @@
 <std>0.02</std>
 </pressureSensor>
 </vehicle>
-
+-->
 <object>
 <name>terrain</name>
 <file>terrain/shipwreck/terrain.ive</file>

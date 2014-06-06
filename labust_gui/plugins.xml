@@ -47,3 +47,15 @@
     </qtgui>
   </class>
 </library>
+  <class name="ConMonGui" type="control.conmon_gui.ConMonRqt" 
+      base_class_type="rqt_gui_py::Plugin">
+    <description>
+      Simple registered controller monitor.
+    </description>
+    <qtgui>
+      <label>ConMon</label>
+      <icon type="theme">system-search</icon>
+      <statustip>Simple controller monitor.</statustip>
+    </qtgui>
+  </class>
+</library>

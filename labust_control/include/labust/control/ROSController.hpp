@@ -96,7 +96,7 @@ namespace labust
 			 */
 			bool changed(const InfoT& left, const InfoT& right)
 			{
-				return (left.reference_topic != right.reference_topic) ||
+				return (left.external_topic != right.external_topic) ||
 						(left.state_topic != right.state_topic) ||
 						(left.tracking_topic != right.tracking_topic) ||
 						(left.state != right.state);
@@ -475,9 +475,9 @@ namespace labust
 							&ROSController::onState,this);
 				}
 
-				if (!info.reference_topic.empty() && (reference.getTopic() != info.reference_topic))
+				if (!info.external_topic.empty() && (reference.getTopic() != info.external_topic))
 				{
-					reference = nh.subscribe<typename Controller::ReferenceType>(info.reference_topic, 1,
+					reference = nh.subscribe<typename Controller::ReferenceType>(info.external_topic, 1,
 							&ROSController::onReference,this);
 				}
 

@@ -95,7 +95,7 @@ set_source_files_properties(
    src/pidtoolkit/IPFFController.c
    src/pidtoolkit/PIDFFController.c
    src/pidtoolkit/IPDFFController.c PROPERTIES LANGUAGE CXX)
-
+   
 add_executable(fadp_controller2 src/FADPControl.cpp)
 add_executable(hdg_controller2 src/HDGControl.cpp)
 add_executable(hdg_controller_direct src/HDGControlDirect.cpp)
@@ -109,7 +109,7 @@ add_executable(nu_manual src/NuManual.cpp)
 add_executable(ref_manual src/RefManual.cpp)
 add_executable(async_merger src/AsyncMerger.cpp)
 add_executable(single_dof_velcon src/velocity_controller/SingleDOFVelocity.cpp)
-add_executable(velcon src/velocity_controller/VelocityController.cpp)
+add_executable(velcon src/velocity_controller/VelCon.cpp)
 add_executable(single_dof_state src/state_controller/SingleDOFState.cpp)
 
 ## Declare a cpp executable
@@ -133,7 +133,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(async_merger ${catkin_EXPORTED_TARGETS})
  add_dependencies(single_dof_velcon ${catkin_EXPORTED_TARGETS})
  add_dependencies(velcon ${catkin_EXPORTED_TARGETS})
-  add_dependencies(single_dof_state ${catkin_EXPORTED_TARGETS})
+ add_dependencies(single_dof_state ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Specify libraries to link a library or executable target against

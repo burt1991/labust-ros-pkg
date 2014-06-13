@@ -46,7 +46,7 @@
       <statustip>Slider mode Joystick.</statustip>
     </qtgui>
   </class>
-</library>
+  
   <class name="ConMonGui" type="control.conmon_gui.ConMonRqt" 
       base_class_type="rqt_gui_py::Plugin">
     <description>

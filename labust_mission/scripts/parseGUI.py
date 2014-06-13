@@ -84,19 +84,29 @@ class NeptusTab():
         missionData = StartNeptusParser()
         missionData.fileName = self.parent.labustMissionPath+"data/extracted/mission.nmis"
         
+        missionData.origin.latitude = self.originLat
+        missionData.origin.longitude = self.originLon
+        
         if self.ui.radioButtonRelative.isChecked():
             missionData.relative = True
-            missionData.customStart = False
-            missionData.lat = self.Xpos
-            missionData.lon = self.Ypos
+            missionData.customStartFlag = False
+            missionData.customStart.latitude = self.Xpos
+            missionData.customStart.longitude = self.Ypos
         elif self.ui.radioButtonAbsolute.isChecked():
             missionData.relative = False
-            missionData.customStart = False
+            missionData.customStartFlag = False
+        elif self.ui.radioButtonLatLon.isChecked():
+            missionData.relative = False
+            missionData.customStartFlag = True   
+            missionData.customStart.latitude = self.startLat
+            missionData.customStart.longitude = self.startLon
+            #missionData.lat = self.lat
+            #missionData.lon = self.lon
         else:
             missionData.relative = False
-            missionData.customStart = True           
-            missionData.lat = self.startLat
-            missionData.lon = self.startLon
+            missionData.customStartFlag = True           
+            missionData.customStart.latitude = self.startLat
+            missionData.customstart.longitude = self.startLon
     
         self.parent.pubStartNeptusParse.publish(missionData)
         
@@ -114,12 +124,17 @@ class NeptusTab():
                 print "Waiting for origin"
             self.startLat = msg.origin.latitude
             self.startLon = msg.origin.longitude
+            self.originLat = msg.origin.latitude
+            self.originLon = msg.origin.longitude
             
             self.ui.lineEditLat.setText(str(self.startLat))
             self.ui.lineEditLon.setText(str(self.startLon))
         
         self.Xpos = msg.position.north
         self.Ypos = msg.position.east
+        
+        #self.lat = msg.global_position.latitude
+        #self.lon = msg.global_position.longitude
         
 ######################################################################
         

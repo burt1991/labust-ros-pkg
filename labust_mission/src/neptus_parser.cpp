@@ -79,6 +79,8 @@ public:
 
 		startPointSet = false;
 		startRelative = true;
+		latLonAbs = false;
+
 		offset.north = offset.east = 0;
 		xmlSavePath = "";
 
@@ -160,11 +162,7 @@ public:
 		ROS_ERROR("Preracunato: %f,%f", position.north, position.east);
 
 		/* Set offset if in relative mode */
-		if(!startPointSet){
-			offset.north += position.north;
-			offset.east += position.east;
-			startPointSet = true;
-		}
+		setStartPoint(position);
 
 		/* Set default values */
 		double duration = 0;
@@ -205,11 +203,7 @@ public:
 		ROS_ERROR("Preracunato: %f,%f", position.north, position.east);
 
 		/* Set offset if in relative mode */
-		if(!startPointSet){
-			offset.north += position.north;
-			offset.east += position.east;
-			startPointSet = true;
-		}
+		setStartPoint(position);
 
 		/* Set default values */
 		double width = 100;
@@ -337,11 +331,7 @@ ROS_ERROR("width: %f, length: %f, hstep: %f, bearing: %f, alternationPercent: %f
 		ROS_ERROR("Preracunato: %f,%f", position.north, position.east);
 
 		/* Set offset if in relative mode */
-		if(!startPointSet){
-			offset.north += position.north;
-			offset.east += position.east;
-			startPointSet = true;
-		}
+		setStartPoint(position);
 
 		/* Write point to XML file */
 		MG.writeXML.addDynamic_positioning(position.north-offset.north, position.east-offset.east,0);
@@ -378,13 +368,33 @@ ROS_ERROR("width: %f, length: %f, hstep: %f, bearing: %f, alternationPercent: %f
 		LatLon.latitude = DLat+MLat/60+SLat/3600;
 	    LatLon.longitude = DLon+MLon/60+SLon/3600;
 
-		posxy =	labust::tools::deg2meter(LatLon.latitude - startPoint.latitude, LatLon.longitude - startPoint.longitude, startPoint.longitude);
+		ROS_ERROR("LAT LON %f, %f", LatLon.latitude, LatLon.longitude);
+		ROS_ERROR("Origin LAT LON %f, %f", origin.latitude, origin.longitude);
+
+
+
+		//posxy =	labust::tools::deg2meter(LatLon.latitude - startPoint.latitude, LatLon.longitude - startPoint.longitude, startPoint.longitude);
+		posxy =	labust::tools::deg2meter(LatLon.latitude - origin.latitude, LatLon.longitude - origin.longitude, origin.longitude);
 
 	    position.north = posxy.first;
 	    position.east = posxy.second;
 	    position.depth = 0;
 
 	    return position;
+	}
+
+	void setStartPoint(auv_msgs::NED position){
+		if(!startPointSet){
+			if(latLonAbs){
+				offset.north = 0;
+				offset.east = 0;
+				ROS_ERROR("LATLON ABS prva tocka");
+			}else{
+				offset.north += position.north;
+				offset.east += position.east;
+			}
+			startPointSet = true;
+		}
 	}
 
 	/*********************************************************************
@@ -394,9 +404,13 @@ ROS_ERROR("width: %f, length: %f, hstep: %f, bearing: %f, alternationPercent: %f
 	labust::maneuver::ManeuverGenerator MG;
 	XMLDocument xmlDoc;
 	sensor_msgs::NavSatFix startPoint;
+
+	auv_msgs::DecimalLatLon origin;
+
 	auv_msgs::NED offset;
 	bool startPointSet;
 	bool startRelative;
+	bool latLonAbs;
 	string xmlSavePath;
 };
 
@@ -408,8 +422,11 @@ void startParseCallback(ros::Publisher &pubStartDispatcher, const misc_msgs::Sta
 	ROS_ERROR("%s",NP.xmlSavePath.c_str());
 
 	NP.startRelative = msg->relative;
-	NP.startPoint.latitude = msg->lat;
-	NP.startPoint.longitude = msg->lon;
+	NP.latLonAbs = msg->customStartFlag;
+	NP.startPoint.latitude = msg->customStart.latitude;
+	NP.startPoint.longitude = msg->customStart.longitude;
+
+	NP.origin = msg->origin;
 
 	if(NP.startRelative){
 		NP.offset.north = -NP.startPoint.latitude;

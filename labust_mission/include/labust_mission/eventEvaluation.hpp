@@ -120,6 +120,16 @@ namespace labust {
 			double alt = data.altitude;
 
 			symbol_table.add_constants();
+
+			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
+
+				double value = (*it).value;
+				string eventName = (*it).description.c_str();
+
+				symbol_table.create_variable(eventName.c_str());
+				symbol_table.get_variable(eventName.c_str())->ref() = double(value);
+			}
+
 			symbol_table.add_variable("u",u);
 			symbol_table.add_variable("v",v);
 			symbol_table.add_variable("w",w);
@@ -134,16 +144,12 @@ namespace labust {
 			symbol_table.add_variable("psi_var",psi_var);
 			symbol_table.add_variable("alt",alt);
 
-			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
-
-				double value = (*it).value;
-				symbol_table.add_variable((*it).description.c_str(),value);
-			}
-
 			expression_t expression;
 			expression.register_symbol_table(symbol_table);
 
 			parser_t parser;
+
+			//ROS_ERROR("vrijednost: %f",symbol_table.get_variable("event1")->value());
 
 			if (!parser.compile(expression_str,expression))
 			{
@@ -215,7 +221,7 @@ namespace labust {
 			misc_msgs::ExternalEvent tmp;
 			tmp = externalEventContainer.at((data->id)-1);
 			tmp.id = data->id;
-			tmp.description = data->description;
+			//tmp.description = data->description; // overwrites event name
 			tmp.value = data->value;
 			externalEventContainer.at((data->id)-1) = tmp;
 
@@ -224,16 +230,16 @@ namespace labust {
 		void EventEvaluation::setExternalEvents(){
 
 			int i = 0;
-			std::string externName = "event";
 
 			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
-
+				std::string externName = "event";
 				i++;
 				externName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
 
 				(*it).id = i;
 				(*it).description = externName.c_str();
 				(*it).value = 0;
+				ROS_ERROR("%d, %s",i,externName.c_str());
 			}
 		}
 	}

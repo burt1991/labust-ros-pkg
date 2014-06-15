@@ -1,9 +1,10 @@
-/*
+/*********************************************************************
  * neptus_parser.cpp
  *
  *  Created on: Apr 3, 2014
  *      Author: Filip Mandic
- */
+ *
+ ********************************************************************/
 
 /*********************************************************************
 * Software License Agreement (BSD License)
@@ -52,7 +53,7 @@
 
 using namespace std;
 using namespace tinyxml2;
-using namespace utils;
+using namespace labust::utils;
 
 /*********************************************************************
  *** NeptusParser Class definition
@@ -118,6 +119,11 @@ public:
 
 						   ROS_ERROR("lawnmower manevar");
 						   parseRows(maneuverType);
+
+					   } else  if(strcmp(maneuverType->ToElement()->Name(),"StationKeeping") == 0){
+
+						   ROS_ERROR("DP manevar");
+						   parseStationKeeping(maneuverType);
 					   }
 				   }
 			   }
@@ -153,15 +159,29 @@ public:
 		ROS_ERROR("Preracunato: %f,%f", position.north, position.east);
 
 		/* Set offset if in relative mode */
-		if(!startPointSet && startRelative){
-			offset = position;
+		if(!startPointSet){
+			offset.north += position.north;
+			offset.east += position.east;
 			startPointSet = true;
 		}
 
+		/* Set default values */
+		double duration = 0;
+
+		/* Loop through rows parameters */
+		for (XMLElement* param = maneuverType->FirstChildElement("duration"); param != NULL; param = param->NextSiblingElement()){
+
+			/* Check parameter name */
+			if( strcmp(param->ToElement()->Name(),"duration") == 0){
+
+				duration = atof(param->ToElement()->GetText());
+				ROS_ERROR("Duration: %s", param->ToElement()->GetText());
+
+			}
+		}
+
 		/* Write point to XML file */
-		MG.writeXML.addGo2point_UA(position.north-offset.north, position.east-offset.east,0.5,1.0);
-
-
+		MG.writeXML.addGo2point_FA(position.north-offset.north, position.east-offset.east,0,0.5,1.0);
 	}
 
 	void parseRows(XMLElement *maneuverType){
@@ -184,8 +204,9 @@ public:
 		ROS_ERROR("Preracunato: %f,%f", position.north, position.east);
 
 		/* Set offset if in relative mode */
-		if(!startPointSet  && startRelative){
-			offset = position;
+		if(!startPointSet){
+			offset.north += position.north;
+			offset.east += position.east;
 			startPointSet = true;
 		}
 
@@ -292,7 +313,39 @@ ROS_ERROR("width: %f, length: %f, hstep: %f, bearing: %f, alternationPercent: %f
 		}
 
 		/* Write maneuver points to XML */
-		MG.writePrimitives(go2point_FA, tmpPoints);
+		MG.writePrimitives(go2point_FA, tmpPoints,speed,1.0); /* speed, victoryRadius */
+	}
+
+	void parseStationKeeping(XMLElement *maneuverType){
+
+		ROS_INFO("Parsing StationKeeping maneuver...");
+
+		XMLElement *LatLonPoint = maneuverType->FirstChildElement("basePoint")->FirstChildElement("point")->
+																	   FirstChildElement("coordinate")->FirstChildElement("latitude");
+		/* Read maneuver parameters */
+		ROS_ERROR("Lat: %s", LatLonPoint->ToElement()->GetText());
+		string lat = LatLonPoint->ToElement()->GetText();
+
+		LatLonPoint = LatLonPoint->NextSiblingElement();
+
+		ROS_ERROR("Lon: %s", LatLonPoint->ToElement()->GetText());
+		string lon = LatLonPoint->ToElement()->GetText();
+
+		auv_msgs::NED position;
+		position = str2NED(lat,lon);
+		ROS_ERROR("Preracunato: %f,%f", position.north, position.east);
+
+		/* Set offset if in relative mode */
+		if(!startPointSet){
+			offset.north += position.north;
+			offset.east += position.east;
+			startPointSet = true;
+		}
+
+		/* Write point to XML file */
+		MG.writeXML.addDynamic_positioning(position.north-offset.north, position.east-offset.east,0);
+
+
 	}
 
 	void parseLoiter(XMLElement *maneuverType){
@@ -352,10 +405,18 @@ void startParseCallback(ros::Publisher &pubStartDispatcher, const misc_msgs::Sta
 	NeptusParser NP;
 	ph.param("xml_save_path", NP.xmlSavePath, NP.xmlSavePath);
 	ROS_ERROR("%s",NP.xmlSavePath.c_str());
-	NP.offset.north = NP.offset.east = 0;
+
 	NP.startRelative = msg->relative;
 	NP.startPoint.latitude = msg->lat;
 	NP.startPoint.longitude = msg->lon;
+
+	if(NP.startRelative){
+		NP.offset.north = -NP.startPoint.latitude;
+		NP.offset.east = -NP.startPoint.longitude;
+	} else {
+		NP.offset.north = NP.offset.east = 0;
+	}
+
 	int status = NP.parseNeptus(msg->fileName);
 
 	if(status == 1){

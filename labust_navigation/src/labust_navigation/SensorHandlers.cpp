@@ -135,10 +135,10 @@ void DvlHandler::onDvl(const geometry_msgs::TwistStamped::ConstPtr& data)
 			transform = buffer.lookupTransform("base_link", "dvl_frame", ros::Time(0));
 
 			Eigen::Vector3d speed(data->twist.linear.x, data->twist.linear.y, data->twist.linear.z);
-			Eigen::Quaternion<double> rot(transform.transform.rotation.x,
+			Eigen::Quaternion<double> rot(transform.transform.rotation.w,
+					transform.transform.rotation.x,
 					transform.transform.rotation.y,
-					transform.transform.rotation.z,
-					transform.transform.rotation.w);
+					transform.transform.rotation.z);
 			Eigen::Vector3d body_speed = rot.matrix()*speed;
 
 			//Add compensation for excentralized DVL
@@ -175,10 +175,10 @@ void DvlHandler::onDvl(const geometry_msgs::TwistStamped::ConstPtr& data)
 		Eigen::Vector3d meas(data->twist.linear.x,
 				data->twist.linear.y,
 				data->twist.linear.z);
-		Eigen::Quaternion<double> rot(transform.transform.rotation.x,
+		Eigen::Quaternion<double> rot(transform.transform.rotation.w,
+				transform.transform.rotation.x,
 				transform.transform.rotation.y,
-				transform.transform.rotation.z,
-				transform.transform.rotation.w);
+				transform.transform.rotation.z);
 		transform = buffer.lookupTransform("local", "base_link", ros::Time(0));
 		Eigen::Vector3d result = rot.matrix()*meas;
 		uvw[u] = result.x();

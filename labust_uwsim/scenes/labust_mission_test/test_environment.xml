@@ -59,6 +59,10 @@
 <z>0</z>
 </offsetr>
 <enablePhysics> 1 </enablePhysics>
+<showTrajectory>
+	<target>pladypos</target>
+	<!--<color>white</color>-->
+</showTrajectory>
 </simParams>
 <camera>
 <freeMotion> 1 </freeMotion>
@@ -83,8 +87,8 @@
 <name>pladypos</name>
 <file>data/scenes/pladypos.urdf</file>
 <position>
-<x> 20</x>
-<y> 15 </y>
+<x> 30</x>
+<y> 30 </y>
 <z> 0 </z>
 </position>
 <orientation>
@@ -125,26 +129,6 @@
 <std>0.00005</std>
 </gpsSensor> -->
 
-<usblSensor>
-<name>USBLSensor</name>
-<relativeTo>base_link</relativeTo>
-<position>
-<x>0</x>
-<y>0</y>
-<z>0</z>
-</position>
-<orientation>
-<r>0</r>
-<p>0</p>
-<y>0</y>
-</orientation>
-<!-- <std>0.5</std> -->
-<std>0</std>
-<transponder>
-<name>diver</name>
-<id>0</id>
-</transponder>
-</usblSensor>
 </vehicle>
 
 <vehicle>
@@ -209,18 +193,20 @@
 <p>0</p>
 <y>0</y>
 </orientation>
+<physics>
+	<mass>0</mass>
+	<collisionShapeType> trimesh </collisionShapeType>
+</physics>
 </object>
 
 <rosInterfaces>
 <ROSOdomToPAT>
 <topic> /uwsim_hook </topic>
 <vehicleName> pladypos </vehicleName>
-<visualize> 1 </visualize>
 </ROSOdomToPAT>
 <ROSOdomToPAT>
 <topic> diver/uwsim_hook </topic>
 <vehicleName> diver </vehicleName>
-<visualize> 1 </visualize>
 </ROSOdomToPAT>
      <VirtualCameraToROSImage>
 <cameraName>bowtech1</cameraName>
@@ -242,15 +228,5 @@
 <topic>pladypos/gps</topic>
 <rate>1</rate>
 </GPSSensorToROS> -->
-<USBLSensorToROS>
-<name>USBLSensor</name>
-<topic>pladypos/usbl</topic>
-<rate>1</rate>
-</USBLSensorToROS>
-<!-- <OceanInfoToROS>
-<name>diver</name>
-<topic>pladypos/ocean_info</topic>
-<rate>20</rate>
-</OceanInfoToROS> -->
 </rosInterfaces>
 </UWSimScene>

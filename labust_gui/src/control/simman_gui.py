@@ -14,6 +14,7 @@ from python_qt_binding import loadUi,QtCore, QtGui
 from qt_gui.plugin import Plugin
 
 from std_msgs.msg import String
+from std_msgs.msg import Bool
 from auv_msgs.msg import Bool6Axis
 from navcon_msgs.srv import EnableControl
 from navcon_msgs.srv import ConfigureAxes
@@ -353,6 +354,7 @@ class SimManROS(QtCore.QObject):
             self._stateRef = NavSts()
             self._stateHat = NavSts()
             
+            self.use_dp = True
             self.manager = HLManager()
                                           
         def setup(self, gui):
@@ -433,6 +435,7 @@ class SimManROS(QtCore.QObject):
                              
         def _update_stateRef(self):
             self._stateRefPub.publish(self._stateRef)
+            if self.use_dp: self._stateRefPub2.publish(self._stateRef)
 
         def _connect_signals(self, gui):
             QtCore.QObject.connect(self, 
@@ -442,13 +445,20 @@ class SimManROS(QtCore.QObject):
             self._stateHat = data;
             self.emit(QtCore.SIGNAL("onStateHat"), data)
             
+        def _onUseDP(self, data):
+            self.use_dp = data.data
+            
         def _subscribe(self):   
             self._subscribers.append(rospy.Subscriber("stateHat", 
                                                       NavSts, 
                                                       self._onStateHat))
+            self._subscribers.append(rospy.Subscriber("use_dp", 
+                                                      Bool, 
+                                                      self._onUseDP))
         
         def _advertise(self):
             self._stateRefPub = rospy.Publisher("stateRef", NavSts)
+            self._stateRefPub2 = rospy.Publisher("TrackPoint", NavSts)
         
         def _unsubscribe(self):
             for subscriber in self._subscribers:

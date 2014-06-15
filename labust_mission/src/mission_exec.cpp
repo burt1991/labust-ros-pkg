@@ -1,3 +1,4 @@
+//\todo testirati sto u slucaju da je neki uvjet aktivan odmah po pokretanju primitiva
 /*********************************************************************
  * mission_exec.cpp
  *
@@ -56,6 +57,8 @@ using namespace std;
 using namespace decision_making;
 using namespace tinyxml2;
 using namespace labust::mission;
+//using namespace labust::event;
+
 
 namespace ser = ros::serialization;
 
@@ -177,6 +180,8 @@ FSM(MissionSelect)
 
 		   	ME->oldPosition = data.point;
 
+		   	ME->setTimeout(ME->receivedPrimitive.event.timeout);
+
 			FSM_ON_STATE_EXIT_BGN{
 
 				CM->dynamic_positioning(false,0,0,0);
@@ -195,6 +200,8 @@ FSM(MissionSelect)
 
 			misc_msgs::CourseKeepingFA data = ME->deserializePrimitive<misc_msgs::CourseKeepingFA>(ME->receivedPrimitive.primitiveData);
 		   	CM->course_keeping_FA(true,data.course, data.speed, data.heading);
+
+		   	ME->setTimeout(ME->receivedPrimitive.event.timeout);
 
 			FSM_ON_STATE_EXIT_BGN{
 
@@ -217,6 +224,8 @@ FSM(MissionSelect)
 
 			misc_msgs::CourseKeepingUA data = ME->deserializePrimitive<misc_msgs::CourseKeepingUA>(ME->receivedPrimitive.primitiveData);
 		   	CM->course_keeping_UA(true,data.course, data.speed);
+
+		   	ME->setTimeout(ME->receivedPrimitive.event.timeout);
 
 			FSM_ON_STATE_EXIT_BGN{
 

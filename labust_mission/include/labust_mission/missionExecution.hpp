@@ -1,3 +1,5 @@
+//\todo vidjeti da li prebaciti ovo u controllerManager ili definirati posebnu klasu za prikupljanje mjerenja i generiranje eventa
+
 /*********************************************************************
  * missionExecution.hpp
  *
@@ -45,6 +47,8 @@
 
 
 #include <labust_mission/labustMission.hpp>
+#include <labust_mission/eventEvaluation.hpp>
+#include <exprtk/exprtk.hpp>
 
 #include <decision_making/SynchCout.h>
 #include <decision_making/BT.h>
@@ -77,7 +81,6 @@ namespace labust {
 			 ***  ROS Subscriptions Callback
 			 ****************************************************************/
 
-			//\todo vidjeti da li prebaciti ovo u controllerManager ili definirati posebnu klasu za prikupljanje mjerenja i generiranje eventa
 			void onStateHat(const auv_msgs::NavSts::ConstPtr& data);
 
 			void onEventString(const std_msgs::String::ConstPtr& msg);
@@ -93,9 +96,15 @@ namespace labust {
 
 			void requestPrimitive();
 
+			void setTimeout(double timeout);
+
+			void onTimeout(const ros::TimerEvent& timer);
+
 			/*********************************************************************
 			 ***  Class variables
 			 ********************************************************************/
+
+			ros::NodeHandle nh_;
 
 			misc_msgs::SendPrimitive receivedPrimitive;
 			ros::Publisher pubRequestPrimitive;
@@ -106,6 +115,9 @@ namespace labust {
 
 			auv_msgs::NED oldPosition; /* Remember last primitive end point */
 
+			ros::Timer timer;
+
+			labust::event::EventEvaluation EE;
 		};
 
 		/*****************************************************************
@@ -127,8 +139,21 @@ namespace labust {
 		 ***  ROS Subscriptions Callback
 		 ****************************************************************/
 
-		//\todo vidjeti da li prebaciti ovo u controllerManager ili definirati posebnu klasu za prikupljanje mjerenja i generiranje eventa
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
+
+			if(receivedPrimitive.event.onEventStop.empty()==0)
+				EE.checkEventState(*data, receivedPrimitive.event.onEventStop.c_str());
+//
+//			/* Read external states */
+//
+//			/* Events */
+//			if(0){
+//				mainEventQueue->riseEvent("/PRIMITIVE_FINSIHED");
+//
+//			} else if(0){
+//				mainEventQueue->riseEvent("/PRIMITIVE_FINSIHED");
+//
+//			}
 
 		}
 
@@ -172,6 +197,7 @@ namespace labust {
 				case none:
 
 					ROS_ERROR("Mission ended.");
+					mainEventQueue->riseEvent("/STOP");
 			}
 		}
 
@@ -201,6 +227,21 @@ namespace labust {
 			std_msgs::Bool req;
 			req.data = true;
 			pubRequestPrimitive.publish(req);
+		}
+
+		void MissionExecution::setTimeout(double timeout){
+
+		   	if(timeout != 0){
+		   		ROS_ERROR("Setting timeout: %f", timeout);
+				timer = nh_.createTimer(ros::Duration(timeout), &MissionExecution::onTimeout, this, true);
+		   	}
+		}
+
+		void MissionExecution::onTimeout(const ros::TimerEvent& timer){
+
+			ROS_ERROR("Timeout");
+			mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
 		}
 	}
 }

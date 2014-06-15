@@ -9,6 +9,7 @@ export JOYSTICK=/dev/input/js1
 
 #Simulation variables
 export IS_SIM=0
+export USE_SIM_TIME=1
 export USE_NOISE=0
 export USE_VISUALIZATION=1
 
@@ -29,8 +30,6 @@ export TF_PREFIX=pladypos
 export USE_USBL_MANAGER=0
 export USE_USBL=0
 
-#ROS variables
-ROS_LOG_DIR=/extern/ros_logs
 
 
 

@@ -71,6 +71,8 @@ namespace labust {
 
 			int checkEventState(auv_msgs::NavSts data, std::string expression_str);
 
+			double evaluateStringExpression(std::string expression_str);
+
 			void updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table);
 
 			void onReceiveExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data);
@@ -85,9 +87,11 @@ namespace labust {
 
 			std::vector<misc_msgs::ExternalEvent> externalEventContainer;
 
+			double x,y,z,psi;
+
 		};
 
-		EventEvaluation::EventEvaluation(){
+		EventEvaluation::EventEvaluation():x(0.0),y(0.0),psi(0.0){
 
 			ros::NodeHandle nh;
 			subExternalEvents_ = nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",1, &EventEvaluation::onReceiveExternalEvent, this);
@@ -124,7 +128,7 @@ namespace labust {
 			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
 
 				double value = (*it).value;
-				string eventName = (*it).description.c_str();
+				std::string eventName = (*it).description.c_str();
 
 				symbol_table.create_variable(eventName.c_str());
 				symbol_table.get_variable(eventName.c_str())->ref() = double(value);
@@ -175,6 +179,81 @@ namespace labust {
 				return 1;
 			else
 				return 0;
+		}
+
+		double EventEvaluation::evaluateStringExpression(std::string expression_str){
+
+			symbol_table_t symbol_table;
+			//updateData(data, &symbol_table);
+
+			/* Read estimated values */
+//			double u = data.body_velocity.x;
+//			double v = data.body_velocity.y;
+//			double w = data.body_velocity.z;
+//			double r = data.orientation_rate.yaw;
+//			double x = data.position.north;
+//			double y = data.position.east;
+//			double z = data.position.depth;
+//			double psi = data.orientation.yaw;
+//
+//			double x_var = data.position_variance.north;
+//			double y_var = data.position_variance.east;
+//			double z_var = data.position_variance.depth;
+//			double psi_var = data.orientation_variance.yaw;
+//
+//			double alt = data.altitude;
+
+			symbol_table.add_constants();
+
+			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
+
+				double value = (*it).value;
+				std::string eventName = (*it).description.c_str();
+
+				symbol_table.create_variable(eventName.c_str());
+				symbol_table.get_variable(eventName.c_str())->ref() = double(value);
+			}
+
+//			symbol_table.add_variable("u",u);
+//			symbol_table.add_variable("v",v);
+//			symbol_table.add_variable("w",w);
+//			symbol_table.add_variable("r",r);
+			symbol_table.add_variable("x",x);
+			symbol_table.add_variable("y",y);
+			symbol_table.add_variable("z",z);
+			symbol_table.add_variable("psi",psi);
+//			symbol_table.add_variable("x_var",x_var);
+//			symbol_table.add_variable("y_var",y_var);
+//			symbol_table.add_variable("z_var",z_var);
+//			symbol_table.add_variable("psi_var",psi_var);
+//			symbol_table.add_variable("alt",alt);
+
+			expression_t expression;
+			expression.register_symbol_table(symbol_table);
+
+			parser_t parser;
+
+			//ROS_ERROR("vrijednost: %f",symbol_table.get_variable("event1")->value());
+
+			if (!parser.compile(expression_str,expression))
+			{
+			  ROS_ERROR("Error: %s\tExpression: %s\n",parser.error().c_str(),expression_str.c_str());
+
+			  for (std::size_t i = 0; i < parser.error_count(); ++i)
+			  {
+				 error_t error = parser.get_error(i);
+				 ROS_ERROR("Error: %02d Position: %02d Type: [%s] Msg: %s Expr: %s\n",
+						static_cast<int>(i),
+						static_cast<int>(error.token.position),
+						exprtk::parser_error::to_str(error.mode).c_str(),
+						error.diagnostic.c_str(),
+						expression_str.c_str());
+			  }
+			  return -1;
+			}
+
+			return  expression.value();
+
 		}
 
 		void EventEvaluation::updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table){

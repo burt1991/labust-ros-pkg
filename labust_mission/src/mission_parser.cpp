@@ -47,6 +47,8 @@
 *********************************************************************/
 
 #include <labust_mission/labustMission.hpp>
+#include <labust_mission/eventEvaluation.hpp>
+
 #include <misc_msgs/StartParser.h>
 #include <tinyxml2.h>
 
@@ -88,7 +90,7 @@ namespace labust {
 
 			int parseEvents(string xmlFile);
 
-			void onRequestPrimitive(const std_msgs::Bool::ConstPtr& req);
+			void onRequestPrimitive(const std_msgs::UInt16::ConstPtr& req);
 
 			void onEventString(const std_msgs::String::ConstPtr& msg);
 
@@ -107,6 +109,7 @@ namespace labust {
 
 			int ID;
 			double newXpos, newYpos, newVictoryRadius, newSpeed, newCourse, newHeading;
+			//double oldXpos, oldYpos, oldVictoryRadius, oldSpeed, oldCourse, oldHeading;
 			double newTimeout;
 
 			bool eventsFlag, primitiveHasEvent;
@@ -117,10 +120,16 @@ namespace labust {
 
 			std::vector<std::string> eventsContainer;
 
+			std::vector<uint8_t> eventsActive;
+			//std::vector<std::string> eventsActiveContainer;
+			std::vector<uint8_t> eventsGoToNext;
+
 			ros::Publisher pubSendPrimitive, pubRiseEvent;
 			ros::Subscriber subRequestPrimitive, subEventString, subReceiveXmlPath;
 
 			auv_msgs::NED offset;
+
+			labust::event::EventEvaluation EE;
 		};
 
 
@@ -132,7 +141,8 @@ namespace labust {
 				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), primitiveHasEvent(false), eventID(0){
 
 			/* Subscribers */
-			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
+//			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
+			subRequestPrimitive = nh.subscribe<std_msgs::UInt16>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1,&MissionParser::onEventString, this);
 			subReceiveXmlPath = nh.subscribe<misc_msgs::StartParser>("startParse",1,&MissionParser::onReceiveXmlPath, this);
 
@@ -445,6 +455,8 @@ namespace labust {
 
 								newTimeout = 0;
 								eventID = 0;
+								eventsActive.clear();
+								eventsGoToNext.clear();
 
 							   primitiveParam = primitive->FirstChildElement("param");
 							   do{
@@ -455,7 +467,8 @@ namespace labust {
 
 								   if(primitiveParamName.compare("course") == 0){
 
-									   newCourse = atof(elem2->GetText());
+									   //newCourse = atof(elem2->GetText());
+									   newCourse = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
@@ -467,8 +480,16 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
-									  eventID = atof(elem2->GetText());
-									  primitiveHasEvent = true;
+									   std::string goToId = elem2->Attribute("goToId");
+									   if(goToId.empty()==0){
+										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+									   } else {
+										   eventsGoToNext.push_back(ID+1);
+									   }
+
+									   eventsActive.push_back(atof(elem2->GetText()));
+									   //eventID = atof(elem2->GetText());
+									   primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -526,9 +547,10 @@ namespace labust {
 			}
 		}
 
-		void MissionParser::onRequestPrimitive(const std_msgs::Bool::ConstPtr& req){
+		void MissionParser::onRequestPrimitive(const std_msgs::UInt16::ConstPtr& req){
 			if(req->data){
 				sendPrimitve();
+				ID = req->data;
 			}
 		}
 
@@ -574,8 +596,25 @@ namespace labust {
 			sendContainer.primitiveID = id;
 			sendContainer.primitiveData = buffer;
 
+			std::string EventsContainerTmp;
+
+			for(std::vector<uint8_t>::iterator it = eventsActive.begin() ; it != eventsActive.end(); ++it){
+
+				EventsContainerTmp.append(eventsContainer.at(*it-1));
+				EventsContainerTmp.append(":");
+			}
+
 			sendContainer.event.timeout = newTimeout;
-			sendContainer.event.onEventStop = (eventsFlag && primitiveHasEvent) ? eventsContainer.at(eventID-1).c_str():"";
+
+			if(eventsFlag && primitiveHasEvent){
+				sendContainer.event.onEventStop = EventsContainerTmp.c_str();
+			} else {
+				sendContainer.event.onEventStop = "";
+			}
+
+			sendContainer.event.onEventNext = eventsGoToNext;
+
+			//sendContainer.event.onEventStop = (eventsFlag && primitiveHasEvent) ? eventsContainer.at(eventID-1).c_str():"";
 
 			primitiveHasEvent = false;
 

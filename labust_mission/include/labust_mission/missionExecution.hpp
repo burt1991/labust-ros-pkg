@@ -118,13 +118,17 @@ namespace labust {
 			labust::event::EventEvaluation EE;
 
 			bool checkEventFlag;
+
+			int nextPrimitive;
+
+			std::vector<std::string> eventsActive;
 		};
 
 		/*****************************************************************
 		 ***  Class functions
 		 ****************************************************************/
 
-		MissionExecution::MissionExecution(ros::NodeHandle& nh):checkEventFlag(false){
+		MissionExecution::MissionExecution(ros::NodeHandle& nh):checkEventFlag(false),nextPrimitive(1){
 
 			/* Subscribers */
 			subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &MissionExecution::onStateHat, this);
@@ -141,8 +145,18 @@ namespace labust {
 
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
+			int flag;
+			int i = 0;
 			if(checkEventFlag){
-				int flag = EE.checkEventState(*data, receivedPrimitive.event.onEventStop.c_str());
+
+				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
+														it != receivedPrimitive.event.onEventNext.end(); ++it){
+
+					flag = flag or EE.checkEventState(*data, eventsActive[i++].c_str());
+					nextPrimitive = *it;
+					if (flag) break;
+				}
+
 
 				if(flag == 1){
 					ROS_ERROR("Event active");
@@ -165,11 +179,33 @@ namespace labust {
 			}
 		}
 
+		//////////////////////////////////////////////////////7777
+		//// SREDI OVO
+        /////////////////////////////////////////////////////////////7
+		std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+			std::stringstream ss(s);
+			std::string item;
+			while (std::getline(ss, item, delim)) {
+				if(!item.empty()){
+					elems.push_back(item);
+				}
+			}
+			return elems;
+		}
+
+		std::vector<std::string> split(const std::string &s, char delim) {
+			std::vector<std::string> elems;
+			split(s, delim, elems);
+			return elems;
+		}
+
 		void MissionExecution::onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data){
 
+			eventsActive.clear();
 			receivedPrimitive = *data;
 			if(receivedPrimitive.event.onEventStop.empty() == 0){
 				checkEventFlag = true;
+				eventsActive = split(receivedPrimitive.event.onEventStop.c_str(), ':');
 				ROS_ERROR("Check event state: %s", receivedPrimitive.event.onEventStop.c_str());
 			}
 
@@ -229,11 +265,18 @@ namespace labust {
 			return my_primitive;
 		}
 
+//		void MissionExecution::requestPrimitive(){
+//			std_msgs::Bool req;
+//			req.data = true;
+//			pubRequestPrimitive.publish(req);
+//		}
+
 		void MissionExecution::requestPrimitive(){
-			std_msgs::Bool req;
-			req.data = true;
+			std_msgs::UInt16 req;
+			req.data = nextPrimitive++;
 			pubRequestPrimitive.publish(req);
 		}
+
 
 		void MissionExecution::setTimeout(double timeout){
 

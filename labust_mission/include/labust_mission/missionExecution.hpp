@@ -136,7 +136,9 @@ namespace labust {
 			subReceivePrimitive = nh.subscribe<misc_msgs::SendPrimitive>("sendPrimitive",1, &MissionExecution::onReceivePrimitive, this);
 
 			/* Publishers */
-			pubRequestPrimitive = nh.advertise<std_msgs::Bool>("requestPrimitive",1);
+			//pubRequestPrimitive = nh.advertise<std_msgs::Bool>("requestPrimitive",1);
+			pubRequestPrimitive = nh.advertise<std_msgs::UInt16>("requestPrimitive",1);
+
 		}
 
 		/*****************************************************************
@@ -145,16 +147,27 @@ namespace labust {
 
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
-			int flag;
+			int flag  = 0;
 			int i = 0;
 			if(checkEventFlag){
 
 				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
 														it != receivedPrimitive.event.onEventNext.end(); ++it){
 
-					flag = flag or EE.checkEventState(*data, eventsActive[i++].c_str());
+
+					if(EE.checkEventState(*data, eventsActive[i++].c_str()) == 1)
+						flag = 1;
+
+					ROS_ERROR("%s",  eventsActive[i-1].c_str());
+
 					nextPrimitive = *it;
 					if (flag) break;
+				}
+
+				//// TEMP SOLUTION
+				for(std::vector<misc_msgs::ExternalEvent>::iterator it = EE.externalEventContainer.begin() ; it != EE.externalEventContainer.end(); ++it){
+
+					(*it).value = 0;
 				}
 
 
@@ -165,6 +178,7 @@ namespace labust {
 				} else if(flag == -1){
 					ROS_ERROR("Event parser error");
 					checkEventFlag = false;
+					nextPrimitive = 1;
 					mainEventQueue->riseEvent("/STOP");
 				}
 			}
@@ -176,6 +190,7 @@ namespace labust {
 			ROS_INFO("EventString: %s",msg->data.c_str());
 			if(strcmp(msg->data.c_str(),"/STOP") == 0){
 				checkEventFlag = false;
+				nextPrimitive = 1;
 			}
 		}
 
@@ -203,6 +218,7 @@ namespace labust {
 
 			eventsActive.clear();
 			receivedPrimitive = *data;
+			ROS_ERROR("PRVIII Check event state: %s", receivedPrimitive.event.onEventStop.c_str());
 			if(receivedPrimitive.event.onEventStop.empty() == 0){
 				checkEventFlag = true;
 				eventsActive = split(receivedPrimitive.event.onEventStop.c_str(), ':');

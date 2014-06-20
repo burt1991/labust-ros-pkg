@@ -162,7 +162,7 @@ namespace labust {
 
 			ROS_ERROR("%s",xmlFile.c_str());
 
-			ID++;
+			ROS_ERROR("%d",ID);
 			int status = parseMission(ID, xmlFile);
 
 			ROS_ERROR("%s", primitives[status]);
@@ -377,8 +377,11 @@ namespace labust {
 							/* Case: dynamic_positioning ********************/
 							} else if (primitiveName.compare("dynamic_positioning") == 0){
 
+								// Prebaci ovo na zajednicko mjesto. /////////////////////////////////////////////////////
 								newTimeout = 0;
 								eventID = 0;
+								eventsActive.clear();
+								eventsGoToNext.clear();
 
 							   primitiveParam = primitive->FirstChildElement("param");
 							   do{
@@ -389,11 +392,11 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = atof(elem2->GetText());
+									   newXpos = EE.evaluateStringExpression(elem2->GetText(), 0);
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = atof(elem2->GetText());
+									   newYpos = EE.evaluateStringExpression(elem2->GetText(), 0);
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
@@ -405,8 +408,20 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
-									  eventID = atof(elem2->GetText());
-									  primitiveHasEvent = true;
+//									  eventID = atof(elem2->GetText());
+//									  primitiveHasEvent = true;
+
+									    std::string goToId = elem2->Attribute("goToId");
+									    ROS_ERROR("gottoid aatribut %s",goToId.c_str());
+										if(goToId.empty()==0){
+										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+										} else {
+										   eventsGoToNext.push_back(ID+1);
+										}
+
+										eventsActive.push_back(atof(elem2->GetText()));
+										//eventID = atof(elem2->GetText());
+										primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -417,6 +432,8 @@ namespace labust {
 
 								newTimeout = 0;
 								eventID = 0;
+								eventsActive.clear();
+								eventsGoToNext.clear();
 
 							   primitiveParam = primitive->FirstChildElement("param");
 							   do{
@@ -427,7 +444,9 @@ namespace labust {
 
 								   if(primitiveParamName.compare("course") == 0){
 
-									   newCourse = atof(elem2->GetText());
+									  // newCourse = atof(elem2->GetText());
+									   newCourse = EE.evaluateStringExpression(elem2->GetText(), newCourse);
+
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
@@ -443,8 +462,16 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
-									  eventID = atof(elem2->GetText());
-									  primitiveHasEvent = true;
+									   std::string goToId = elem2->Attribute("goToId");
+									   if(goToId.empty()==0){
+										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+									   } else {
+										   eventsGoToNext.push_back(ID+1);
+									   }
+
+									   eventsActive.push_back(atof(elem2->GetText()));
+									   //eventID = atof(elem2->GetText());
+									   primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -468,7 +495,7 @@ namespace labust {
 								   if(primitiveParamName.compare("course") == 0){
 
 									   //newCourse = atof(elem2->GetText());
-									   newCourse = EE.evaluateStringExpression(elem2->GetText());
+									   newCourse = EE.evaluateStringExpression(elem2->GetText(), newCourse);
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
@@ -549,8 +576,8 @@ namespace labust {
 
 		void MissionParser::onRequestPrimitive(const std_msgs::UInt16::ConstPtr& req){
 			if(req->data){
-				sendPrimitve();
 				ID = req->data;
+				sendPrimitve();
 			}
 		}
 
@@ -602,9 +629,13 @@ namespace labust {
 
 				EventsContainerTmp.append(eventsContainer.at(*it-1));
 				EventsContainerTmp.append(":");
+
+				ROS_ERROR("%s", EventsContainerTmp.c_str());
 			}
 
 			sendContainer.event.timeout = newTimeout;
+
+			ROS_ERROR("Evo koji eventi su aktivni: %s", EventsContainerTmp.c_str());
 
 			if(eventsFlag && primitiveHasEvent){
 				sendContainer.event.onEventStop = EventsContainerTmp.c_str();

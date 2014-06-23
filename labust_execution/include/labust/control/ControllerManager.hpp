@@ -33,9 +33,10 @@
 *********************************************************************/
 #ifndef CONTROLLERMANAGER_HPP_
 #define CONTROLLERMANAGER_HPP_
-
+#include <labust/control/ControllerGraph.hpp>
 #include <navcon_msgs/ControllerSelect.h>
-#include <navcon_msgs/RegisterController_v2.h>
+#include <navcon_msgs/RegisterController_v3.h>
+
 #include <ros/ros.h>
 
 #include <boost/array.hpp>
@@ -48,15 +49,11 @@ namespace labust
 	namespace control
 	{
 		/**
-		 * The class contains the temporary implementation of a controller manager.
+		 * The class contains the implementation of a controller manager. The manager accepts controller
+		 * registrations and handles their dependencies during activation and deactivation.
 		 */
 		class ControllerManager
 		{
-			typedef std::map<std::string,
-					navcon_msgs::RegisterController_v2::Request> ControllerMap;
-
-			enum {dofsNum=6};
-
 		public:
 			/**
 			 * Main constructor
@@ -72,13 +69,18 @@ namespace labust
 			/**
 			 * Handle the activation request.
 			 */
-			bool onActivateController(navcon_msgs::ControllerSelect::Request& req,
+			bool onControllerSelect(navcon_msgs::ControllerSelect::Request& req,
 					navcon_msgs::ControllerSelect::Response& resp);
 			/**
 			 * Handle the registration request.
 			 */
-			bool onRegisterController(navcon_msgs::RegisterController_v2::Request& req,
-					navcon_msgs::RegisterController_v2::Response& resp);
+			bool onRegisterController(navcon_msgs::RegisterController_v3::Request& req,
+					navcon_msgs::RegisterController_v3::Response& resp);
+			/**
+			 * Handle the unregistration request.
+			 */
+			bool onUnRegisterController(navcon_msgs::RegisterController_v3::Request& req,
+					navcon_msgs::RegisterController_v3::Response& resp);
 
 			/**
 			 * Activate the controller.
@@ -94,23 +96,16 @@ namespace labust
 			/**
 			 * Activation service.
 			 */
-			ros::ServiceServer activateController, registerController;
+			ros::ServiceServer controllerSelect, registerController, unregisterController;
 
 			/**
 			 * The controller state topic publisher.
 			 */
 			ros::Publisher controllerState;
 			/**
-			 * The current active tau and nu.
+			 * The controller graph.
 			 */
-			boost::array<std::string, 6> actTau, actNu;
-			/**
-			 * The registered controllers.
-			 */
-			ControllerMap controllers;
-			/**
-			 *
-			 */
+			ControllerGraph cgraph;
 		};
 	}
 }

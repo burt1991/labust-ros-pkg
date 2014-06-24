@@ -123,6 +123,8 @@ public:
 	ros::Subscriber subStateHatAbs, subRequestLawn;
 	ros::Publisher pubEvent;
 
+	ros::Timer timer;
+
 	bool requestLawnFlag;
 
 	int counter;
@@ -146,22 +148,32 @@ public:
 
 		//missionLoop();
 
+
 	}
 
 	void onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
 		updateData(data);
 		//ROS_ERROR("UPDATE");
-
-		misc_msgs::ExternalEvent sendEvent;
-
-
+		ros::NodeHandle nh;
 		if(requestLawnFlag == true){
-			sendEvent.id = 1;
-			sendEvent.value = 0;
-			pubEvent.publish(sendEvent);
+			timer = nh.createTimer(ros::Duration(2.0), &LOD::onTimeout, this, true);
 			requestLawnFlag = false;
 		}
+
+	}
+
+	void onTimeout(const ros::TimerEvent& timer){
+
+		//ROS_ERROR("Timeout");
+		//mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+		//checkEventFlag = false;
+		misc_msgs::ExternalEvent sendEvent;
+
+		sendEvent.id = 1;
+		sendEvent.value = 0;
+		pubEvent.publish(sendEvent);
+
 
 	}
 

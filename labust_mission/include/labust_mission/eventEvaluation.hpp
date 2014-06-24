@@ -182,7 +182,7 @@ namespace labust {
 
 			double result = expression.value();
 
-			ROS_ERROR("RESULT: %10.5f\n",result);
+			//ROS_ERROR("RESULT: %10.5f\n",result);
 			if(result == 1)
 				return 1;
 			else
@@ -191,7 +191,7 @@ namespace labust {
 
 		double EventEvaluation::evaluateStringExpression(std::string expression_str){
 
-			ROS_ERROR("PROVJERAVAM STRING %s", expression_str.c_str());
+			//ROS_ERROR("PROVJERAVAM STRING %s", expression_str.c_str());
 
 			symbol_table_t symbol_table;
 			//updateData(data, &symbol_table);
@@ -272,7 +272,7 @@ namespace labust {
 			  return -1;
 			}
 
-			ROS_ERROR(" expression Value %f", expression.value());
+			//ROS_ERROR(" expression Value %f", expression.value());
 			//course = expression.value(); /////////////// TEMP ////////////////////////////////////////////////////////////////7
 			return  expression.value();
 

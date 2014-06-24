@@ -90,6 +90,8 @@ namespace labust {
 
 			int parseEvents(string xmlFile);
 
+			int parseMissionParam(string xmlFile);
+
 			void onRequestPrimitive(const std_msgs::UInt16::ConstPtr& req);
 
 			void onEventString(const std_msgs::String::ConstPtr& msg);
@@ -107,7 +109,7 @@ namespace labust {
 			 ***  Class variables
 			 ****************************************************************/
 
-			int ID;
+			int ID, lastID;
 			double newXpos, newYpos, newVictoryRadius, newSpeed, newCourse, newHeading;
 			//double oldXpos, oldYpos, oldVictoryRadius, oldSpeed, oldCourse, oldHeading;
 			double newTimeout;
@@ -130,6 +132,8 @@ namespace labust {
 			auv_msgs::NED offset;
 
 			labust::event::EventEvaluation EE;
+
+			int breakpoint;
 		};
 
 
@@ -137,8 +141,8 @@ namespace labust {
 		 ***  Class functions
 		 ****************************************************************/
 
-		MissionParser::MissionParser(ros::NodeHandle& nh):ID(0), newXpos(0), newYpos(0), newVictoryRadius(0), newSpeed(0),
-				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), primitiveHasEvent(false), eventID(0){
+		MissionParser::MissionParser(ros::NodeHandle& nh):ID(0), lastID(0), newXpos(0), newYpos(0), newVictoryRadius(0), newSpeed(0),
+				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), primitiveHasEvent(false), eventID(0), breakpoint(1){
 
 			/* Subscribers */
 //			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
@@ -301,6 +305,11 @@ namespace labust {
 
 					   if (tmp.compare(id_string) == 0){
 
+						   /* Reset data */
+							newTimeout = 0;
+							eventsActive.clear();
+							eventsGoToNext.clear();
+
 						   /* Case: go2point_FA *****************************/
 						   if(primitiveName.compare("go2point_FA") == 0){
 
@@ -313,11 +322,11 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = atof(elem2->GetText());
+									   newXpos = EE.evaluateStringExpression(elem2->GetText(), 0);
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = atof(elem2->GetText());
+									   newYpos = EE.evaluateStringExpression(elem2->GetText(), 0);
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
@@ -333,8 +342,22 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
-									  eventID = atof(elem2->GetText());
-									  primitiveHasEvent = true;
+									    std::string goToId = elem2->Attribute("goToId");
+									    ROS_ERROR("gottoid aatribut %s",goToId.c_str());
+									    if(goToId.empty()==0){
+									   if(strcmp(goToId.c_str(),"breakpoint") == 0){
+										   eventsGoToNext.push_back(breakpoint);
+									   }else{
+										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+									   }
+								   } else {
+									   eventsGoToNext.push_back(ID+1);
+								   }
+
+
+										eventsActive.push_back(atof(elem2->GetText()));
+										//eventID = atof(elem2->GetText());
+										primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -367,8 +390,17 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
-									  eventID = atof(elem2->GetText());
-									  primitiveHasEvent = true;
+									    std::string goToId = elem2->Attribute("goToId");
+									    ROS_ERROR("gottoid aatribut %s",goToId.c_str());
+										if(goToId.empty()==0){
+										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+										} else {
+										   eventsGoToNext.push_back(ID+1);
+										}
+
+										eventsActive.push_back(atof(elem2->GetText()));
+										//eventID = atof(elem2->GetText());
+										primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -376,12 +408,6 @@ namespace labust {
 
 							/* Case: dynamic_positioning ********************/
 							} else if (primitiveName.compare("dynamic_positioning") == 0){
-
-								// Prebaci ovo na zajednicko mjesto. /////////////////////////////////////////////////////
-								newTimeout = 0;
-								eventID = 0;
-								eventsActive.clear();
-								eventsGoToNext.clear();
 
 							   primitiveParam = primitive->FirstChildElement("param");
 							   do{
@@ -408,13 +434,16 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
-//									  eventID = atof(elem2->GetText());
-//									  primitiveHasEvent = true;
-
 									    std::string goToId = elem2->Attribute("goToId");
 									    ROS_ERROR("gottoid aatribut %s",goToId.c_str());
 										if(goToId.empty()==0){
-										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+											 if(strcmp(goToId.c_str(),"breakpoint") == 0){
+												   eventsGoToNext.push_back(breakpoint);
+											   }else{
+												   eventsGoToNext.push_back(atoi(goToId.c_str()));
+												// breakpoint = ID;
+											   }
+
 										} else {
 										   eventsGoToNext.push_back(ID+1);
 										}
@@ -429,11 +458,6 @@ namespace labust {
 
 							/* Case: course_keeping_FA **********************/
 							}else if (primitiveName.compare("course_keeping_FA") == 0){
-
-								newTimeout = 0;
-								eventID = 0;
-								eventsActive.clear();
-								eventsGoToNext.clear();
 
 							   primitiveParam = primitive->FirstChildElement("param");
 							   do{
@@ -464,7 +488,11 @@ namespace labust {
 
 									   std::string goToId = elem2->Attribute("goToId");
 									   if(goToId.empty()==0){
-										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+										   if(strcmp(goToId.c_str(),"breakpoint") == 0){
+											   eventsGoToNext.push_back(breakpoint);
+										   }else{
+											   eventsGoToNext.push_back(atoi(goToId.c_str()));
+										   }
 									   } else {
 										   eventsGoToNext.push_back(ID+1);
 									   }
@@ -479,11 +507,6 @@ namespace labust {
 
 							/* Case: course_keeping_UA **********************/
 							}else if (primitiveName.compare("course_keeping_UA") == 0){
-
-								newTimeout = 0;
-								eventID = 0;
-								eventsActive.clear();
-								eventsGoToNext.clear();
 
 							   primitiveParam = primitive->FirstChildElement("param");
 							   do{
@@ -509,7 +532,11 @@ namespace labust {
 
 									   std::string goToId = elem2->Attribute("goToId");
 									   if(goToId.empty()==0){
-										   eventsGoToNext.push_back(atoi(goToId.c_str()));
+										   if(strcmp(goToId.c_str(),"breakpoint") == 0){
+											   eventsGoToNext.push_back(1);
+										   }else{
+											   eventsGoToNext.push_back(atoi(goToId.c_str()));
+										   }
 									   } else {
 										   eventsGoToNext.push_back(ID+1);
 									   }
@@ -574,9 +601,54 @@ namespace labust {
 			}
 		}
 
+
+		int MissionParser::parseMissionParam(string xmlFile){
+
+//		   XMLDocument xmlDoc;
+//
+//		   XMLNode *events;
+//		   XMLNode *event;
+//		   XMLNode *primitiveParam;
+//
+//		   /* Open XML file */
+//		   if(xmlDoc.LoadFile(xmlFile.c_str()) == XML_SUCCESS) {
+//
+//			   /* Find events node */
+//			   events = xmlDoc.FirstChildElement("events");
+//			   if(events){
+//				   for (event = events->FirstChildElement("event"); event != NULL; event = event->NextSiblingElement()){
+//
+//					   eventsContainer.push_back(event->ToElement()->GetText());
+//				   }
+//				   eventsFlag = true;
+//			   } else {
+//				   ROS_ERROR("No events defined");
+//				   return -1;
+//			   }
+//		   } else {
+//			   ROS_ERROR("Cannot open XML file!");
+//			   return -1;
+//		   }
+//
+//		   // debug PRINT
+//
+//		   for(std::vector<std::string>::iterator it = eventsContainer.begin() ; it != eventsContainer.end(); ++it){
+//
+//				std::string vTmp = *it;
+//				ROS_ERROR("Event string: %s", vTmp.c_str());
+//			}
+		}
+
 		void MissionParser::onRequestPrimitive(const std_msgs::UInt16::ConstPtr& req){
+
 			if(req->data){
+				lastID = ID;
 				ID = req->data;
+				if(abs(ID-lastID)>1){
+					breakpoint = lastID;
+					ROS_ERROR("DEBUG: New breakpoint %d", breakpoint);
+				}
+
 				sendPrimitve();
 			}
 		}

@@ -99,8 +99,8 @@ namespace labust {
 		EventEvaluation::EventEvaluation():x(0.0),y(0.0),z(0.0),psi(0.0){
 
 			ros::NodeHandle nh;
-			subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",1, &EventEvaluation::onReceiveExternalEvent, this);
-			subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &EventEvaluation::onStateHat, this);
+			subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",5, &EventEvaluation::onReceiveExternalEvent, this);
+			subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",5, &EventEvaluation::onStateHat, this);
 
 
 			externalEventContainer.resize(5); // 5 eksternih evenata
@@ -182,7 +182,7 @@ namespace labust {
 
 			double result = expression.value();
 
-			ROS_ERROR("Result: %10.5f\n",result);
+			//ROS_ERROR("Result: %10.5f\n",result);
 			if(result == 1)
 				return 1;
 			else
@@ -237,6 +237,10 @@ namespace labust {
 
 
 			symbol_table.add_variable("course",course);
+
+			//symbol_table.add_variable("startLawnX",startLawnX);
+			//symbol_table.add_variable("startLawnY",startLawnY);
+
 
 //			symbol_table.add_variable("x_var",x_var);
 //			symbol_table.add_variable("y_var",y_var);

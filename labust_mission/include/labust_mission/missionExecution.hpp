@@ -145,38 +145,39 @@ namespace labust {
 		 ***  ROS Subscriptions Callback
 		 ****************************************************************/
 
+
+		/* On stateHat check if any of active events is true */
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
+			/* Reset flag and counters */
 			int flag  = 0;
 			int i = 0;
+
+			/* If primitve has active events */
 			if(checkEventFlag){
 
 				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
 														it != receivedPrimitive.event.onEventNext.end(); ++it){
 
-
-					if(EE.checkEventState(*data, eventsActive[i++].c_str()) == 1)
+					/* For each primitive event check if it is true */
+					if(EE.checkEventState(*data, eventsActive[i++].c_str()) == 1){
 						flag = 1;
-
+						nextPrimitive = *it;
+					}
 					ROS_ERROR("%s",  eventsActive[i-1].c_str());
 
-					nextPrimitive = *it;
+					/* First true event has prioritiy */
 					if (flag) break;
-				}
-
-				//// TEMP SOLUTION
-				for(std::vector<misc_msgs::ExternalEvent>::iterator it = EE.externalEventContainer.begin() ; it != EE.externalEventContainer.end(); ++it){
-
-					(*it).value = 0;
 				}
 
 
 				if(flag == 1){
-					ROS_ERROR("Event active");
+					//ROS_ERROR("Event active");
 					checkEventFlag = false;
 					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
 				} else if(flag == -1){
-					ROS_ERROR("Event parser error");
+					ROS_ERROR("Event Parser Error");
 					checkEventFlag = false;
 					nextPrimitive = 1;
 					mainEventQueue->riseEvent("/STOP");
@@ -214,17 +215,20 @@ namespace labust {
 			return elems;
 		}
 
+		/* */
 		void MissionExecution::onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data){
 
 			eventsActive.clear();
 			receivedPrimitive = *data;
-			ROS_ERROR("PRVIII Check event state: %s", receivedPrimitive.event.onEventStop.c_str());
+
+			/* Check if received primitive has active events */
 			if(receivedPrimitive.event.onEventStop.empty() == 0){
 				checkEventFlag = true;
 				eventsActive = split(receivedPrimitive.event.onEventStop.c_str(), ':');
-				ROS_ERROR("Check event state: %s", receivedPrimitive.event.onEventStop.c_str());
+				ROS_ERROR("Primitive has following active states: %s", receivedPrimitive.event.onEventStop.c_str());
 			}
 
+			/* Call primitive */
 			switch(data->primitiveID){
 
 				case go2point_FA:

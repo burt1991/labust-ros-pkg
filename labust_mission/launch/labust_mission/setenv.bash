@@ -5,7 +5,7 @@ export MODEL=`rospack find snippets`/data/models/pladypos.yaml
 export ALLOCATION_MODEL=`rospack find snippets`/data/allocations/x_horizontal.yaml
 
 #Input
-export JOYSTICK=/dev/input/js1
+export JOYSTICK=/dev/input/js0
 
 #Simulation variables
 export IS_SIM=1

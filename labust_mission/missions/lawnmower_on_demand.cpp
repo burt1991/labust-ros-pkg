@@ -5,8 +5,6 @@
  *      Author: Filip Mandic
  */
 
-
-
 /*********************************************************************
 * Software License Agreement (BSD License)
 *
@@ -45,6 +43,7 @@
 //#define EVENTEVALUATION_HPP_
 //
 #include <labust_mission/labustMission.hpp>
+#include <sensor_msgs/Joy.h>
 ////#include <exprtk/exprtk.hpp>
 //
 namespace labust {
@@ -120,7 +119,7 @@ class LOD : public labust::data::DataManager{
 
 public:
 
-	ros::Subscriber subStateHatAbs, subRequestLawn, subMissionOffset;
+	ros::Subscriber subStateHatAbs, subRequestLawn, subMissionOffset, subJoy;
 	ros::Publisher pubEvent;
 
 	ros::Timer timer;
@@ -144,6 +143,7 @@ public:
 		subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",5, &LOD::onStateHat, this);
 		subRequestLawn = nh.subscribe<std_msgs::Bool>("requestLawn",1, &LOD::onRequestLawn, this);
 		subMissionOffset = nh.subscribe<auv_msgs::NED>("missionOffset",1, &LOD::onMissionOffset, this);
+		subJoy = nh.subscribe<sensor_msgs::Joy>("joy", 1, &LOD::onJoy,this);
 
 
 
@@ -207,7 +207,31 @@ public:
 
 		offset.north = data->north;
 		offset.east = data->east;
+	}
 
+	void onJoy(const sensor_msgs::Joy::ConstPtr& data){
+
+
+
+		if(data->buttons[1]){
+
+			ROS_ERROR("pritisak");
+
+			misc_msgs::ExternalEvent sendEvent;
+			sendEvent.id = 2;
+			sendEvent.value = startLawnX = stateHatVar[x] + offset.north;
+			pubEvent.publish(sendEvent);
+
+			sendEvent.id = 3;
+			sendEvent.value = startLawnY = stateHatVar[y] + offset.east;
+			pubEvent.publish(sendEvent);
+
+			sendEvent.id = 1;
+			sendEvent.value = 1;
+			pubEvent.publish(sendEvent);
+
+			requestLawnFlag = true;
+		}
 	}
 
 

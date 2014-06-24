@@ -72,7 +72,7 @@ namespace labust {
 
 			int checkEventState(auv_msgs::NavSts data, std::string expression_str);
 
-			double evaluateStringExpression(std::string expression_str, double course);
+			double evaluateStringExpression(std::string expression_str);
 
 			void updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table);
 
@@ -99,8 +99,8 @@ namespace labust {
 		EventEvaluation::EventEvaluation():x(0.0),y(0.0),z(0.0),psi(0.0){
 
 			ros::NodeHandle nh;
-			subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",5, &EventEvaluation::onReceiveExternalEvent, this);
-			subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",5, &EventEvaluation::onStateHat, this);
+			subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",5, &EventEvaluation::onReceiveExternalEvent, this); // Ovdej si uvao promjenu s 5 na 1
+			subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &EventEvaluation::onStateHat, this);
 
 
 			externalEventContainer.resize(5); // 5 eksternih evenata
@@ -182,14 +182,14 @@ namespace labust {
 
 			double result = expression.value();
 
-			//ROS_ERROR("Result: %10.5f\n",result);
+			ROS_ERROR("RESULT: %10.5f\n",result);
 			if(result == 1)
 				return 1;
 			else
 				return 0;
 		}
 
-		double EventEvaluation::evaluateStringExpression(std::string expression_str, double course){
+		double EventEvaluation::evaluateStringExpression(std::string expression_str){
 
 			ROS_ERROR("PROVJERAVAM STRING %s", expression_str.c_str());
 
@@ -228,7 +228,7 @@ namespace labust {
 //			symbol_table.add_variable("v",v);
 //			symbol_table.add_variable("w",w);
 //			symbol_table.add_variable("r",r);
-			ROS_ERROR("x: %f, y: %f", x, y);
+			//ROS_ERROR("x: %f, y: %f", x, y);
 			symbol_table.add_variable("x",x);
 			symbol_table.add_variable("y",y);
 			symbol_table.add_variable("z",z);
@@ -236,7 +236,7 @@ namespace labust {
 
 
 
-			symbol_table.add_variable("course",course);
+			//symbol_table.add_variable("course",course);
 
 			//symbol_table.add_variable("startLawnX",startLawnX);
 			//symbol_table.add_variable("startLawnY",startLawnY);
@@ -281,38 +281,47 @@ namespace labust {
 		void EventEvaluation::updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table){
 
 //			/* Read estimated values */
-//			double u = data.body_velocity.x;
-//			double v = data.body_velocity.y;
-//			double w = data.body_velocity.z;
-//			double r = data.orientation_rate.yaw;
-//			double x = data.position.north;
-//			double y = data.position.east;
-//			double z = data.position.depth;
-//			double psi = data.orientation.yaw;
+//						double u = data.body_velocity.x;
+//						double v = data.body_velocity.y;
+//						double w = data.body_velocity.z;
+//						double r = data.orientation_rate.yaw;
+//						 x = data.position.north;
+//						 y = data.position.east;
+//						 z = data.position.depth;
+//						 psi = data.orientation.yaw;
 //
-//			double x_var = data.position_variance.north;
-//			double y_var = data.position_variance.east;
-//			double z_var = data.position_variance.depth;
-//			double psi_var = data.orientation_variance.yaw;
+//						double x_var = data.position_variance.north;
+//						double y_var = data.position_variance.east;
+//						double z_var = data.position_variance.depth;
+//						double psi_var = data.orientation_variance.yaw;
 //
-//			double alt = data.altitude;
+//						double alt = data.altitude;
 //
-//			ROS_ERROR("x: %f", x);
+//						symbol_table.add_constants();
 //
-//			symbol_table->add_constants();
-//			symbol_table->add_variable("u",u);
-//			symbol_table->add_variable("v",v);
-//			symbol_table->add_variable("w",w);
-//			symbol_table->add_variable("r",r);
-//			symbol_table->add_variable("x",x);
-//			symbol_table->add_variable("y",y);
-//			symbol_table->add_variable("z",z);
-//			symbol_table->add_variable("psi",psi);
-//			symbol_table->add_variable("x_var",x_var);
-//			symbol_table->add_variable("y_var",y_var);
-//			symbol_table->add_variable("z_var",z_var);
-//			symbol_table->add_variable("psi_var",psi_var);
-//			symbol_table->add_variable("alt",alt);
+//						for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
+//
+//							double value = (*it).value;
+//							std::string eventName = (*it).description.c_str();
+//
+//							symbol_table.create_variable(eventName.c_str());
+//							symbol_table.get_variable(eventName.c_str())->ref() = double(value);
+//
+//						}
+//
+//						symbol_table.add_variable("u",u);
+//						symbol_table.add_variable("v",v);
+//						symbol_table.add_variable("w",w);
+//						symbol_table.add_variable("r",r);
+//						symbol_table.add_variable("x",x);
+//						symbol_table.add_variable("y",y);
+//						symbol_table.add_variable("z",z);
+//						symbol_table.add_variable("psi",psi);
+//						symbol_table.add_variable("x_var",x_var);
+//						symbol_table.add_variable("y_var",y_var);
+//						symbol_table.add_variable("z_var",z_var);
+//						symbol_table.add_variable("psi_var",psi_var);
+//						symbol_table.add_variable("alt",alt);
 
 
 		}
@@ -325,6 +334,8 @@ namespace labust {
 			//tmp.description = data->description; // overwrites event name
 			tmp.value = data->value;
 			externalEventContainer.at((data->id)-1) = tmp;
+
+			//ROS_ERROR("EVENT: %d, VRIJEDNOST: %f", tmp.id, tmp.value);
 
 		}
 

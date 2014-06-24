@@ -324,11 +324,11 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = EE.evaluateStringExpression(elem2->GetText(), 0);
+									   newXpos = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = EE.evaluateStringExpression(elem2->GetText(), 0);
+									   newYpos = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
@@ -344,9 +344,9 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
-									    std::string goToId = elem2->Attribute("goToId");
-									    ROS_ERROR("gottoid aatribut %s",goToId.c_str());
-									    if(goToId.empty()==0){
+									   std::string goToId = elem2->Attribute("goToId");
+
+									   if(goToId.empty()==0){
 									   if(strcmp(goToId.c_str(),"breakpoint") == 0){
 										   eventsGoToNext.push_back(breakpoint);
 									   }else{
@@ -393,7 +393,7 @@ namespace labust {
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
 									    std::string goToId = elem2->Attribute("goToId");
-									    ROS_ERROR("gottoid aatribut %s",goToId.c_str());
+
 										if(goToId.empty()==0){
 										   eventsGoToNext.push_back(atoi(goToId.c_str()));
 										} else {
@@ -420,11 +420,11 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = EE.evaluateStringExpression(elem2->GetText(), 0);
+									   newXpos = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = EE.evaluateStringExpression(elem2->GetText(), 0);
+									   newYpos = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
@@ -437,7 +437,7 @@ namespace labust {
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
 									    std::string goToId = elem2->Attribute("goToId");
-									    ROS_ERROR("gottoid aatribut %s",goToId.c_str());
+
 										if(goToId.empty()==0){
 											 if(strcmp(goToId.c_str(),"breakpoint") == 0){
 												   eventsGoToNext.push_back(breakpoint);
@@ -471,7 +471,7 @@ namespace labust {
 								   if(primitiveParamName.compare("course") == 0){
 
 									  // newCourse = atof(elem2->GetText());
-									   newCourse = EE.evaluateStringExpression(elem2->GetText(), newCourse);
+									   newCourse = EE.evaluateStringExpression(elem2->GetText());
 
 
 								   } else if(primitiveParamName.compare("speed") == 0){
@@ -500,7 +500,7 @@ namespace labust {
 									   }
 
 									   eventsActive.push_back(atof(elem2->GetText()));
-									   //eventID = atof(elem2->GetText());
+
 									   primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
@@ -520,7 +520,7 @@ namespace labust {
 								   if(primitiveParamName.compare("course") == 0){
 
 									   //newCourse = atof(elem2->GetText());
-									   newCourse = EE.evaluateStringExpression(elem2->GetText(), newCourse);
+									   newCourse = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
@@ -596,11 +596,11 @@ namespace labust {
 
 		   // debug PRINT
 
-		   for(std::vector<std::string>::iterator it = eventsContainer.begin() ; it != eventsContainer.end(); ++it){
-
-				std::string vTmp = *it;
-				ROS_ERROR("Event string: %s", vTmp.c_str());
-			}
+//		   for(std::vector<std::string>::iterator it = eventsContainer.begin() ; it != eventsContainer.end(); ++it){
+//
+//				std::string vTmp = *it;
+//				ROS_ERROR("Event string: %s", vTmp.c_str());
+//			}
 		}
 
 

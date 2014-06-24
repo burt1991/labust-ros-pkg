@@ -126,7 +126,7 @@ namespace labust {
 			//std::vector<std::string> eventsActiveContainer;
 			std::vector<uint8_t> eventsGoToNext;
 
-			ros::Publisher pubSendPrimitive, pubRiseEvent;
+			ros::Publisher pubSendPrimitive, pubRiseEvent, pubMissionOffset;
 			ros::Subscriber subRequestPrimitive, subEventString, subReceiveXmlPath;
 
 			auv_msgs::NED offset;
@@ -154,6 +154,8 @@ namespace labust {
 			/* Publishers */
 			pubSendPrimitive = nh.advertise<misc_msgs::SendPrimitive>("sendPrimitive",1);
 			pubRiseEvent = nh.advertise<std_msgs::String>("eventString",1);
+			pubMissionOffset = nh.advertise<auv_msgs::NED>("missionOffset",1);
+
 
 			/* Parse file path */
 			ros::NodeHandle ph("~");
@@ -672,6 +674,8 @@ namespace labust {
 				} else {
 					offset.north = offset.east = 0;
 				}
+
+				pubMissionOffset.publish(offset);
 
 				parseEvents(xmlFile.c_str());
 			}

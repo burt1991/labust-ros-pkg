@@ -120,7 +120,7 @@ class LOD : public labust::data::DataManager{
 
 public:
 
-	ros::Subscriber subStateHatAbs, subRequestLawn;
+	ros::Subscriber subStateHatAbs, subRequestLawn, subMissionOffset;
 	ros::Publisher pubEvent;
 
 	ros::Timer timer;
@@ -128,6 +128,8 @@ public:
 	bool requestLawnFlag;
 
 	int counter;
+
+	auv_msgs::NED offset;
 
 	//enum {u=0, v, w, r, x, y, z, psi, x_var, y_var, z_var, psi_var, alt, stateHatNum};
 
@@ -141,6 +143,8 @@ public:
 		/* Subscribers */
 		subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",5, &LOD::onStateHat, this);
 		subRequestLawn = nh.subscribe<std_msgs::Bool>("requestLawn",1, &LOD::onRequestLawn, this);
+		subMissionOffset = nh.subscribe<auv_msgs::NED>("missionOffset",1, &LOD::onMissionOffset, this);
+
 
 
 		/* Publishers */
@@ -184,11 +188,11 @@ public:
 
 			misc_msgs::ExternalEvent sendEvent;
 			sendEvent.id = 2;
-			sendEvent.value = startLawnX = stateHatVar[x];
+			sendEvent.value = startLawnX = stateHatVar[x] + offset.north;
 			pubEvent.publish(sendEvent);
 
 			sendEvent.id = 3;
-			sendEvent.value = startLawnY = stateHatVar[y];
+			sendEvent.value = startLawnY = stateHatVar[y] + offset.east;
 			pubEvent.publish(sendEvent);
 
 			sendEvent.id = 1;
@@ -199,36 +203,11 @@ public:
 		}
 	}
 
-	void missionLoop(){
+	void onMissionOffset(const auv_msgs::NED::ConstPtr& data){
 
-//		ros::NodeHandle nh;
-//		ros::Rate r(10);
-//		while (ros::ok())
-//		{
-//			if(requestLawnFlag){
-//				misc_msgs::ExternalEvent send;
-//
-//				send.id = 2;
-//				send.value = startLawnX = stateHatVar[x];
-//				pubEvent.publish(send);
-//
-//				send.id = 3;
-//				send.value = startLawnY = stateHatVar[y];
-//				pubEvent.publish(send);
-//
-////				ROS_ERROR("sad cu pricekati");
-////				ros::Duration(0.2).sleep();
-////				ROS_ERROR("sad saljem");
-//
-//				send.id = 1;
-//				send.value = 1;
-//				pubEvent.publish(send);
-//
-//				requestLawnFlag = false;
-//			}
-//
-//		  r.sleep();
-//		}
+		offset.north = data->north;
+		offset.east = data->east;
+
 	}
 
 

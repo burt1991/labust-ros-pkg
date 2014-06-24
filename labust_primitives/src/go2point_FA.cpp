@@ -221,6 +221,7 @@ namespace labust
 				boost::mutex::scoped_lock l(state_mux);
 				if (aserver->isActive())
 				{
+					/* Publish reference for high-level controller */
 					stateRef.publish(step(*estimate));
 
 				    // Check if goal is completed
@@ -228,6 +229,10 @@ namespace labust
 					deltaVictory<<goalPosition.x-estimate->position.north,
 							goalPosition.y-estimate->position.east,
 							0;
+
+					distVictory = deltaVictory.norm();
+					Ddistance = distVictory - lastDistance;
+					lastDistance = distVictory;
 
 					double distVictory = deltaVictory.norm();
 					if(distVictory < goalRadius){
@@ -261,6 +266,37 @@ namespace labust
 				ref->orientation.yaw = goal->yaw;
 				ref->header.frame_id = "course_frame";
 
+				Eigen::Vector3d T1,T2;
+				T1<<state.position.north,
+						state.position.east,
+						0;
+				T2<<goalPosition.x,
+						goalPosition.y,
+						0;
+				line2.setLine(T1,T2);
+
+				//line3 = line;
+
+				if(fabs(labust::math::wrapRad(line2.gamma() - line.gamma())) > 60*M_PI/180 && Ddistance > 0){
+
+					//ref->orientation.yaw = line2.gamma();
+					line = line2;
+					ROS_ERROR("Changing course");
+
+					enum{xp=0,yp,zp};
+					geometry_msgs::TransformStamped transform;
+					transform.transform.translation.x = T1(xp);
+					transform.transform.translation.y = T1(yp);
+					transform.transform.translation.z = T1(zp);
+					labust::tools::quaternionFromEulerZYX(0, 0, line.gamma(),
+							transform.transform.rotation);
+					transform.child_frame_id = "course_frame";
+					transform.header.frame_id = "local";
+					transform.header.stamp = ros::Time::now();
+					broadcaster.sendTransform(transform);
+
+				}
+
 				//Check underactuated behaviour
 				if (underactuated)
 				{
@@ -290,7 +326,7 @@ namespace labust
 			}
 
 			geometry_msgs::Point goalPosition;
-			double goalRadius;
+			double goalRadius, distVictory, lastDistance, Ddistance;
 			Result result;
 			//auv_msgs::NavSts lastState;
 			//Goal::ConstPtr goal;
@@ -298,7 +334,7 @@ namespace labust
 
 			geometry_msgs::Point lastPosition;
 			//geometry_msgs::Point goalPosition;
-			labust::math::Line line;
+			labust::math::Line line, line2;
 			tf2_ros::StaticTransformBroadcaster broadcaster;
 			bool underactuated;
 			bool headingEnabled;

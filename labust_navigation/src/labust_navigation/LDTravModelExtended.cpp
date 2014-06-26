@@ -89,7 +89,7 @@ void LDTravModel::step(const input_type& input)
   //x(w) += Ts*(-heave.Beta(x(w))/heave.alpha*x(w) + 1/heave.alpha * (input(Z) + x(buoyancy)));
   //x(p) += Ts*(-roll.Beta(x(p))/roll.alpha*x(p) + 1/roll.alpha * (input(Kroll) + x(roll_restore)));
   //x(q) += Ts*(-pitch.Beta(x(p))/pitch.alpha*x(q) + 1/pitch.alpha * (input(M) + x(pitch_restore)));
-  x(r) += Ts*(-yaw.Beta(x(r))/yaw.alpha*x(r) + 1/yaw.alpha * input(N) + 0*x(b));
+  x(r) += Ts*(-yaw.Beta(x(r))/yaw.alpha*x(r) + 1/yaw.alpha * input(N) + x(b));
 
   xdot = x(u)*cos(x(psi)) - x(v)*sin(x(psi)) + x(xc);
   ydot = x(u)*sin(x(psi)) + x(v)*cos(x(psi)) + x(yc);
@@ -122,7 +122,7 @@ void LDTravModel::derivativeAW()
 //	A(q,q) = 1-Ts*(pitch.beta + 2*pitch.betaa*fabs(x(q)))/pitch.alpha;
 //	A(q,pitch_restore) = Ts/pitch.alpha;
 	A(r,r) = 1-Ts*(yaw.beta + 2*yaw.betaa*fabs(x(r)))/yaw.alpha;
-	A(r,b) = 0*Ts;
+	A(r,b) = Ts;
 
 	A(xp,u) = Ts*cos(x(psi));
 	A(xp,v) = -Ts*sin(x(psi));

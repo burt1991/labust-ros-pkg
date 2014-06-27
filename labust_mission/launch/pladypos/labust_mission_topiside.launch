@@ -58,6 +58,7 @@
     <!-- Simulation settings ===================================== -->  
 
     <arg name="is_sim" value="$(optenv IS_SIM 0)" />
+    <arg name="use_joy" value="$(optenv USE_JOY 0)" />
     <rosparam command="load" file="$(find snippets)/data/locations/$(env LOCATION).yaml" />
 
     <!-- Control settings ======================================== -->

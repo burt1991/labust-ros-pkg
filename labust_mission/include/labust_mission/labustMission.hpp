@@ -55,6 +55,7 @@
 
 #include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
+#include <std_msgs/UInt16.h>
 
 #include <misc_msgs/SendPrimitive.h>
 #include <misc_msgs/Go2PointFA.h>
@@ -65,6 +66,7 @@
 #include <misc_msgs/ExternalEvent.h>
 
 #include <auv_msgs/NED.h>
+#include <auv_msgs/NavSts.h>
 
 /*********************************************************************
  *** Common global variables
@@ -74,6 +76,8 @@ enum {X = 0, Y, Z, T};
 
 enum {none = 0, go2point_FA, go2point_UA, dynamic_positioning, course_keeping_FA, course_keeping_UA};
 const char *primitives[] = {"none", "go2point_FA", "go2point_UA", "dynamic_positioning", "course_keeping_FA", "course_keeping_UA"};
+
+using namespace std;
 
 
 #endif /* LABUSTMISSION_HPP_ */

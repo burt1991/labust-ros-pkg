@@ -281,6 +281,18 @@ namespace labust
 					line = line2;
 					ROS_ERROR("Changing course");
 
+					enum{xp=0,yp,zp};
+					geometry_msgs::TransformStamped transform;
+					transform.transform.translation.x = T1(xp);
+					transform.transform.translation.y = T1(yp);
+					transform.transform.translation.z = T1(zp);
+					labust::tools::quaternionFromEulerZYX(0, 0, line.gamma(),
+							transform.transform.rotation);
+					transform.child_frame_id = "course_frame";
+					transform.header.frame_id = "local";
+					transform.header.stamp = ros::Time::now();
+					broadcaster.sendTransform(transform);
+
 				}
 
 

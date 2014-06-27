@@ -158,6 +158,12 @@ struct Go2PointFA_CB {
 			typedef navcon_msgs::GoToPointResult Result;
 			typedef navcon_msgs::GoToPointFeedback Feedback;
 
+			int counter;
+
+			Go2PointFA_CB():counter(0){
+
+			}
+
 			// Called once when the goal completes
 			void doneCb(const actionlib::SimpleClientGoalState& state, const Result::ConstPtr& result)
 			   {
@@ -176,7 +182,8 @@ struct Go2PointFA_CB {
 			   void feedbackCb(const Feedback::ConstPtr& feedback)
 			   {
 				// ROS_INFO("Got Feedback of length %lu", feedback->sequence.size());
-				   ROS_ERROR("Feedback - distance: %f", feedback->distance);
+				   if((counter++)%10 == 0)
+					   ROS_ERROR("Feedback - distance: %f", feedback->distance);
 			   }
 		};
 
@@ -185,6 +192,12 @@ struct Go2PointUA_CB {
 			typedef navcon_msgs::GoToPointGoal Goal;
 			typedef navcon_msgs::GoToPointResult Result;
 			typedef navcon_msgs::GoToPointFeedback Feedback;
+
+			int counter;
+
+			Go2PointUA_CB():counter(0){
+
+			}
 
 			// Called once when the goal completes
 			void doneCb(const actionlib::SimpleClientGoalState& state, const Result::ConstPtr& result)
@@ -204,7 +217,8 @@ struct Go2PointUA_CB {
 			   void feedbackCb(const Feedback::ConstPtr& feedback)
 			   {
 				// ROS_INFO("Got Feedback of length %lu", feedback->sequence.size());
-				   ROS_ERROR("Feedback - distance: %f", feedback->distance);
+				   if((counter++)%10 == 0)
+					   ROS_ERROR("Feedback - distance: %f", feedback->distance);
 			   }
 		};
 

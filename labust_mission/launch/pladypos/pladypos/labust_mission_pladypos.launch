@@ -50,10 +50,11 @@
     <arg name="labust_mission_path" value ="$(find labust_mission)" /> 
     <arg name="xml_save_path" value ="$(find labust_mission)/data/mission.xml" /> 
     <arg name="mission_execution_INTEGRATED" default="false" />
-    <arg name="mission_execution" default="false" />
-    <arg name="mission_parser" default="true" />
-    <arg name="neptus_parser" default="true" />
-    <arg name="parseGUI" default="true" />
+    <arg name="mission_execution" default="true" />
+    <arg name="mission_parser" default="false" />
+    <arg name="neptus_parser" default="false" />
+    <arg name="parseGUI" default="false" />
+    <arg name="use_mm" value="$(optenv USE_MULTIMASTER 0)" />
    
     <!-- Simulation settings ===================================== -->  
 
@@ -63,6 +64,7 @@
     <!-- Control settings ======================================== -->
 
     <arg name="use_ident" value="$(optenv USE_IDENTIFICATION 0)" />
+    <arg name="use_joy" value="$(optenv USE_JOY 0)" />
     <rosparam command="load"
 	file="$(find labust_mission)/launch/labust_mission/config/control.yaml" />
 
@@ -83,7 +85,7 @@
     <!-- ========================================================= -->
     <!-- == Launch includes ====================================== -->
     <!-- ========================================================= -->
-
+ 
     <!-- labust_sim include ====================================== -->
 
     <include
@@ -93,14 +95,22 @@
 
     <!-- labust_navigation include =============================== -->
 
-    <include file="$(find labust_mission)/launch/labust_navigation_template.launch">
-        <arg name="ekfAbs" value="$(arg ekfAbs)" />
-    </include>
+    <group>
+  	  <include file="$(find labust_mission)/launch/pladypos/static_frames.launch" />
+	  <remap from="gps" to="fix_ublox" />
+	  <remap from="imu" to="imu_spatial" />
+ 	  <include file="$(find labust_mission)/launch/labust_navigation_template.launch">
+        	<arg name="ekfAbs" value="$(arg ekfAbs)" /> 
+    	  </include>
+  	  <!-- <include file="$(find labust_mission)/launch/pladypos/navigation.launch" /> -->
+    </group>
+
 
     <!-- labust_control include ================================== -->
 
     <include file="$(find labust_mission)/launch/labust_control_template.launch">
        <arg name="use_ident" value="$(arg use_ident)" />
+       <arg name="use_joy" value="$(arg use_joy)" />
     </include>
 
     <!-- labust_primitives include =============================== -->
@@ -121,11 +131,11 @@
 
     </include>
 
-    <!-- labust_visualization include ============================ -->
+    <include file="$(find labust_mission)/launch/pladypos/sensors.launch" />
+    <node pkg="rosbag" type="record" name="rosbag" args="-a -o /extern/bags/navcon" />
+    <include file="$(find pladypos)/launch/pladypos_driver.launch" />
 
-    <include 
-        if="$(arg use_visualization)"
-        file="$(find labust_mission)/launch/labust_visualization_template.launch"> 
-    </include>
-
+     <group if="$(arg use_mm)">
+  	<include file="$(find caddy_launch)/launch/caddy/multi_master.launch" />
+     </group>
 </launch>

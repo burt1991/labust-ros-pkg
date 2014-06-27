@@ -1,5 +1,5 @@
 <launch>
-  <arg name="logger_dir" value="$(optenv LOGDIR ./)" />
+  <arg name="logger_dir" value="$(optenv LOGDIR /extern/logs)" />
   <rosparam command="load" file="$(find matlogger)/data/auvmsgs_t.yaml" />
   <rosparam command="load" file="$(find matlogger)/data/geometrymsgs_t.yaml" />
   <rosparam command="load" file="$(find matlogger)/data/sensormsgs_t.yaml" />    

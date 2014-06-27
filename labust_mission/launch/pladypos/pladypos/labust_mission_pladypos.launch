@@ -102,6 +102,7 @@
 
     <include file="$(find labust_mission)/launch/labust_control_template.launch">
        <arg name="use_ident" value="$(arg use_ident)" />
+       <arg name="use_joy" value="$(arg use_joy)" />
     </include>
 
     <!-- labust_primitives include =============================== -->

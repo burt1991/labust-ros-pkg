@@ -16,6 +16,7 @@ export USE_VISUALIZATION=0
 #Location for simulation or predefined position
 export LOCATION=labos
 export USE_LOCAL_FIX=1
+export TOPSIDE=1
 
 #Control configuration
 export USE_IDENTIFICATION=1

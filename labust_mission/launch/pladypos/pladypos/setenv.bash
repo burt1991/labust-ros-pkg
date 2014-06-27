@@ -8,7 +8,7 @@ export ALLOCATION_MODEL=`rospack find snippets`/data/allocations/x_horizontal.ya
 export JOYSTICK=/dev/input/js1
 
 #Simulation variables
-export IS_SIM=1
+export IS_SIM=0
 export USE_NOISE=0
 export USE_VISUALIZATION=1
 

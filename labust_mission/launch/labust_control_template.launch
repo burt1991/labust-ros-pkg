@@ -78,15 +78,17 @@
     <!-- == joy node ============================================= -->
     <!-- ========================================================= -->
 
-    <node 
+   <!-- <node 
 	if="$(arg use_joy)"
         pkg="joy" 
         type="joy_node" 
         name="joystick">
 
-	   <!--<remap from="Enable" to="NU_enable" />-->
+	</node>-->
 
-	</node>
+        <!-- Joystick -->
+        <include if="$(arg use_joy)" file="$(find labust_launchers)/launch/common/joy.launch"/>
+
 
     <!-- ========================================================= -->
     <!-- == Identification node ================================== -->

@@ -455,6 +455,7 @@ int main(int argc, char** argv){
 
 	/* Subscribers */
 	ros::Subscriber subStartParse = nh.subscribe<misc_msgs::StartNeptusParser>("startNeptusParse",1, boost::bind(&startParseCallback, boost::ref(pubStartDispatcher), _1));
+	//subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &onStateHat, this);
 
 	ros::spin();
 	return 0;

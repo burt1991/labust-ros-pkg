@@ -46,7 +46,7 @@
 #include<labust_mission/dataManager.hpp>
 #include<labust_mission/eventEvaluation.hpp>
 
-#include<misc_msgs/EvaluateExpression.h>
+#include<misc_msgs/EvaluateExpression.h>check
 
 class DataEventManager{
 
@@ -65,7 +65,11 @@ public:
 	void onStateHatAbsSlow(const auv_msgs::NavSts::ConstPtr& data){
 
 
-		publishDataEvent();
+		DM.updateData(data);
+		EE.updateSymbolTable(DM.stateHatVar,DM.missionVar,DM.eventsVar);
+		EE.evaluateEvents(eventsContainer, eventsValue);
+
+		publishDataEvent(DM.mainData, EE.eventsData);
 	}
 
 	void publishDataEvent(){
@@ -96,7 +100,7 @@ public:
 		std::vector<std::string> tmp;
 		tmp = labust::utilities::split(missionParamString.c_str(), ':');
 		int i = 0;
-		for(std::vector<std::string>::iterator it = tmp.begin(); it != tmp.end(); ++it){
+		for(std::vector<std::string>::iterator it = tmp.begin()+1; it != tmp.end(); it=it+2){
 			DM.missionVar[i++] = atof((*it).c_str());
 		}
 	}
@@ -115,6 +119,7 @@ public:
 	ros::ServiceServer srvEvaluateExpression;
 
 	std::vector<std::string> eventsContainer;
+	std::vector<double> eventsValue;
 	std::vector<bool> eventsStatus;
 
 };

@@ -70,7 +70,6 @@ namespace labust {
 			 ********************************************************************/
 
 			/* State Hat variables */
-			enum {u=0, v, w, r, x, y, z, psi, x_var, y_var, z_var, psi_var, alt, stateHatNum};
 			std::vector<double> stateHatVar;
 
 			/* Events data variables */

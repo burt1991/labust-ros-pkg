@@ -47,7 +47,7 @@
 *********************************************************************/
 
 #include <labust_mission/labustMission.hpp>
-#include <labust_mission/eventEvaluation.hpp>
+//#include <labust_mission/eventEvaluation.hpp>
 
 #include <misc_msgs/StartParser.h>
 #include <misc_msgs/EvaluateExpression.h>
@@ -121,6 +121,8 @@ namespace labust {
 
 			string xmlFile;
 
+			std::string missionEvents;
+
 			std::vector<std::string> eventsContainer;
 
 			std::vector<uint8_t> eventsActive;
@@ -144,7 +146,8 @@ namespace labust {
 		 ****************************************************************/
 
 		MissionParser::MissionParser(ros::NodeHandle& nh):ID(0), lastID(0), newXpos(0), newYpos(0), newVictoryRadius(0), newSpeed(0),
-				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), primitiveHasEvent(false), eventID(0), breakpoint(1){
+				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), primitiveHasEvent(false), eventID(0), breakpoint(1),
+				missionEvents(""){
 
 			/* Subscribers */
 //			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
@@ -330,7 +333,7 @@ namespace labust {
 								   XMLElement *elem2 = primitiveParam->ToElement();
 								   string primitiveParamName = elem2->Attribute("name");
 								   //ROS_ERROR("%s", primitiveParamName.c_str());
-
+								   std::string missionEvents = "";
 								   if(primitiveParamName.compare("north") == 0){
 
 									   evalExpr.request.expression = elem2->GetText();
@@ -398,7 +401,7 @@ namespace labust {
 									   evalExpr.request.expression = elem2->GetText();
 									   newYpos = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 								   } else if(primitiveParamName.compare("speed") == 0){
-
+									   std::string missionEvents = "";
 									   evalExpr.request.expression = elem2->GetText();
 									   newSpeed = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
@@ -603,12 +606,16 @@ namespace labust {
 		   /* Open XML file */
 		   if(xmlDoc.LoadFile(xmlFile.c_str()) == XML_SUCCESS) {
 
+
+
 			   /* Find events node */
 			   events = xmlDoc.FirstChildElement("events");
 			   if(events){
 				   for (event = events->FirstChildElement("event"); event != NULL; event = event->NextSiblingElement()){
 
 					   eventsContainer.push_back(event->ToElement()->GetText());
+					   missionEvents.append(event->ToElement()->GetText());
+					   missionEvents.append(":");
 				   }
 				   eventsFlag = true;
 			   } else {
@@ -686,6 +693,7 @@ namespace labust {
 			if(strcmp(msg->data.c_str(),"/STOP") == 0){
 				ID = 0;
 				eventsContainer.clear();
+				missionEvents.clear();
 			}
 		}
 
@@ -704,6 +712,9 @@ namespace labust {
 				pubMissionOffset.publish(offset);
 
 				parseEvents(xmlFile.c_str());
+
+				misc_msgs::MissionSetup missionSetup;
+				missionSetup.missionEvents = missionEvents;
 			}
 		}
 

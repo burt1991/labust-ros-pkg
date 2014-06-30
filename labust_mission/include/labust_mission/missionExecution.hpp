@@ -45,7 +45,7 @@
 
 
 #include <labust_mission/labustMission.hpp>
-#include <labust_mission/eventEvaluation.hpp>
+//#include <labust_mission/eventEvaluation.hpp>
 #include <exprtk/exprtk.hpp>
 
 #include <decision_making/SynchCout.h>
@@ -81,6 +81,8 @@ namespace labust {
 
 			void onStateHat(const auv_msgs::NavSts::ConstPtr& data);
 
+			void onDataEventsContainer(const misc_msgs::DataEventsContainer::ConstPtr& data);
+
 			void onEventString(const std_msgs::String::ConstPtr& msg);
 
 			void onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data);
@@ -107,7 +109,7 @@ namespace labust {
 			misc_msgs::SendPrimitive receivedPrimitive;
 			ros::Publisher pubRequestPrimitive;
 
-			ros::Subscriber subStateHatAbs;
+			ros::Subscriber subStateHatAbs, subDataEventsContainer;
 			ros::Subscriber subEventString;
 			ros::Subscriber subReceivePrimitive;
 
@@ -115,7 +117,7 @@ namespace labust {
 
 			ros::Timer timer;
 
-			labust::event::EventEvaluation EE;
+			//labust::event::EventEvaluation EE;
 
 			bool checkEventFlag;
 
@@ -134,6 +136,8 @@ namespace labust {
 			subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &MissionExecution::onStateHat, this);
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1, &MissionExecution::onEventString, this);
 			subReceivePrimitive = nh.subscribe<misc_msgs::SendPrimitive>("sendPrimitive",1, &MissionExecution::onReceivePrimitive, this);
+			subDataEventsContainer = nh.subscribe<misc_msgs::DataEventsContainer>("data_events_container",1, &MissionExecution::onDataEventsContainer, this);
+
 
 			/* Publishers */
 			//pubRequestPrimitive = nh.advertise<std_msgs::Bool>("requestPrimitive",1);
@@ -149,41 +153,80 @@ namespace labust {
 		/* On stateHat check if any of active events is true */
 		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
-			/* Reset flag and counters */
-			int flag  = 0;
-			int i = 0;
-
-			/* If primitve has active events */
-			if(checkEventFlag){
-
-				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
-														it != receivedPrimitive.event.onEventNext.end(); ++it){
-
-					/* For each primitive event check if it is true */
-					if(EE.checkEventState(*data, eventsActive[i++].c_str()) == 1){
-						flag = 1;
-						nextPrimitive = *it;
-					}
-					ROS_ERROR("%s",  eventsActive[i-1].c_str());
-
-					/* First true event has prioritiy */
-					if (flag) break;
-				}
-
-
-				if(flag == 1){
-					//ROS_ERROR("Event active");
-					checkEventFlag = false;
-					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
-
-				} else if(flag == -1){
-					ROS_ERROR("Event Parser Error");
-					checkEventFlag = false;
-					nextPrimitive = 1;
-					mainEventQueue->riseEvent("/STOP");
-				}
-			}
+//			/* Reset flag and counters */
+//			int flag  = 0;
+//			int i = 0;
+//
+//			/* If primitve has active events */
+//			if(checkEventFlag){
+//
+//				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
+//														it != receivedPrimitive.event.onEventNext.end(); ++it){
+//
+//					/* For each primitive event check if it is true */
+//					if(EE.checkEventState(*data, eventsActive[i++].c_str()) == 1){
+//						flag = 1;
+//						nextPrimitive = *it;
+//					}
+//					ROS_ERROR("%s",  eventsActive[i-1].c_str());
+//
+//					/* First true event has prioritiy */
+//					if (flag) break;
+//				}
+//
+//
+//				if(flag == 1){
+//					//ROS_ERROR("Event active");
+//					checkEventFlag = false;
+//					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+//
+//				} else if(flag == -1){
+//					ROS_ERROR("Event Parser Error");
+//					checkEventFlag = false;
+//					nextPrimitive = 1;
+//					mainEventQueue->riseEvent("/STOP");
+//				}
+//			}
 		}
+
+		void MissionExecution::onDataEventsContainer(const misc_msgs::DataEventsContainer::ConstPtr& data){
+
+					/* Reset flag and counters */
+					int flag  = 0;
+					int i = 0;
+
+					/* If primitve has active events */
+					if(checkEventFlag){
+
+						for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
+																it != receivedPrimitive.event.onEventNext.end(); ++it){
+
+
+							int nekibroj = 0;
+							/* For each primitive event check if it is true */
+							if(data->eventsVar.data[nekibroj] == 1){
+								flag = 1;
+								nextPrimitive = *it;
+							}
+
+							/* First true event has prioritiy */
+							if (flag) break;
+						}
+
+
+						if(flag == 1){
+							//ROS_ERROR("Event active");
+							checkEventFlag = false;
+							mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
+						} else if(flag == -1){
+							ROS_ERROR("Event Parser Error");
+							checkEventFlag = false;
+							nextPrimitive = 1;
+							mainEventQueue->riseEvent("/STOP");
+						}
+					}
+				}
 
 		void MissionExecution::onEventString(const std_msgs::String::ConstPtr& msg){
 
@@ -198,22 +241,22 @@ namespace labust {
 		//////////////////////////////////////////////////////7777
 		//// SREDI OVO
         /////////////////////////////////////////////////////////////7
-		std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
-			std::stringstream ss(s);
-			std::string item;
-			while (std::getline(ss, item, delim)) {
-				if(!item.empty()){
-					elems.push_back(item);
-				}
-			}
-			return elems;
-		}
-
-		std::vector<std::string> split(const std::string &s, char delim) {
-			std::vector<std::string> elems;
-			split(s, delim, elems);
-			return elems;
-		}
+//		std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+//			std::stringstream ss(s);
+//			std::string item;
+//			while (std::getline(ss, item, delim)) {
+//				if(!item.empty()){
+//					elems.push_back(item);
+//				}
+//			}
+//			return elems;
+//		}
+//
+//		std::vector<std::string> split(const std::string &s, char delim) {
+//			std::vector<std::string> elems;
+//			split(s, delim, elems);
+//			return elems;
+//		}
 
 		/* */
 		void MissionExecution::onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data){
@@ -224,7 +267,7 @@ namespace labust {
 			/* Check if received primitive has active events */
 			if(receivedPrimitive.event.onEventStop.empty() == 0){
 				checkEventFlag = true;
-				eventsActive = split(receivedPrimitive.event.onEventStop.c_str(), ':');
+				eventsActive = labust::utilities::split(receivedPrimitive.event.onEventStop.c_str(), ':');
 				ROS_ERROR("Primitive has following active states: %s", receivedPrimitive.event.onEventStop.c_str());
 			}
 

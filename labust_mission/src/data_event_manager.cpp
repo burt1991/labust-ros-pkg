@@ -59,6 +59,9 @@ public:
 
 		srvEvaluateExpression = nh.advertiseService("evaluate_expression", &DataEventManager::expressionEvaluationService,this);
 
+		pubDataEventsContainer = nh.advertise<misc_msgs::DataEventsContainer>("data_events_container",1);
+
+
 	}
 
 	/* Callback for evaluating states and event condition */
@@ -72,8 +75,14 @@ public:
 		publishDataEvent(DM.mainData, eventsValue);
 	}
 
+	/* Publish data and events */
 	void publishDataEvent(std::vector<double> mainVal, std::vector<double> eventsVal){
 
+		misc_msgs::DataEventsContainer dataEventsContainer;
+		dataEventsContainer.stateVar.data  = mainVal;
+		dataEventsContainer.eventsVar.data = eventsVal;
+
+		pubDataEventsContainer.publish(dataEventsContainer);
 	}
 
 	/* Callback that initializes mission parameters and events */
@@ -115,7 +124,8 @@ public:
 	labust::event::EventEvaluation EE;
 
 	ros::Subscriber subStateHatAbsSlow;
-	ros::Publisher pubDataEvent;
+	ros::Publisher pubDataEvent, pubDataEventsContainer;
+;
 
 	ros::ServiceServer srvEvaluateExpression;
 

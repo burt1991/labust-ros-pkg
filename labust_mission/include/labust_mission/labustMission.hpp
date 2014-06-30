@@ -58,6 +58,7 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/String.h>
 #include <std_msgs/UInt16.h>
+#include <std_msgs/Float64MultiArray.h>
 
 #include <misc_msgs/SendPrimitive.h>
 #include <misc_msgs/Go2PointFA.h>
@@ -67,6 +68,7 @@
 #include <misc_msgs/CourseKeepingUA.h>
 #include <misc_msgs/ExternalEvent.h>
 #include <misc_msgs/MissionSetup.h>
+#include <misc_msgs/DataEventsContainer.h>
 
 #include <auv_msgs/NED.h>
 #include <auv_msgs/NavSts.h>

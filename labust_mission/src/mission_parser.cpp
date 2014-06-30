@@ -50,6 +50,7 @@
 #include <labust_mission/eventEvaluation.hpp>
 
 #include <misc_msgs/StartParser.h>
+#include <misc_msgs/EvaluateExpression.h>
 #include <tinyxml2.h>
 
 namespace ser = ros::serialization;
@@ -128,10 +129,11 @@ namespace labust {
 
 			ros::Publisher pubSendPrimitive, pubRiseEvent, pubMissionOffset;
 			ros::Subscriber subRequestPrimitive, subEventString, subReceiveXmlPath;
+			ros::ServiceClient srvExprEval;
 
 			auv_msgs::NED offset;
 
-			labust::event::EventEvaluation EE;
+			//labust::event::EventEvaluation EE;
 
 			int breakpoint;
 		};
@@ -155,6 +157,9 @@ namespace labust {
 			pubSendPrimitive = nh.advertise<misc_msgs::SendPrimitive>("sendPrimitive",1);
 			pubRiseEvent = nh.advertise<std_msgs::String>("eventString",1);
 			pubMissionOffset = nh.advertise<auv_msgs::NED>("missionOffset",1);
+
+			/* Service */
+			srvExprEval = nh.serviceClient<misc_msgs::EvaluateExpression>("evaluate_expression");
 
 
 			/* Parse file path */
@@ -312,6 +317,10 @@ namespace labust {
 							eventsActive.clear();
 							eventsGoToNext.clear();
 
+							/* Initialize service call data */
+							misc_msgs::EvaluateExpression evalExpr;
+
+
 						   /* Case: go2point_FA *****************************/
 						   if(primitiveName.compare("go2point_FA") == 0){
 
@@ -324,23 +333,30 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = EE.evaluateStringExpression(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newXpos = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = EE.evaluateStringExpression(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newYpos = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newSpeed = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+
 
 								   } else if(primitiveParamName.compare("victory_radius") == 0){
 
-									   newVictoryRadius = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newVictoryRadius = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
-									   newHeading = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newHeading = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -355,8 +371,6 @@ namespace labust {
 								   } else {
 									   eventsGoToNext.push_back(ID+1);
 								   }
-
-
 										eventsActive.push_back(atof(elem2->GetText()));
 										//eventID = atof(elem2->GetText());
 										primitiveHasEvent = true;
@@ -376,19 +390,22 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newXpos = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = atof(elem2->GetText());
-
+									   evalExpr.request.expression = elem2->GetText();
+									   newYpos = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newSpeed = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("victory_radius") == 0){
 
-									   newVictoryRadius = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newVictoryRadius = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -420,19 +437,23 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = EE.evaluateStringExpression(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newXpos = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = EE.evaluateStringExpression(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newYpos = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
-									   newHeading = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newHeading = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
-									  newTimeout = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newTimeout = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -471,20 +492,23 @@ namespace labust {
 								   if(primitiveParamName.compare("course") == 0){
 
 									  // newCourse = atof(elem2->GetText());
-									   newCourse = EE.evaluateStringExpression(elem2->GetText());
-
+									   evalExpr.request.expression = elem2->GetText();
+									   newCourse = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newSpeed = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
-									   newHeading = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newHeading = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
-									  newTimeout = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newTimeout = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -519,16 +543,18 @@ namespace labust {
 
 								   if(primitiveParamName.compare("course") == 0){
 
-									   //newCourse = atof(elem2->GetText());
-									   newCourse = EE.evaluateStringExpression(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newCourse = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newSpeed = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
-									  newTimeout = atof(elem2->GetText());
+									   evalExpr.request.expression = elem2->GetText();
+									   newTimeout = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 

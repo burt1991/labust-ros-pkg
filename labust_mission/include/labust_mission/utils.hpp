@@ -49,15 +49,16 @@ namespace labust{
 	namespace utilities{
 
 
-//		template <typename custom_srv>
-//		void callService(ros::ServiceClient& client, custom_srv& request){
-//
-//			if (client.call(request)){
-//				ROS_INFO("Call to service %s successful", client.getService().c_str());
-//			} else {
-//				ROS_ERROR("* Call to service %s failed", client.getService().c_str());
-//			}
-//		}
+		template <typename custom_srv>
+		custom_srv callService(ros::ServiceClient& client, custom_srv& request){
+
+			if (client.call(request)){
+				ROS_INFO("Call to service %s successful", client.getService().c_str());
+				return request;
+			} else {
+				ROS_ERROR("* Call to service %s failed", client.getService().c_str());
+			}
+		}
 
 		/*************************************************************
 		 ***  Functions used for splitting string expressions

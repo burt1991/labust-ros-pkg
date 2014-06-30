@@ -77,6 +77,9 @@ namespace labust {
 
 			/* Mission specific variables */ // Svaki specificni projekt ima klasu koja extenda DataManager klasu
 			std::vector<double> missionVar;
+
+			std::vector<double> mainData;
+
 		};
 
 		DataManager::DataManager(){

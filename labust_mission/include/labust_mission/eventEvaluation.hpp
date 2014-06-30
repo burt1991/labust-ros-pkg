@@ -68,17 +68,17 @@ namespace labust {
 			 ***  Class functions
 			 ****************************************************************/
 
-			EventEvaluation();
+			EventEvaluation(std::vector<double> stateVar, std::vector<double> missionVar, std::vector<double> eventsVar);
 
 			int checkEventState(auv_msgs::NavSts data, std::string expression_str);
 
-			void evaluateEvents(std::vector<std::string> events, std::vector<std::string>& eventsValue);
+			void evaluateEvents(std::vector<std::string> events, std::vector<double> &eventsValue);
 
 			double evaluateStringExpression(std::string expression_str);
 
 			void updateSymbolTable(std::vector<double> stateVar, std::vector<double> missionVar, std::vector<double> eventsVar);
 
-			void initializeSymbolTable();
+			void initializeSymbolTable(std::vector<double> eventsVar);
 
 			//void onReceiveExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data);
 
@@ -102,7 +102,7 @@ namespace labust {
 
 		};
 
-		EventEvaluation::EventEvaluation(){
+		EventEvaluation::EventEvaluation(std::vector<double> stateVar, std::vector<double> missionVar, std::vector<double> eventsVar){
 
 			//ros::NodeHandle nh;
 			//subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",5, &EventEvaluation::onReceiveExternalEvent, this); // Ovdej si uvao promjenu s 5 na 1
@@ -114,10 +114,10 @@ namespace labust {
 			//setExternalEvents();
 
 			/* Initialize symbol table */
-			initializeSymbolTable();
+			initializeSymbolTable(eventsVar);
 		}
 
-		void EventEvaluation::evaluateEvents(std::vector<std::string> events, std::vector<std::string>& eventsValue){
+		void EventEvaluation::evaluateEvents(std::vector<std::string> events, std::vector<double> &eventsValue){
 			int i = 0;
 			for(std::vector<std::string>::iterator it = events.begin() ; it != events.end(); ++it){
 
@@ -154,23 +154,24 @@ namespace labust {
 			return expression.value();
 		}
 
-		void EventEvaluation::initializeSymbolTable(){
+		void EventEvaluation::initializeSymbolTable(std::vector<double> eventsVar){
 
 			symbol_table.add_constants();
 
-			symbol_table.add_variable("u",0);
-			symbol_table.add_variable("v",0);
-			symbol_table.add_variable("w",0);
-			symbol_table.add_variable("r",0);
-			symbol_table.add_variable("x",0);
-			symbol_table.add_variable("y",0);
-			symbol_table.add_variable("z",0);
-			symbol_table.add_variable("psi",0);
-			symbol_table.add_variable("x_var",0);
-			symbol_table.add_variable("y_var",0);
-			symbol_table.add_variable("z_var",0);
-			symbol_table.add_variable("psi_var",0);
-			symbol_table.add_variable("alt",0);
+			double tmp = 0.0;
+			symbol_table.add_variable("u",tmp);
+			symbol_table.add_variable("v",tmp);
+			symbol_table.add_variable("w",tmp);
+			symbol_table.add_variable("r",tmp);
+			symbol_table.add_variable("x",tmp);
+			symbol_table.add_variable("y",tmp);
+			symbol_table.add_variable("z",tmp);
+			symbol_table.add_variable("psi",tmp);
+			symbol_table.add_variable("x_var",tmp);
+			symbol_table.add_variable("y_var",tmp);
+			symbol_table.add_variable("z_var",tmp);
+			symbol_table.add_variable("psi_var",tmp);
+			symbol_table.add_variable("alt",tmp);
 
 			int i = 0;
 			for(std::vector<double>::iterator it = eventsVar.begin() ; it != eventsVar.end(); ++it){
@@ -178,7 +179,7 @@ namespace labust {
 				i++;
 				std::string eventName = "event";
 				eventName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
-				double value = 0;
+				double value = 0.0;
 				//std::string eventName = (*it).description.c_str();
 				symbol_table.create_variable(eventName.c_str());
 				symbol_table.get_variable(eventName.c_str())->ref() = double(value);

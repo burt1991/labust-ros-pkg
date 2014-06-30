@@ -46,12 +46,12 @@
 #include<labust_mission/dataManager.hpp>
 #include<labust_mission/eventEvaluation.hpp>
 
-#include<misc_msgs/EvaluateExpression.h>check
+#include<misc_msgs/EvaluateExpression.h>
 
 class DataEventManager{
 
 public:
-	DataEventManager(){
+	DataEventManager():EE(DM.stateHatVar,DM.missionVar,DM.eventsVar){
 
 		ros::NodeHandle nh;
 
@@ -67,12 +67,12 @@ public:
 
 		DM.updateData(data);
 		EE.updateSymbolTable(DM.stateHatVar,DM.missionVar,DM.eventsVar);
-		EE.evaluateEvents(eventsContainer, eventsValue);
+		EE.evaluateEvents(eventsContainer, boost::ref(eventsValue));
 
-		publishDataEvent(DM.mainData, EE.eventsData);
+		publishDataEvent(DM.mainData, eventsValue);
 	}
 
-	void publishDataEvent(){
+	void publishDataEvent(std::vector<double> mainVal, std::vector<double> eventsVal){
 
 	}
 
@@ -110,8 +110,9 @@ public:
 		eventsContainer = labust::utilities::split(missionEventsString.c_str(), ':');
 	}
 
-	labust::event::EventEvaluation EE;
+
 	labust::data::DataManager DM;
+	labust::event::EventEvaluation EE;
 
 	ros::Subscriber subStateHatAbsSlow;
 	ros::Publisher pubDataEvent;

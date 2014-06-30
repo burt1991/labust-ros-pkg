@@ -32,7 +32,9 @@
 *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
 *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  BUT NOT LIMITED TO, PROCUREME	void onMissionSetup(misc_msgs::){
+
+	}NT OF SUBSTITUTE GOODS OR SERVICES;
 *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
@@ -44,6 +46,8 @@
 #include<labust_mission/dataManager.hpp>
 #include<labust_mission/eventEvaluation.hpp>
 
+#include<misc_msgs/EvaluateExpression.h>
+
 class DataEventManager{
 
 public:
@@ -52,8 +56,12 @@ public:
 		ros::NodeHandle nh;
 
 		subStateHatAbsSlow = nh.subscribe<auv_msgs::NavSts>("stateHatAbsSlow",1,&DataEventManager::onStateHatAbsSlow,this);
+
+		srvEvaluateExpression = nh.advertiseService("evaluate_expression", &DataEventManager::expressionEvaluationService,this);
+
 	}
 
+	/* Callback for evaluating states and event condition */
 	void onStateHatAbsSlow(const auv_msgs::NavSts::ConstPtr& data){
 
 
@@ -64,11 +72,51 @@ public:
 
 	}
 
+	/* Callback that initializes mission parameters and events */
+	void onMissionSetup(const misc_msgs::MissionSetup::ConstPtr& data){
+
+		parseMissionParam(data->missionParam.c_str());
+		parseMissionEvents(data->missionParam.c_str());
+	}
+
+
+	/* Service that evaluates string expression */
+	bool expressionEvaluationService(misc_msgs::EvaluateExpression::Request &req, misc_msgs::EvaluateExpression::Response &res){
+
+		res.result = EE.evaluateStringExpression(req.expression);
+		return true;
+	}
+
+	/*****************************************************************
+	 *** Helper functions
+	 ****************************************************************/
+
+	void parseMissionParam(std::string missionParamString){
+
+		std::vector<std::string> tmp;
+		tmp = labust::utilities::split(missionParamString.c_str(), ':');
+		int i = 0;
+		for(std::vector<std::string>::iterator it = tmp.begin(); it != tmp.end(); ++it){
+			DM.missionVar[i++] = atof((*it).c_str());
+		}
+	}
+
+	void parseMissionEvents(std::string missionEventsString){
+
+		eventsContainer = labust::utilities::split(missionEventsString.c_str(), ':');
+	}
+
 	labust::event::EventEvaluation EE;
 	labust::data::DataManager DM;
 
 	ros::Subscriber subStateHatAbsSlow;
 	ros::Publisher pubDataEvent;
+
+	ros::ServiceServer srvEvaluateExpression;
+
+	std::vector<std::string> eventsContainer;
+	std::vector<bool> eventsStatus;
+
 };
 
 

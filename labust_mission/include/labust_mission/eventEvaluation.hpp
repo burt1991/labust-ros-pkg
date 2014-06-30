@@ -142,7 +142,7 @@ namespace labust {
 
 			}
 
-			symbol_table.add_variable("u",u);
+			symbol_table.add_variable("ulabust::eve",u);
 			symbol_table.add_variable("v",v);
 			symbol_table.add_variable("w",w);
 			symbol_table.add_variable("r",r);

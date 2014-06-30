@@ -5,8 +5,7 @@
  *      Author: Filip Mandic
  */
 
-#ifndef DATAMANAGER_HPP_
-#define DATAMANAGER_HPP_
+
 
 /*********************************************************************
 * Software License Agreement (BSD License)
@@ -29,7 +28,7 @@
 *     from this software without specific prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  "AS IS" AND ANExternalEventY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
 *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
 *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
@@ -42,8 +41,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef EVENTEVALUATION_HPP_
-#define EVENTEVALUATION_HPP_
+#ifndef DATAMANAGER_HPP_
+#define DATAMANAGER_HPP_
 
 #include <labust_mission/labustMission.hpp>
 
@@ -83,7 +82,6 @@ namespace labust {
 
 		DataManager::DataManager(){
 
-			//ros::NodeHandle nh;
 			stateHatVar.resize(stateHatNum);
 		}
 

@@ -422,6 +422,7 @@ namespace labust {
 
 									   newXpos = EE.evaluateStringExpression(elem2->GetText());
 
+
 								   } else if(primitiveParamName.compare("east") == 0){
 
 									   newYpos = EE.evaluateStringExpression(elem2->GetText());
@@ -480,7 +481,7 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
-									   newHeading = atof(elem2->GetText());
+									   newHeading = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("timeout") == 0){
 

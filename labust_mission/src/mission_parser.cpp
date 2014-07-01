@@ -332,15 +332,15 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   newSpeed = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("victory_radius") == 0){
 
-									   newVictoryRadius = atof(elem2->GetText());
+									   newVictoryRadius = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
-									   newHeading = atof(elem2->GetText());
+									   newHeading = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -376,19 +376,19 @@ namespace labust {
 
 								   if(primitiveParamName.compare("north") == 0){
 
-									   newXpos = atof(elem2->GetText());
+									   newXpos = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("east") == 0){
 
-									   newYpos = atof(elem2->GetText());
+									   newYpos = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   newSpeed = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("victory_radius") == 0){
 
-									   newVictoryRadius = atof(elem2->GetText());
+									   newVictoryRadius = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -422,18 +422,17 @@ namespace labust {
 
 									   newXpos = EE.evaluateStringExpression(elem2->GetText());
 
-
 								   } else if(primitiveParamName.compare("east") == 0){
 
 									   newYpos = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
-									   newHeading = atof(elem2->GetText());
+									   newHeading = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
-									  newTimeout = atof(elem2->GetText());
+									  newTimeout = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -477,7 +476,7 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   newSpeed = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("heading") == 0){
 
@@ -485,7 +484,7 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
-									  newTimeout = atof(elem2->GetText());
+									  newTimeout = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 
@@ -525,11 +524,11 @@ namespace labust {
 
 								   } else if(primitiveParamName.compare("speed") == 0){
 
-									   newSpeed = atof(elem2->GetText());
+									   newSpeed = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("timeout") == 0){
 
-									  newTimeout = atof(elem2->GetText());
+									  newTimeout = EE.evaluateStringExpression(elem2->GetText());
 
 								   } else if(primitiveParamName.compare("onEventStop") == 0){
 

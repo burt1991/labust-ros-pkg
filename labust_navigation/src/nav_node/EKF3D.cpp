@@ -461,7 +461,11 @@ void Estimator3D::start()
 				nav.getState()(KFNav::theta),
 				nav.getState()(KFNav::psi),
 				transform.transform.rotation);
-		transform.child_frame_id = "base_link";
+		if(absoluteEKF){
+			transform.child_frame_id = "base_link_abs";
+		} else{
+			transform.child_frame_id = "base_link";
+		}
 		transform.header.frame_id = "local";
 		transform.header.stamp = ros::Time::now();
 		broadcaster.sendTransform(transform);

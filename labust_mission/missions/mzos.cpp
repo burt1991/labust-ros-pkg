@@ -128,15 +128,17 @@ public:
 
 	auv_msgs::NED offset;
 
-	bool measAvailable, fineApproachFlag;
+
 
 	double deltaXposTarget, deltaYposTarget, targetXpos, targetYpos, agvXpos, agvYpos;
 
 	enum {initial = 0, coarseApproach, fineApproach, Tugging};
 
+	int missionState;
 
-	MZOS():measAvailable(false),deltaXposTarget(0.0),deltaYposTarget(0.0), targetXpos(0.0), targetYpos(0.0), agvXpos(0.0), agvYpos(0.0),
-			fineApproachFlag(false){
+
+	MZOS():deltaXposTarget(0.0),deltaYposTarget(0.0), targetXpos(0.0), targetYpos(0.0), agvXpos(0.0), agvYpos(0.0),
+		    missionState(0){
 
 		ros::NodeHandle nh;
 
@@ -147,7 +149,7 @@ public:
 		subAgvPos = nh.subscribe<auv_msgs::NED>("agv_pos", 1, &MZOS::onAgvPos, this);
 
 		/* Publishers */
-		pubEvent = nh.advertise<misc_msgs::ExternalEvent>("externalEvent",1);
+		pubEvent = nh.advertise<misc_msgs::ExternalEvent>("externalEvent",5);
 		pubDeltaPos = nh.advertise<auv_msgs::NED>("quad_delta_pos", 1);
 		//pubKFmode = nh.advertise<std_msgs::Bool>("quad_delta_pos_available",1);
 		pubKFmode = nh.advertise<std_msgs::Bool>("KFmode",1);
@@ -156,32 +158,6 @@ public:
 
 	void onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
-//		if(measAvailable){
-//
-//			measAvailable = false;
-//
-////			auv_msgs::NED msg;
-////			msg.north = deltaXposTarget;
-////			msg.east = deltaYposTarget;
-////			pubDeltaPos.publish(msg);
-//
-//			std_msgs::Bool msg2;
-//			msg2.data = true;
-//			pubKFmode.publish(msg2);
-//
-//		} else {
-//
-//			std_msgs::Bool msg2;
-//			msg2.data = false;
-//			pubKFmode.publish(msg2);
-//		}
-
-
-	}
-
-
-	void onTimeout(const ros::TimerEvent& timer){
-
 	}
 
 	void onTargetPos(const auv_msgs::NED::ConstPtr& msg){
@@ -189,28 +165,29 @@ public:
 		targetXpos = msg->north;
 		targetYpos = msg->east;
 
-		misc_msgs::ExternalEvent sendEvent;
+		if(missionState == initial){
 
-		sendEvent.id = 1;
-		sendEvent.value = targetXpos;
-		pubEvent.publish(sendEvent);
+			misc_msgs::ExternalEvent sendEvent;
 
-		sendEvent.id = 2;
-		sendEvent.value = targetYpos;
-		pubEvent.publish(sendEvent);
-
-	    /* Publish controller mode*/
-	    std_msgs::Bool KFdeltaMode;
-	    KFdeltaMode.data = false;
-	    pubKFmode.publish(KFdeltaMode);
-
-		if(fineApproachFlag == false){
-
-			sendEvent.id = 5;
-			sendEvent.value = coarseApproach;
+			sendEvent.id = 1;
+			sendEvent.value = targetXpos;
 			pubEvent.publish(sendEvent);
 
-			fineApproachFlag = true;
+			sendEvent.id = 2;
+			sendEvent.value = targetYpos;
+			pubEvent.publish(sendEvent);
+
+			/* Publish controller mode*/
+			std_msgs::Bool KFdeltaMode;
+			KFdeltaMode.data = false;
+			pubKFmode.publish(KFdeltaMode);
+
+			sendEvent.id = 5;
+			sendEvent.value = 1;
+			pubEvent.publish(sendEvent);
+
+			missionState = coarseApproach;
+
 		}
 	}
 
@@ -219,7 +196,8 @@ public:
 		deltaXposTarget = -msg->pose.position.x;
 		deltaYposTarget = -msg->pose.position.y;
 
-		measAvailable = true;
+
+		if(missionState == coarseApproach){
 
 		misc_msgs::ExternalEvent sendEvent;
 
@@ -232,13 +210,16 @@ public:
 		pubEvent.publish(sendEvent);
 
 		sendEvent.id = 5;
-		sendEvent.value = fineApproach;
+		sendEvent.value = 2;
 		pubEvent.publish(sendEvent);
 
 	    /* Publish controller mode*/
 	    std_msgs::Bool KFdeltaMode;
 	    KFdeltaMode.data = true;
 	    pubKFmode.publish(KFdeltaMode);
+
+	    missionState = fineApproach;
+		}
 	}
 
 	void onAgvPos(const auv_msgs::NED::ConstPtr& msg){
@@ -246,24 +227,33 @@ public:
 		agvXpos = msg->north;
 		agvYpos = msg->east;
 
-		misc_msgs::ExternalEvent sendEvent;
+		if(missionState == fineApproach){
 
-		sendEvent.id = 3;
-		sendEvent.value = agvXpos;
-		pubEvent.publish(sendEvent);
+			misc_msgs::ExternalEvent sendEvent;
 
-		sendEvent.id = 4;
-		sendEvent.value = agvYpos;
-		pubEvent.publish(sendEvent);
+			sendEvent.id = 3;
+			sendEvent.value = agvXpos;
+			pubEvent.publish(sendEvent);
 
-		sendEvent.id = 5;
-		sendEvent.value = Tugging;
-		pubEvent.publish(sendEvent);
+			sendEvent.id = 4;
+			sendEvent.value = agvYpos;
+			pubEvent.publish(sendEvent);
 
-	    /* Publish controller mode*/
-	    std_msgs::Bool KFdeltaMode;
-	    KFdeltaMode.data = false;
-	    pubKFmode.publish(KFdeltaMode);
+			sendEvent.id = 5;
+			sendEvent.value = 3;
+			pubEvent.publish(sendEvent);
+
+			/* Publish controller mode*/
+			std_msgs::Bool KFdeltaMode;
+			KFdeltaMode.data = false;
+			pubKFmode.publish(KFdeltaMode);
+
+			missionState = Tugging;
+		}
+	}
+
+	void onLostContact(const std_msgs::Bool::ConstPtr& data){
+
 	}
 
 };

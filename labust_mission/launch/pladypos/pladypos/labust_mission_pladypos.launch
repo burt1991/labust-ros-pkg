@@ -97,7 +97,7 @@
 
     <group>
   	  <include file="$(find labust_mission)/launch/pladypos/static_frames.launch" />
-	  <remap from="gps" to="fix_ublox" />
+	  <remap from="gps" to="fix_spatial" />
 	  <remap from="imu" to="imu_spatial" />
  	  <include file="$(find labust_mission)/launch/labust_navigation_template.launch">
         	<arg name="ekfAbs" value="$(arg ekfAbs)" /> 
@@ -133,7 +133,7 @@
 
     <include file="$(find labust_mission)/launch/pladypos/sensors.launch" />
     <node pkg="rosbag" type="record" name="rosbag" args="-a -o /extern/bags/navcon" />
-    <include file="$(find pladypos)/launch/pladypos_driver.launch" />
+    <include file="$(find pladypos)/launch/pladyposv2_driver.launch" />
 
      <group if="$(arg use_mm)">
   	<include file="$(find caddy_launch)/launch/caddy/multi_master.launch" />

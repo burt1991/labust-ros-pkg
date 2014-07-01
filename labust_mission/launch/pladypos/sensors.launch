@@ -1,16 +1,16 @@
 <launch>
-  <node pkg="microstrain_3dmgx2_imu" type="gx3_node" name="gx3">
+  <!-- <node pkg="microstrain_3dmgx2_imu" type="gx3_node" name="gx3">
 	<param name="port" value="/dev/ttyACM1" />
         <param name="frame_id" value="imu_frame" />
 	<remap from="/imu/data" to="imu_gx3" />
-  </node>
+  </node> -->
 
-  <node pkg="nmea_navsat_driver" type="nmea_serial_driver" name="ublox">
-	<param name="port" value="/dev/ttyACM0" />
+  <!-- <node pkg="nmea_navsat_driver" type="nmea_serial_driver" name="ublox">
+	<param name="port" value="/dev/ttyACM1" />
 	<param name="baud" value="115200" />
  	<remap from="fix" to="fix_ublox" />
         <param name="frame_id" value="gps_frame" />
-  </node>
+  </node> -->
 
   <node pkg="spatial_ins" type="spatial_node" name="spatial">
 	<param name="PortName" value="/dev/ttyUSB0" />
@@ -21,7 +21,7 @@
 	<remap from="fix" to="fix_spatial" />
 	<!-- <remap from="fix_in" to="fix_ublox" /> -->
   </node>
-
+<!--
   <node pkg="labust_imu" type="imu_node" name="labust_imu">
     <param name="PortName" value="/dev/ttyS0" />
     <param name="Baud" value="115200" />
@@ -30,9 +30,9 @@
     <remap from="imu" to="imu_labust" />
     <param name="magnetic_declination" value="0.052359833" />
   </node>
-
+-->
   <node pkg="navquest_dvl" type="navquest_node" name="dvl" >
-	<param name="PortName" value="/dev/ttyUSB1" />
+	<param name="PortName" value="/dev/ttyS0" />
 	<param name="Baud" value="115200" />
 	<param name="fixed_orientation" value="3.14159" />
 	<remap from="velo_instrument" to="dvl" />	

@@ -13,7 +13,7 @@ export USE_NOISE=0
 export USE_VISUALIZATION=1
 
 #Location for simulation or predefined position
-export LOCATION=sdot_yam
+export LOCATION=split_hrm
 export USE_LOCAL_FIX=0
 
 #Control configuration

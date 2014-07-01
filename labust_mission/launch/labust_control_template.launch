@@ -100,6 +100,7 @@
         name="identification" 
         if="$(arg use_ident)">
 
+	   <param name="useUV" value="true" />
 	   <remap from="tauOut" to="tauIdent" />
 
  	</node>
@@ -133,6 +134,7 @@
             name="station_keeping">
 
 		    <remap from="Enable" to="FADP_enable" />
+		    <remap from="ref" to="TrackPoint" />
 
 		</node>
 

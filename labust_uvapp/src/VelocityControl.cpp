@@ -151,7 +151,14 @@ void VelocityControl::updateDynRecConfig()
 bool VelocityControl::handleServerConfig(labust_uvapp::ConfigureVelocityController::Request& req,
 		labust_uvapp::ConfigureVelocityController::Response& resp)
 {
-	axis_control = req.desired_mode;
+	for (int i=0; i<req.desired_mode.size();++i)
+	{
+		if (axis_control[i] != req.desired_mode[i])
+		{
+			axis_control[i] = req.desired_mode[i];
+			controller[i].integratorState = 0;
+		}
+	}
 	this->updateDynRecConfig();
 	return true;
 }

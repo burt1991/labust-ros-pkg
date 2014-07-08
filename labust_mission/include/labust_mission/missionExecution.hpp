@@ -45,7 +45,6 @@
 
 
 #include <labust_mission/labustMission.hpp>
-//#include <labust_mission/eventEvaluation.hpp>
 #include <exprtk/exprtk.hpp>
 
 #include <decision_making/SynchCout.h>
@@ -297,6 +296,11 @@ namespace labust {
 				case course_keeping_UA:
 
 					mainEventQueue->riseEvent("/COURSE_KEEPING_UA");
+					break;
+
+				case iso:
+
+					mainEventQueue->riseEvent("/ISO");
 					break;
 
 				case none:

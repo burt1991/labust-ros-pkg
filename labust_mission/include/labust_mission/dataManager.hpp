@@ -75,6 +75,7 @@ namespace labust {
 			vector<double> eventsVar;
 			vector<string> eventsVarNames;
 
+
 			/* Mission specific variables */ // Svaki specificni projekt ima klasu koja extenda DataManager klasu
 			vector<double> missionVar;
 			vector<string> missionVarNames;

@@ -47,7 +47,6 @@
 *********************************************************************/
 
 #include <labust_mission/labustMission.hpp>
-//#include <labust_mission/eventEvaluation.hpp>
 
 #include <misc_msgs/StartParser.h>
 #include <misc_msgs/EvaluateExpression.h>
@@ -121,7 +120,7 @@ namespace labust {
 
 			string xmlFile;
 
-			std::string missionEvents;
+			string missionEvents, missionParams;
 
 			std::vector<std::string> eventsContainer;
 
@@ -283,6 +282,7 @@ namespace labust {
 		}
 
 
+		/* Function for parsing primitives in XML mission file */
 		int MissionParser::parseMission(int id, string xmlFile){
 
 		   XMLDocument xmlDoc;
@@ -595,6 +595,12 @@ namespace labust {
 		   }
 		}
 
+
+		/*************************************************************
+		 *** Initial parse of XML mission file
+		 ************************************************************/
+
+		/* Parse events on mission load */
 		int MissionParser::parseEvents(string xmlFile){
 
 		   XMLDocument xmlDoc;
@@ -606,14 +612,12 @@ namespace labust {
 		   /* Open XML file */
 		   if(xmlDoc.LoadFile(xmlFile.c_str()) == XML_SUCCESS) {
 
-
-
 			   /* Find events node */
-			   events = xmlDoc.FirstChildElement("events");
+			   events = xmlDoc.FirstChildElement("main")->FirstChildElement("events");;
 			   if(events){
 				   for (event = events->FirstChildElement("event"); event != NULL; event = event->NextSiblingElement()){
 
-					   eventsContainer.push_back(event->ToElement()->GetText());
+					   //eventsContainer.push_back(event->ToElement()->GetText());
 					   missionEvents.append(event->ToElement()->GetText());
 					   missionEvents.append(":");
 				   }
@@ -626,53 +630,46 @@ namespace labust {
 			   ROS_ERROR("Cannot open XML file!");
 			   return -1;
 		   }
-
-		   // debug PRINT
-
-//		   for(std::vector<std::string>::iterator it = eventsContainer.begin() ; it != eventsContainer.end(); ++it){
-//
-//				std::string vTmp = *it;
-//				ROS_ERROR("Event string: %s", vTmp.c_str());
-//			}
+		   return 0;
 		}
 
-
+		/* Parse mission parameters on mission load */
 		int MissionParser::parseMissionParam(string xmlFile){
 
-//		   XMLDocument xmlDoc;
-//
-//		   XMLNode *events;
-//		   XMLNode *event;
-//		   XMLNode *primitiveParam;
-//
-//		   /* Open XML file */
-//		   if(xmlDoc.LoadFile(xmlFile.c_str()) == XML_SUCCESS) {
-//
-//			   /* Find events node */
-//			   events = xmlDoc.FirstChildElement("events");
-//			   if(events){
-//				   for (event = events->FirstChildElement("event"); event != NULL; event = event->NextSiblingElement()){
-//
-//					   eventsContainer.push_back(event->ToElement()->GetText());
-//				   }
-//				   eventsFlag = true;
-//			   } else {
-//				   ROS_ERROR("No events defined");
-//				   return -1;
-//			   }
-//		   } else {
-//			   ROS_ERROR("Cannot open XML file!");
-//			   return -1;
-//		   }
-//
-//		   // debug PRINT
-//
-//		   for(std::vector<std::string>::iterator it = eventsContainer.begin() ; it != eventsContainer.end(); ++it){
-//
-//				std::string vTmp = *it;
-//				ROS_ERROR("Event string: %s", vTmp.c_str());
-//			}
+		   XMLDocument xmlDoc;
+
+		   XMLNode *events;
+		   XMLNode *event;
+		   XMLNode *primitiveParam;
+
+		   /* Open XML file */
+		   if(xmlDoc.LoadFile(xmlFile.c_str()) == XML_SUCCESS) {
+
+			   /* Find events node */
+			   events = xmlDoc.FirstChildElement("main")->FirstChildElement("params");
+			   if(events){
+				   for (event = events->FirstChildElement("param"); event != NULL; event = event->NextSiblingElement()){
+
+					   missionParams.append(event->ToElement()->Attribute("name"));
+					   missionParams.append(":");
+					   missionParams.append(event->ToElement()->GetText());
+					   missionParams.append(":");
+				   }
+				   eventsFlag = true;
+			   } else {
+				   ROS_ERROR("No mission parameters defined");
+				   return -1;
+			   }
+		   } else {
+			   ROS_ERROR("Cannot open XML file!");
+			   return -1;
+		   }
+		   return 0;
 		}
+
+		/*************************************************************
+		 *** ROS subscriptions
+		 ************************************************************/
 
 		void MissionParser::onRequestPrimitive(const std_msgs::UInt16::ConstPtr& req){
 
@@ -776,10 +773,7 @@ int main(int argc, char** argv){
 
 	ros::init(argc, argv, "mission_parser");
 	ros::NodeHandle nh;
-
-	using namespace labust::mission;
-	MissionParser MP(nh);
-
+	labust::mission::MissionParser MP(nh);
 	ros::spin();
 	return 0;
 }

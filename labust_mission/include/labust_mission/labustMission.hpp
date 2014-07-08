@@ -80,8 +80,8 @@
 
 enum {X = 0, Y, Z, T};
 
-enum {none = 0, go2point_FA, go2point_UA, dynamic_positioning, course_keeping_FA, course_keeping_UA};
-const char *primitives[] = {"none", "go2point_FA", "go2point_UA", "dynamic_positioning", "course_keeping_FA", "course_keeping_UA"};
+enum {none = 0, go2point_FA, go2point_UA, dynamic_positioning, course_keeping_FA, course_keeping_UA, iso};
+const char *primitives[] = {"none", "go2point_FA", "go2point_UA", "dynamic_positioning", "course_keeping_FA", "course_keeping_UA", "iso"};
 
 enum {u=0, v, w, r, x, y, z, psi, x_var, y_var, z_var, psi_var, alt, stateHatNum}; /* Enumeration used for DataManager */
 

@@ -69,6 +69,7 @@
 #include <misc_msgs/ExternalEvent.h>
 #include <misc_msgs/MissionSetup.h>
 #include <misc_msgs/DataEventsContainer.h>
+#include <misc_msgs/EvaluateExpression.h>
 
 #include <auv_msgs/NED.h>
 #include <auv_msgs/NavSts.h>

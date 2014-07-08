@@ -32,9 +32,7 @@
 *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
 *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREME	void onMissionSetup(misc_msgs::){
-
-	}NT OF SUBSTITUTE GOODS OR SERVICES;
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
@@ -46,7 +44,9 @@
 #include<labust_mission/dataManager.hpp>
 #include<labust_mission/eventEvaluation.hpp>
 
-#include<misc_msgs/EvaluateExpression.h>
+/*********************************************************************
+ *** DataEventManager class definition
+ ********************************************************************/
 
 class DataEventManager{
 
@@ -55,28 +55,32 @@ public:
 
 		ros::NodeHandle nh;
 
-		subStateHatAbsSlow = nh.subscribe<auv_msgs::NavSts>("stateHatAbsSlow",1,&DataEventManager::onStateHatAbsSlow,this);
+		/* Subscriber */
+		subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1,&DataEventManager::onStateHat,this);
 
-		srvEvaluateExpression = nh.advertiseService("evaluate_expression", &DataEventManager::expressionEvaluationService,this);
-
+		/* Publisher */
 		pubDataEventsContainer = nh.advertise<misc_msgs::DataEventsContainer>("data_events_container",1);
 
-
+		/* Service */
+		srvEvaluateExpression = nh.advertiseService("evaluate_expression", &DataEventManager::expressionEvaluationService,this);
 	}
 
 	/* Callback for evaluating states and event condition */
-	void onStateHatAbsSlow(const auv_msgs::NavSts::ConstPtr& data){
+	void onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
-
+		/* Update all data in DataManager */
 		DM.updateData(data);
+
+		/* Update EventEvaluation symbol table and evaluate events */
 		EE.updateSymbolTable(DM.stateHatVar,DM.missionVar,DM.eventsVar);
 		EE.evaluateEvents(eventsContainer, boost::ref(eventsValue));
 
+		/* Publish events data and events states */
 		publishDataEvent(DM.mainData, eventsValue);
 	}
 
 	/* Publish data and events */
-	void publishDataEvent(std::vector<double> mainVal, std::vector<double> eventsVal){
+	void publishDataEvent(vector<double> mainVal, vector<double> eventsVal){
 
 		misc_msgs::DataEventsContainer dataEventsContainer;
 		dataEventsContainer.stateVar.data  = mainVal;
@@ -104,37 +108,47 @@ public:
 	 *** Helper functions
 	 ****************************************************************/
 
-	void parseMissionParam(std::string missionParamString){
+	/* Parse string with mission parameters sent from mission parser */
+	void parseMissionParam(string missionParamString){
 
-		std::vector<std::string> tmp;
+		vector<string> tmp;
 		tmp = labust::utilities::split(missionParamString.c_str(), ':');
 		int i = 0;
-		for(std::vector<std::string>::iterator it = tmp.begin()+1; it != tmp.end(); it=it+2){
-			DM.missionVar[i++] = atof((*it).c_str());
+		for(vector<string>::iterator it = tmp.begin()+1; it != tmp.end(); it=it+2){
+
+			DM.missionVarNames[i] = (*(it-1)).c_str(); /* Assign mission variable name */
+			DM.missionVar[i++] = atof((*it).c_str()); /* Assign mission variable value */
 		}
 	}
 
-	void parseMissionEvents(std::string missionEventsString){
+	/* Parse string with mission events sent from mission parser */
+	void parseMissionEvents(string missionEventsString){
 
 		eventsContainer = labust::utilities::split(missionEventsString.c_str(), ':');
 	}
 
 
+	/*****************************************************************
+	 *** Class variables
+	 ****************************************************************/
+
 	labust::data::DataManager DM;
 	labust::event::EventEvaluation EE;
 
-	ros::Subscriber subStateHatAbsSlow;
+	ros::Subscriber subStateHatAbs;
 	ros::Publisher pubDataEvent, pubDataEventsContainer;
-;
 
 	ros::ServiceServer srvEvaluateExpression;
 
-	std::vector<std::string> eventsContainer;
-	std::vector<double> eventsValue;
-	std::vector<bool> eventsStatus;
+	vector<string> eventsContainer;
+	vector<double> eventsValue;
+	vector<bool> eventsStatus;
 
 };
 
+/*********************************************************************
+ *** Main
+ ********************************************************************/
 
 int main(int argc, char **argv){
 

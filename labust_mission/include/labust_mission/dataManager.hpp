@@ -1,11 +1,10 @@
-/*
+/*********************************************************************
  * dataManager.hpp
  *
  *  Created on: Jun 20, 2014
  *      Author: Filip Mandic
- */
-
-
+ *
+ ********************************************************************/
 
 /*********************************************************************
 * Software License Agreement (BSD License)
@@ -70,15 +69,17 @@ namespace labust {
 			 ********************************************************************/
 
 			/* State Hat variables */
-			std::vector<double> stateHatVar;
+			vector<double> stateHatVar;
 
 			/* Events data variables */
-			std::vector<double> eventsVar;
+			vector<double> eventsVar;
+			vector<string> eventsVarNames;
 
 			/* Mission specific variables */ // Svaki specificni projekt ima klasu koja extenda DataManager klasu
-			std::vector<double> missionVar;
+			vector<double> missionVar;
+			vector<string> missionVarNames;
 
-			std::vector<double> mainData;
+			vector<double> mainData;
 
 		};
 

@@ -71,7 +71,7 @@
         type="NavSts2Odom.py" 
         name="ldtravo2uwsim">
 
-        <!--<remap from="stateHat" to="stateHatAbs" />-->
+        <remap from="stateHat" to="stateHatAbs" />
         <!--<remap from="meas_ideal" to="/meas_ideal" />-->
         <remap from="uwsim_hook" to="uwsim_hook" />
         <!--<param name="base_frame" value="base_link_abs" />-->

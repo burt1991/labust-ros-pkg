@@ -133,7 +133,7 @@ FSM(MissionSelect)
 		{
 			ROS_ERROR("go2point_FA primitive active");
 
-			misc_msgs::Go2PointFA data = ME->deserializePrimitive<misc_msgs::Go2PointFA>(ME->receivedPrimitive.primitiveData);
+			misc_msgs::Go2PointFA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointFA>(ME->receivedPrimitive.primitiveData);
 		   	CM->go2point_FA(true,ME->oldPosition.north,ME->oldPosition.east,data.point.north,data.point.east, data.speed, data.heading, data.victoryRadius);
 
 		   	ME->oldPosition = data.point;
@@ -154,7 +154,7 @@ FSM(MissionSelect)
 		{
 			ROS_ERROR("go2point_UA primitive active");
 
-			misc_msgs::Go2PointUA data = ME->deserializePrimitive<misc_msgs::Go2PointUA>(ME->receivedPrimitive.primitiveData);
+			misc_msgs::Go2PointUA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointUA>(ME->receivedPrimitive.primitiveData);
 		   	CM->go2point_UA(true,ME->oldPosition.north,ME->oldPosition.east,data.point.north,data.point.east, data.speed, data.victoryRadius);
 
 		   	ME->oldPosition = data.point;
@@ -175,7 +175,7 @@ FSM(MissionSelect)
 		{
 			ROS_ERROR("dynamic_positioning primitive active");
 
-			misc_msgs::DynamicPositioning data = ME->deserializePrimitive<misc_msgs::DynamicPositioning>(ME->receivedPrimitive.primitiveData);
+			misc_msgs::DynamicPositioning data = labust::utilities::deserializeMsg<misc_msgs::DynamicPositioning>(ME->receivedPrimitive.primitiveData);
 		   	CM->dynamic_positioning(true,data.point.north,data.point.east, data.heading);
 
 		   	ME->oldPosition = data.point;
@@ -198,7 +198,7 @@ FSM(MissionSelect)
 		{
 			ROS_ERROR("course_keeping_FA primitive active");
 
-			misc_msgs::CourseKeepingFA data = ME->deserializePrimitive<misc_msgs::CourseKeepingFA>(ME->receivedPrimitive.primitiveData);
+			misc_msgs::CourseKeepingFA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingFA>(ME->receivedPrimitive.primitiveData);
 		   	CM->course_keeping_FA(true,data.course, data.speed, data.heading);
 
 		   	ME->setTimeout(ME->receivedPrimitive.event.timeout);
@@ -222,7 +222,7 @@ FSM(MissionSelect)
 		{
 			ROS_ERROR("course_keeping_UA primitive active");
 
-			misc_msgs::CourseKeepingUA data = ME->deserializePrimitive<misc_msgs::CourseKeepingUA>(ME->receivedPrimitive.primitiveData);
+			misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(ME->receivedPrimitive.primitiveData);
 		   	CM->course_keeping_UA(true,data.course, data.speed);
 
 		   	ME->setTimeout(ME->receivedPrimitive.event.timeout);
@@ -246,7 +246,7 @@ FSM(MissionSelect)
 		{
 			ROS_ERROR("iso primitive active");
 
-			misc_msgs::CourseKeepingUA data = ME->deserializePrimitive<misc_msgs::CourseKeepingUA>(ME->receivedPrimitive.primitiveData);
+			misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(ME->receivedPrimitive.primitiveData);
 			CM->course_keeping_UA(true,data.course, data.speed);
 
 			ME->setTimeout(ME->receivedPrimitive.event.timeout);

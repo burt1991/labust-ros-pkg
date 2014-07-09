@@ -57,9 +57,10 @@ public:
 
 		/* Subscriber */
 		subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1,&DataEventManager::onStateHat,this);
+		subMissionSetup = nh.subscribe<misc_msgs::MissionSetup>("missionSetup",1,&DataEventManager::onMissionSetup,this);
 
 		/* Publisher */
-		pubDataEventsContainer = nh.advertise<misc_msgs::DataEventsContainer>("data_events_container",1);
+		pubDataEventsContainer = nh.advertise<misc_msgs::DataEventsContainer>("dataEventsContainer",1);
 
 		/* Service */
 		srvEvaluateExpression = nh.advertiseService("evaluate_expression", &DataEventManager::expressionEvaluationService,this);
@@ -69,14 +70,14 @@ public:
 	void onStateHat(const auv_msgs::NavSts::ConstPtr& data){
 
 		/* Update all data in DataManager */
-		DM.updateData(data);
+		//DM.updateData(data);
 
 		/* Update EventEvaluation symbol table and evaluate events */
-		EE.updateSymbolTable(DM.stateHatVar,DM.missionVar,DM.eventsVar);
-		EE.evaluateEvents(eventsContainer, boost::ref(eventsValue));
+		//EE.updateSymbolTable(DM.stateHatVar,DM.missionVar,DM.eventsVar);
+		//EE.evaluateEvents(eventsContainer, boost::ref(eventsValue));
 
 		/* Publish events data and events states */
-		publishDataEvent(DM.mainData, eventsValue);
+		//publishDataEvent(DM.mainData, eventsValue);
 	}
 
 	/* Publish data and events */
@@ -92,14 +93,15 @@ public:
 	/* Callback that initializes mission parameters and events */
 	void onMissionSetup(const misc_msgs::MissionSetup::ConstPtr& data){
 
-		parseMissionParam(data->missionParam.c_str());
-		parseMissionEvents(data->missionParam.c_str());
+		parseMissionParam(data->missionParams.c_str());
+		parseMissionEvents(data->missionParams.c_str());
 	}
 
 
 	/* Service that evaluates string expression */
 	bool expressionEvaluationService(misc_msgs::EvaluateExpression::Request &req, misc_msgs::EvaluateExpression::Response &res){
 
+		//ROS_ERROR("Evaluating string expression: %s", req.expression.c_str());
 		res.result = EE.evaluateStringExpression(req.expression);
 		return true;
 	}
@@ -111,20 +113,24 @@ public:
 	/* Parse string with mission parameters sent from mission parser */
 	void parseMissionParam(string missionParamString){
 
-		vector<string> tmp;
-		tmp = labust::utilities::split(missionParamString.c_str(), ':');
-		int i = 0;
-		for(vector<string>::iterator it = tmp.begin()+1; it != tmp.end(); it=it+2){
+		if(missionParamString.empty() == 0){
+			vector<string> tmp;
+			tmp = labust::utilities::split(missionParamString.c_str(), ':');
+			int i = 0;
+			for(vector<string>::iterator it = tmp.begin()+1; it != tmp.end(); it=it+2){
 
-			DM.missionVarNames[i] = (*(it-1)).c_str(); /* Assign mission variable name */
-			DM.missionVar[i++] = atof((*it).c_str()); /* Assign mission variable value */
+				DM.missionVarNames[i] = (*(it-1)).c_str(); /* Assign mission variable name */
+				DM.missionVar[i++] = atof((*it).c_str()); /* Assign mission variable value */
+			}
 		}
 	}
 
 	/* Parse string with mission events sent from mission parser */
 	void parseMissionEvents(string missionEventsString){
 
-		eventsContainer = labust::utilities::split(missionEventsString.c_str(), ':');
+		if(missionEventsString.empty() == 0){
+			eventsContainer = labust::utilities::split(missionEventsString.c_str(), ':');
+		}
 	}
 
 
@@ -135,7 +141,7 @@ public:
 	labust::data::DataManager DM;
 	labust::event::EventEvaluation EE;
 
-	ros::Subscriber subStateHatAbs;
+	ros::Subscriber subStateHatAbs, subMissionSetup;
 	ros::Publisher pubDataEvent, pubDataEventsContainer;
 
 	ros::ServiceServer srvEvaluateExpression;

@@ -52,9 +52,6 @@
 #include <misc_msgs/EvaluateExpression.h>
 #include <tinyxml2.h>
 
-namespace ser = ros::serialization;
-
-using namespace std;
 using namespace tinyxml2;
 
 namespace labust {
@@ -102,40 +99,26 @@ namespace labust {
 			 ***  Helper functions
 			 ****************************************************************/
 
-			template <typename primitiveType>
-			void serializePrimitive(int id, primitiveType data);
+			//template <typename primitiveType>
+			void serializePrimitive(int id, vector<uint8_t> serializedData);
 
 			/*****************************************************************
 			 ***  Class variables
 			 ****************************************************************/
 
-			int ID, lastID;
-			double newXpos, newYpos, newVictoryRadius, newSpeed, newCourse, newHeading;
-			//double oldXpos, oldYpos, oldVictoryRadius, oldSpeed, oldCourse, oldHeading;
-			double newTimeout;
-
-			bool eventsFlag, primitiveHasEvent;
-
-			int eventID;
+			int ID, lastID, eventID;
+			double newXpos, newYpos, newVictoryRadius, newSpeed, newCourse, newHeading, newTimeout;
 
 			string xmlFile;
-
 			string missionEvents, missionParams;
 
-			std::vector<std::string> eventsContainer;
+			vector<uint8_t> eventsActive, eventsGoToNext;
 
-			std::vector<uint8_t> eventsActive;
-			//std::vector<std::string> eventsActiveContainer;
-			std::vector<uint8_t> eventsGoToNext;
-
-			ros::Publisher pubSendPrimitive, pubRiseEvent, pubMissionOffset;
+			ros::Publisher pubSendPrimitive, pubRiseEvent, pubMissionSetup;
 			ros::Subscriber subRequestPrimitive, subEventString, subReceiveXmlPath;
 			ros::ServiceClient srvExprEval;
 
 			auv_msgs::NED offset;
-
-			//labust::event::EventEvaluation EE;
-
 			int breakpoint;
 		};
 
@@ -145,7 +128,7 @@ namespace labust {
 		 ****************************************************************/
 
 		MissionParser::MissionParser(ros::NodeHandle& nh):ID(0), lastID(0), newXpos(0), newYpos(0), newVictoryRadius(0), newSpeed(0),
-				newCourse(0), newHeading(0), newTimeout(0), eventsFlag(false), primitiveHasEvent(false), eventID(0), breakpoint(1),
+				newCourse(0), newHeading(0), newTimeout(0), eventID(0), breakpoint(1),
 				missionEvents(""){
 
 			/* Subscribers */
@@ -154,15 +137,13 @@ namespace labust {
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1,&MissionParser::onEventString, this);
 			subReceiveXmlPath = nh.subscribe<misc_msgs::StartParser>("startParse",1,&MissionParser::onReceiveXmlPath, this);
 
-
 			/* Publishers */
 			pubSendPrimitive = nh.advertise<misc_msgs::SendPrimitive>("sendPrimitive",1);
 			pubRiseEvent = nh.advertise<std_msgs::String>("eventString",1);
-			pubMissionOffset = nh.advertise<auv_msgs::NED>("missionOffset",1);
+			pubMissionSetup = nh.advertise<misc_msgs::MissionSetup>("missionSetup",1);
 
 			/* Service */
 			srvExprEval = nh.serviceClient<misc_msgs::EvaluateExpression>("evaluate_expression");
-
 
 			/* Parse file path */
 			ros::NodeHandle ph("~");
@@ -177,7 +158,7 @@ namespace labust {
 
 			ROS_ERROR("%d",ID);
 			int status = parseMission(ID, xmlFile);
-
+			//int status = 0;
 			ROS_ERROR("%s", primitives[status]);
 
 			switch(status){
@@ -235,7 +216,8 @@ namespace labust {
 			data.speed = speed;
 			data.victoryRadius = victoryRadius;
 
-			serializePrimitive<misc_msgs::Go2PointFA>(go2point_FA, data);
+			serializePrimitive(go2point_FA, labust::utilities::serializeMsg(data));
+
 		}
 
 		void MissionParser::go2pointUA(double north, double east, double speed, double victoryRadius){
@@ -247,7 +229,7 @@ namespace labust {
 			data.speed = speed;
 			data.victoryRadius = victoryRadius;
 
-			serializePrimitive<misc_msgs::Go2PointUA>(go2point_UA, data);
+			serializePrimitive(go2point_UA, labust::utilities::serializeMsg(data));
 		}
 
 		void MissionParser::dynamicPositioning(double north, double east, double heading){
@@ -258,7 +240,7 @@ namespace labust {
 			data.point.depth = 0;
 			data.heading = heading;
 
-			serializePrimitive<misc_msgs::DynamicPositioning>(dynamic_positioning, data);
+			serializePrimitive(dynamic_positioning, labust::utilities::serializeMsg(data));
 
 		}
 
@@ -269,7 +251,7 @@ namespace labust {
 			data.heading = heading;
 			data.speed = speed;
 
-			serializePrimitive<misc_msgs::CourseKeepingFA>(course_keeping_FA, data);
+			serializePrimitive(course_keeping_FA, labust::utilities::serializeMsg(data));
 		}
 
 		void MissionParser::courseKeepingUA(double course, double speed){
@@ -278,7 +260,7 @@ namespace labust {
 			data.course = course;
 			data.speed = speed;
 
-			serializePrimitive<misc_msgs::CourseKeepingUA>(course_keeping_UA, data);
+			serializePrimitive(course_keeping_UA, labust::utilities::serializeMsg(data));
 		}
 
 
@@ -295,7 +277,7 @@ namespace labust {
 		   if(xmlDoc.LoadFile(xmlFile.c_str()) == XML_SUCCESS) {
 
 			   /* Find mission node */
-			   mission = xmlDoc.FirstChildElement("mission");
+			   mission = xmlDoc.FirstChildElement("main")->FirstChildElement("mission");
 			   if(mission){
 
 				   /* Loop through primitive nodes */
@@ -374,9 +356,9 @@ namespace labust {
 								   } else {
 									   eventsGoToNext.push_back(ID+1);
 								   }
-										eventsActive.push_back(atof(elem2->GetText()));
+										eventsActive.push_back(atoi(elem2->GetText()));
 										//eventID = atof(elem2->GetText());
-										primitiveHasEvent = true;
+										//primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -422,7 +404,7 @@ namespace labust {
 
 										eventsActive.push_back(atof(elem2->GetText()));
 										//eventID = atof(elem2->GetText());
-										primitiveHasEvent = true;
+										//primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -476,7 +458,7 @@ namespace labust {
 
 										eventsActive.push_back(atof(elem2->GetText()));
 										//eventID = atof(elem2->GetText());
-										primitiveHasEvent = true;
+									//	primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -528,7 +510,7 @@ namespace labust {
 
 									   eventsActive.push_back(atof(elem2->GetText()));
 
-									   primitiveHasEvent = true;
+									  // primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -574,7 +556,7 @@ namespace labust {
 
 									   eventsActive.push_back(atof(elem2->GetText()));
 									   //eventID = atof(elem2->GetText());
-									   primitiveHasEvent = true;
+									   //primitiveHasEvent = true;
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -621,7 +603,7 @@ namespace labust {
 					   missionEvents.append(event->ToElement()->GetText());
 					   missionEvents.append(":");
 				   }
-				   eventsFlag = true;
+				  // eventsFlag = true;
 			   } else {
 				   ROS_ERROR("No events defined");
 				   return -1;
@@ -655,7 +637,7 @@ namespace labust {
 					   missionParams.append(event->ToElement()->GetText());
 					   missionParams.append(":");
 				   }
-				   eventsFlag = true;
+				 //  eventsFlag = true;
 			   } else {
 				   ROS_ERROR("No mission parameters defined");
 				   return -1;
@@ -689,7 +671,7 @@ namespace labust {
 
 			if(strcmp(msg->data.c_str(),"/STOP") == 0){
 				ID = 0;
-				eventsContainer.clear();
+				missionParams.clear();
 				missionEvents.clear();
 			}
 		}
@@ -697,8 +679,10 @@ namespace labust {
 		void MissionParser::onReceiveXmlPath(const misc_msgs::StartParser::ConstPtr& msg){
 
 			if(msg->fileName.empty() == 0){
+
 				xmlFile.assign(msg->fileName.c_str());
 
+				/* Set mission start offset */
 				if(msg->relative){
 					offset.north = -msg->startPosition.north;
 					offset.east = -msg->startPosition.east;
@@ -706,12 +690,16 @@ namespace labust {
 					offset.north = offset.east = 0;
 				}
 
-				pubMissionOffset.publish(offset);
-
+				/* On XML load parse mission parameters and mission events */
 				parseEvents(xmlFile.c_str());
+				parseMissionParam(xmlFile.c_str());
 
+				/* Publish mission setup */
 				misc_msgs::MissionSetup missionSetup;
 				missionSetup.missionEvents = missionEvents;
+				missionSetup.missionParams = missionParams;
+				missionSetup.missionOffset = offset;
+				pubMissionSetup.publish(missionSetup);
 			}
 		}
 
@@ -720,44 +708,15 @@ namespace labust {
 		 ***  Helper functions
 		 ****************************************************************/
 
-		template <typename primitiveType>
-		void MissionParser::serializePrimitive(int id, primitiveType data){
-
-			uint32_t serial_size = ros::serialization::serializationLength(data);
-			std::vector<uint8_t> buffer(serial_size);
-
-			ser::OStream stream(&buffer.front(), serial_size);
-			ser::serialize(stream, data);
+		//template <typename primitiveType>
+		void MissionParser::serializePrimitive(int id, vector<uint8_t> serializedData){
 
 			misc_msgs::SendPrimitive sendContainer;
 			sendContainer.primitiveID = id;
-			sendContainer.primitiveData = buffer;
-
-			std::string EventsContainerTmp;
-
-			for(std::vector<uint8_t>::iterator it = eventsActive.begin() ; it != eventsActive.end(); ++it){
-
-				EventsContainerTmp.append(eventsContainer.at(*it-1));
-				EventsContainerTmp.append(":");
-
-				ROS_ERROR("%s", EventsContainerTmp.c_str());
-			}
-
+			sendContainer.primitiveData = serializedData;
 			sendContainer.event.timeout = newTimeout;
-
-			ROS_ERROR("Evo koji eventi su aktivni: %s", EventsContainerTmp.c_str());
-
-			if(eventsFlag && primitiveHasEvent){
-				sendContainer.event.onEventStop = EventsContainerTmp.c_str();
-			} else {
-				sendContainer.event.onEventStop = "";
-			}
-
+			sendContainer.event.onEventStop = eventsActive;
 			sendContainer.event.onEventNext = eventsGoToNext;
-
-			//sendContainer.event.onEventStop = (eventsFlag && primitiveHasEvent) ? eventsContainer.at(eventID-1).c_str():"";
-
-			primitiveHasEvent = false;
 
 			pubSendPrimitive.publish(sendContainer);
 		}

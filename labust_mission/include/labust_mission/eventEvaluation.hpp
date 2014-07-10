@@ -68,62 +68,41 @@ namespace labust {
 			 ***  Class functions
 			 ****************************************************************/
 
-			EventEvaluation(vector<double> stateVar, vector<double> missionVar, vector<double> eventsVar);
+			EventEvaluation();
 
 			int checkEventState(auv_msgs::NavSts data, std::string expression_str);
 
-			void evaluateEvents(std::vector<std::string> events, std::vector<double> &eventsValue);
+			vector<uint8_t> evaluateEvents(vector<string> events);
 
 			double evaluateStringExpression(std::string expression_str);
 
-			void updateSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<double> eventsVar);
+			void updateSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames);
 
-			void initializeSymbolTable(vector<double> eventsVar);
-
-			//void onReceiveExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data);
-
-			//void setExternalEvents();
-
-			//void onStateHat(const auv_msgs::NavSts::ConstPtr& data);
+			void initializeSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames);
 
 			/*********************************************************************
 			 ***  Class variables
 			 ********************************************************************/
 
-			//ros::Subscriber subExternalEvents;
-			//ros::Subscriber subStateHatAbs;
-
 			symbol_table_t symbol_table;
-
-			//double x,y,z,psi;
-			//std::vector<misc_msgs::ExternalEvent> externalEventContainer;
-
-
-
 		};
 
-		EventEvaluation::EventEvaluation(vector<double> stateVar, vector<double> missionVar, vector<double> eventsVar){
+		EventEvaluation::EventEvaluation(){
 
-			//ros::NodeHandle nh;
-			//subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",5, &EventEvaluation::onReceiveExternalEvent, this); // Ovdej si uvao promjenu s 5 na 1
-			//subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &EventEvaluation::onStateHat, this);
-
-
-			//externalEventContainer.resize(5); // 5 eksternih evenata
-
-			//setExternalEvents();
-
-			/* Initialize symbol table */
-			initializeSymbolTable(eventsVar);
 		}
 
-		void EventEvaluation::evaluateEvents(vector<std::string> events, vector<double> &eventsValue){
-			int i = 0;
-			for(std::vector<std::string>::iterator it = events.begin() ; it != events.end(); ++it){
+		vector<uint8_t> EventEvaluation::evaluateEvents(vector<string> events){
+			ROS_ERROR("debug1");
+			//int i = 0;
+			vector<uint8_t> eventsState;
 
-				eventsValue[i] = evaluateStringExpression((*it).c_str());
-				i++;
+			for(vector<string>::iterator it = events.begin(); it != events.end(); ++it){
+				ROS_ERROR("debug");
+				uint8_t tmp = (evaluateStringExpression((*it).c_str()) == 1.0)?1:0;
+				eventsState.push_back(tmp);
 			}
+
+			return eventsState;
 		}
 
 
@@ -154,7 +133,7 @@ namespace labust {
 			return expression.value();
 		}
 
-		void EventEvaluation::initializeSymbolTable(std::vector<double> eventsVar){
+		void EventEvaluation::initializeSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames){
 
 			symbol_table.add_constants();
 
@@ -174,19 +153,19 @@ namespace labust {
 			symbol_table.add_variable("alt",tmp);
 
 			int i = 0;
-			for(std::vector<double>::iterator it = eventsVar.begin() ; it != eventsVar.end(); ++it){
+			for(vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
-				i++;
-				std::string eventName = "event";
-				eventName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
-				double value = 0.0;
-				//std::string eventName = (*it).description.c_str();
-				symbol_table.create_variable(eventName.c_str());
-				symbol_table.get_variable(eventName.c_str())->ref() = double(value);
+				//i++;
+				string varName = missionVarNames[i++];
+				//eventName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
+				//double value = 0.0;
+
+				symbol_table.create_variable(varName.c_str());
+				symbol_table.get_variable(varName.c_str())->ref() = double(tmp);
 			}
 		}
 
-		void EventEvaluation::updateSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<double> eventsVar){
+		void EventEvaluation::updateSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames){
 
 			symbol_table.get_variable("u")->ref() = stateVar[u];
 			symbol_table.get_variable("v")->ref() = stateVar[v];
@@ -203,16 +182,18 @@ namespace labust {
 			symbol_table.get_variable("alt")->ref() = stateVar[alt];
 
 			int i = 0;
-			for(std::vector<double>::iterator it = eventsVar.begin() ; it != eventsVar.end(); ++it){
+			for(std::vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
-				i++;
-				std::string eventName = "event";
-				eventName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
+				//i++;
+				//std::string eventName = "event";
+				string varName = missionVarNames[i++];
+
+				//eventName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
 				double value = (*it);
 				//std::string eventName = (*it).description.c_str();
 
 				//symbol_table.create_variable(eventName.c_str());
-				symbol_table.get_variable(eventName.c_str())->ref() = double(value);
+				symbol_table.get_variable(varName.c_str())->ref() = double(value);
 			}
 		}
 	}

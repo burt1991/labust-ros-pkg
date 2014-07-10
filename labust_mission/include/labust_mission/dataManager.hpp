@@ -62,7 +62,9 @@ namespace labust {
 
 			DataManager();
 
-			void updateData(const auv_msgs::NavSts::ConstPtr& data);
+			void updateStateVar(const auv_msgs::NavSts::ConstPtr& data);
+
+			void updateMissionVar(int missionVarID, double value);
 
 			/*********************************************************************
 			 ***  Class variables
@@ -72,24 +74,23 @@ namespace labust {
 			vector<double> stateHatVar;
 
 			/* Events data variables */
-			vector<double> eventsVar;
-			vector<string> eventsVarNames;
+			vector<uint8_t> eventsVar;
 
-
-			/* Mission specific variables */ // Svaki specificni projekt ima klasu koja extenda DataManager klasu
+			/* Mission specific variables */
 			vector<double> missionVar;
 			vector<string> missionVarNames;
-
-			vector<double> mainData;
-
 		};
 
 		DataManager::DataManager(){
 
 			stateHatVar.resize(stateHatNum);
+			eventsVar.clear();
+			missionVar.clear();
+			missionVarNames.clear();
+
 		}
 
-		void DataManager::updateData(const auv_msgs::NavSts::ConstPtr& data){
+		void DataManager::updateStateVar(const auv_msgs::NavSts::ConstPtr& data){
 
 			stateHatVar[u] = data->body_velocity.x;
 			stateHatVar[v] = data->body_velocity.y;
@@ -108,6 +109,11 @@ namespace labust {
 
 			stateHatVar[alt] = data->altitude;
 
+		}
+
+		void DataManager::updateMissionVar(int missionVarID, double value){
+
+			missionVar[missionVarID] = value;
 		}
 	}
 }

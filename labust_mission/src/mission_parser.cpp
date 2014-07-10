@@ -402,7 +402,7 @@ namespace labust {
 										   eventsGoToNext.push_back(ID+1);
 										}
 
-										eventsActive.push_back(atof(elem2->GetText()));
+										eventsActive.push_back(atoi(elem2->GetText()));
 										//eventID = atof(elem2->GetText());
 										//primitiveHasEvent = true;
 								   }
@@ -456,7 +456,7 @@ namespace labust {
 										   eventsGoToNext.push_back(ID+1);
 										}
 
-										eventsActive.push_back(atof(elem2->GetText()));
+										eventsActive.push_back(atoi(elem2->GetText()));
 										//eventID = atof(elem2->GetText());
 									//	primitiveHasEvent = true;
 								   }
@@ -508,7 +508,7 @@ namespace labust {
 										   eventsGoToNext.push_back(ID+1);
 									   }
 
-									   eventsActive.push_back(atof(elem2->GetText()));
+									   eventsActive.push_back(atoi(elem2->GetText()));
 
 									  // primitiveHasEvent = true;
 								   }
@@ -554,7 +554,7 @@ namespace labust {
 										   eventsGoToNext.push_back(ID+1);
 									   }
 
-									   eventsActive.push_back(atof(elem2->GetText()));
+									   eventsActive.push_back(atoi(elem2->GetText()));
 									   //eventID = atof(elem2->GetText());
 									   //primitiveHasEvent = true;
 								   }

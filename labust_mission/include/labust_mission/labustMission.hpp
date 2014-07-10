@@ -85,8 +85,6 @@ const char *primitives[] = {"none", "go2point_FA", "go2point_UA", "dynamic_posit
 
 enum {u=0, v, w, r, x, y, z, psi, x_var, y_var, z_var, psi_var, alt, stateHatNum}; /* Enumeration used for DataManager */
 
-
 using namespace std;
-
 
 #endif /* LABUSTMISSION_HPP_ */

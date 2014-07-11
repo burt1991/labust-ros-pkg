@@ -61,7 +61,6 @@ public:
 		subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",1, &DataEventManager::onExternalEvent, this);
 		subEventString = nh.subscribe<std_msgs::String>("eventString",1, &DataEventManager::onEventString, this);
 
-
 		/* Publisher */
 		pubDataEventsContainer = nh.advertise<misc_msgs::DataEventsContainer>("dataEventsContainer",1);
 
@@ -74,17 +73,17 @@ public:
 
 		/* Update all data in DataManager */
 		DM.updateStateVar(data);
-		ROS_ERROR("update debug");
+		//ROS_ERROR("update debug");
 
 		if(missionLoaded){
 			/* Update EventEvaluation symbol table and evaluate events */
-			EE.updateSymbolTable(DM.stateHatVar,DM.missionVar, DM.missionVarNames);
-			ROS_ERROR("debug0");
-			DM.eventsVar = EE.evaluateEvents(eventsContainer);
+			EE.updateSymbolTable(DM.getStateVar(),DM.getMissionVar(),DM.getMissionVarNames());
+			//ROS_ERROR("debug0");
+			DM.updateEventsVar(EE.evaluateEvents(eventsContainer));
 
-			ROS_ERROR("prosao");
+			//ROS_ERROR("prosao");
 			/* Publish events data and events states */
-			publishDataEvent(DM.stateHatVar, DM.missionVar, DM.eventsVar);
+			publishDataEvent(DM.getStateVar(), DM.getMissionVar(), DM.getEventsVar());
 		}
 	}
 
@@ -112,20 +111,19 @@ public:
 		parseMissionEvents(data->missionEvents.c_str());
 
 		/* Initialize symbol table */
-		EE.initializeSymbolTable(DM.stateHatVar, DM.missionVar, DM.missionVarNames);
+		EE.initializeSymbolTable(DM.getStateVar(), DM.getMissionVar(), DM.getMissionVarNames());
 
+		ROS_ERROR("Mission successfully loaded");
 		missionLoaded = true;
 	}
 
 	void onEventString(const std_msgs::String::ConstPtr& msg){
 
-		//mainEventQueue->riseEvent(msg->data.c_str());
 		ROS_INFO("EventString: %s",msg->data.c_str());
 		if(strcmp(msg->data.c_str(),"/STOP") == 0){
 			missionLoaded = false;
-			DM.stateHatVar.clear();
-			DM.missionVar.clear();
-			DM.eventsVar.clear();
+			DM.reset();
+			EE.resetSymbolTable();
 		}
 	}
 
@@ -146,19 +144,16 @@ public:
 	void parseMissionParam(string missionParamString){
 
 		if(missionParamString.empty() == 0){
+
 			vector<string> tmp;
 			tmp = labust::utilities::split(missionParamString.c_str(), ':');
-			//int i = 0;
+
 			for(vector<string>::iterator it = tmp.begin(); it != tmp.end(); it=it+2){
 
-				ROS_ERROR("Debug %s",(*(it)).c_str());
-
-				DM.missionVarNames.push_back((*(it)).c_str()); /* Assign mission variable name */
-				DM.missionVar.push_back(atof((*(it+1)).c_str())); /* Assign mission variable value */
+				DM.setMissionVarNames((*(it)).c_str()); /* Assign mission variable name */
+				DM.setMissionVar(atof((*(it+1)).c_str())); /* Assign mission variable value */
 			}
 		}
-
-		//ROS_ERROR("prosao petlju");
 	}
 
 	/* Parse string with mission events sent from mission parser */
@@ -166,16 +161,15 @@ public:
 
 		if(missionEventsString.empty() == 0){
 			eventsContainer = labust::utilities::split(missionEventsString.c_str(), ':');
-			DM.eventsVar.resize(eventsContainer.size()); /* Resize event states vector */
-
-			ROS_ERROR("debug in events");
+			vector<uint8_t> tmp(eventsContainer.size(),0);
+			DM.updateEventsVar(tmp); /* Resize event states vector */
 		}
 	}
-
 
 	/*****************************************************************
 	 *** Class variables
 	 ****************************************************************/
+private:
 
 	labust::data::DataManager DM;
 	labust::event::EventEvaluation EE;

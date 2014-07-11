@@ -102,6 +102,8 @@ namespace labust {
 			//template <typename primitiveType>
 			void serializePrimitive(int id, vector<uint8_t> serializedData);
 
+			void onEventNextParse();
+
 			/*****************************************************************
 			 ***  Class variables
 			 ****************************************************************/
@@ -112,7 +114,7 @@ namespace labust {
 			string xmlFile;
 			string missionEvents, missionParams;
 
-			vector<uint8_t> eventsActive, eventsGoToNext;
+			vector<uint8_t> onEventNextActive, onEventNext;
 
 			ros::Publisher pubSendPrimitive, pubRiseEvent, pubMissionSetup;
 			ros::Subscriber subRequestPrimitive, subEventString, subReceiveXmlPath;
@@ -575,6 +577,24 @@ namespace labust {
 			   ROS_ERROR("Cannot open XML file!");
 			   return -1;
 		   }
+		}
+
+		void MissionParser::onEventNextParse(){
+
+			//string Event = elem2->Attribute("event");
+			string primitiveNext = elem2->GetText();
+
+			if(primitiveNext.empty()==0){
+				if(strcmp(primitveNext.c_str(),"bkp") == 0){
+					onEventNext.push_back(breakpoint);
+				}else{
+					onEventNext.push_back(atoi(onEvent.c_str()));
+				}
+			} else {
+					onEventNext.push_back(ID+1);
+			}
+
+			onEventNextActive.push_back(atoi(elem2->GetText()));
 		}
 
 

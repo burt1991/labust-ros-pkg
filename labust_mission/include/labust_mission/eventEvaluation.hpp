@@ -70,8 +70,6 @@ namespace labust {
 
 			EventEvaluation();
 
-			int checkEventState(auv_msgs::NavSts data, std::string expression_str);
-
 			vector<uint8_t> evaluateEvents(vector<string> events);
 
 			double evaluateStringExpression(std::string expression_str);
@@ -80,9 +78,13 @@ namespace labust {
 
 			void initializeSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames);
 
+			void resetSymbolTable();
+
 			/*********************************************************************
 			 ***  Class variables
 			 ********************************************************************/
+
+		private:
 
 			symbol_table_t symbol_table;
 		};
@@ -92,12 +94,11 @@ namespace labust {
 		}
 
 		vector<uint8_t> EventEvaluation::evaluateEvents(vector<string> events){
-			ROS_ERROR("debug1");
-			//int i = 0;
+
 			vector<uint8_t> eventsState;
 
 			for(vector<string>::iterator it = events.begin(); it != events.end(); ++it){
-				ROS_ERROR("debug");
+				//ROS_ERROR("debug");
 				uint8_t tmp = (evaluateStringExpression((*it).c_str()) == 1.0)?1:0;
 				eventsState.push_back(tmp);
 			}
@@ -155,10 +156,7 @@ namespace labust {
 			int i = 0;
 			for(vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
-				//i++;
 				string varName = missionVarNames[i++];
-				//eventName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
-				//double value = 0.0;
 
 				symbol_table.create_variable(varName.c_str());
 				symbol_table.get_variable(varName.c_str())->ref() = double(tmp);
@@ -184,20 +182,17 @@ namespace labust {
 			int i = 0;
 			for(std::vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
-				//i++;
-				//std::string eventName = "event";
 				string varName = missionVarNames[i++];
 
-				//eventName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
 				double value = (*it);
-				//std::string eventName = (*it).description.c_str();
-
-				//symbol_table.create_variable(eventName.c_str());
 				symbol_table.get_variable(varName.c_str())->ref() = double(value);
 			}
 		}
+
+		void EventEvaluation::resetSymbolTable(){
+			symbol_table.clear();
+		}
 	}
 }
-
 
 #endif /* EVENTEVALUATION_HPP_ */

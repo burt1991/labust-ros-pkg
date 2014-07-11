@@ -149,10 +149,11 @@ namespace labust {
 					//ROS_ERROR("%d", *it);
 
 				//	ROS_ERROR("Na event %d gotTo %d. Event je %d",receivedPrimitive.event.onEventStop[i++],*it, data->eventsVar[receivedPrimitive.event.onEventStop[i++]]);
-				//	if(flag = data->eventsVar[receivedPrimitive.event.onEventStop[i++]]){
+				if(flag = data->eventsVar[receivedPrimitive.event.onEventStop[i++]]){
 						//flag = 1;
-				//		nextPrimitive = *it;
-			//		}
+						//nextPrimitive = *it;
+					ROS_ERROR("ispis: %d", receivedPrimitive.event.onEventStop[i++]);
+					}
 
 					/* First true event has priority */
 					if (flag) break;

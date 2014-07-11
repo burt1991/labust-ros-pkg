@@ -66,9 +66,28 @@ namespace labust {
 
 			void updateMissionVar(int missionVarID, double value);
 
+			void setMissionVar(double value);
+
+			void setMissionVarNames(string name);
+
+			void updateEventsVar(vector<uint8_t> values);
+
+			vector<double> getStateVar();
+
+			vector<double> getMissionVar();
+
+			vector<string> getMissionVarNames();
+
+			vector<uint8_t> getEventsVar();
+
+			void reset();
+
+
 			/*********************************************************************
 			 ***  Class variables
 			 ********************************************************************/
+
+		private:
 
 			/* State Hat variables */
 			vector<double> stateHatVar;
@@ -113,7 +132,48 @@ namespace labust {
 
 		void DataManager::updateMissionVar(int missionVarID, double value){
 
-			missionVar[missionVarID] = value;
+			missionVar.at(missionVarID) = value;
+			/* OVDJE DODAJ KAKO DA HENDLA EXCEPTION */
+		}
+
+		void DataManager::setMissionVar(double value){
+
+				missionVar.push_back(value);
+		}
+
+		void DataManager::setMissionVarNames(string name){
+
+			missionVarNames.push_back(name.c_str());
+			/* OVDJE DODAJ KAKO DA HENDLA EXCEPTION */
+		}
+
+		void DataManager::updateEventsVar(vector<uint8_t> values){
+
+			eventsVar = values;
+			/* OVDJE DODAJ KAKO DA HENDLA EXCEPTION */
+		}
+
+		vector<double> DataManager::getStateVar(){
+			return stateHatVar;
+		}
+
+		vector<double> DataManager::getMissionVar(){
+			return missionVar;
+		}
+
+		vector<uint8_t> DataManager::getEventsVar(){
+			return eventsVar;
+		}
+
+		vector<string> DataManager::getMissionVarNames(){
+			return missionVarNames;
+		}
+
+		void DataManager::reset(){
+
+			missionVar.clear();
+			missionVarNames.clear();
+			eventsVar.clear();
 		}
 	}
 }

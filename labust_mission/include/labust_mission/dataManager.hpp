@@ -1,3 +1,5 @@
+//\todo prouciti mogucnost primjene inline funkcija
+
 /*********************************************************************
  * dataManager.hpp
  *

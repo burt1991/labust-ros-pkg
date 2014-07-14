@@ -73,6 +73,7 @@
 #include <navcon_msgs/CourseKeepingAction.h>
 #include <navcon_msgs/DynamicPositioningAction.h>
 #include <navcon_msgs/GoToPointAction.h>
+#include <navcon_msgs/DOFIdentificationAction.h>
 
 /*********************************************************************
  ***  Global variables
@@ -134,6 +135,9 @@ namespace labust
 			/* Course keeping underactuated  primitive */
 			void course_keeping_UA(bool enable, double course, double speed);
 
+			/* Self-oscillations identification */
+			void ISO(bool enable);
+
 			/*********************************************************
 			 *** High Level Controllers
 			 ********************************************************/
@@ -163,9 +167,6 @@ namespace labust
 			/* Low-level velocity controller */
 			void LL_VELcontroller(bool enable);
 
-			/* Self-oscillations identification */
-			void LL_ISO(bool enable);
-
 			/*********************************************************
 			 *** Helper functions
 			 ********************************************************/
@@ -176,9 +177,10 @@ namespace labust
 			/* Enable controller */
 			void enableController(const std::string serviceName, bool enable);
 
-			/* Get state estimates */
+			/* Get state estimates used in control loop */
 			void stateHatCallback(const auv_msgs::NavSts::ConstPtr& data);
 
+			/* Get absolute state estimates */
 			void stateHatAbsCallback(const auv_msgs::NavSts::ConstPtr& data);
 
 
@@ -204,6 +206,12 @@ namespace labust
 			ros::Subscriber subStateHat;
 			ros::Subscriber subStateHatAbs;
 			utils::LowLevelConfigure LLcfg;
+
+			actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac;
+			actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac2;
+			actionlib::SimpleActionClient<navcon_msgs::DynamicPositioningAction> ac3;
+			actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac4;
+			actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac5;
 		};
 
 	}
@@ -224,7 +232,12 @@ using namespace labust::controller;
 											LL_VELenable(false),
 											Xpos(0.0),
 											Ypos(0.0),
-											YawPos(0.0)
+											YawPos(0.0),
+											ac("go2point_FA", true),
+											ac2("go2point_UA", true),
+											ac3("DPprimitive", true),
+											ac4("course_keeping_FA", true),
+											ac5("course_keeping_UA", true)
 	{
 
 	}
@@ -251,7 +264,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::go2point_FA(bool enable, double north1, double east1, double north2, double east2, double speed, double heading, double radius){
 
-		static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
 
 		if(enable){
 
@@ -292,7 +305,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::go2point_UA(bool enable, double north1, double east1, double north2, double east2, double speed, double radius){
 
-		static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac2("go2point_UA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac2("go2point_UA", true);
 
 		if(enable){
 
@@ -334,7 +347,7 @@ using namespace labust::controller;
 
 	void ControllerManager::dynamic_positioning(bool enable, double north, double east, double heading){
 
-		static actionlib::SimpleActionClient<navcon_msgs::DynamicPositioningAction> ac3("DPprimitive", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::DynamicPositioningAction> ac3("DPprimitive", true);
 
 		if(enable){
 
@@ -376,7 +389,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::course_keeping_FA(bool enable, double course, double speed, double heading){
 
-		static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac4("course_keeping_FA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac4("course_keeping_FA", true);
 
 		if(enable){
 
@@ -412,7 +425,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::course_keeping_UA(bool enable, double course, double speed){
 
-		static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac5("course_keeping_UA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac5("course_keeping_UA", true);
 
 		if(enable){
 
@@ -443,6 +456,45 @@ using namespace labust::controller;
 			enableController("HDG_enable",false);
 			LLcfg.LL_VELconfigure(false,1,1,0,0,0,1);
 		}
+	}
+
+	void ControllerManager::ISO(bool enable){
+
+//		static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
+//
+//		if(enable){
+//
+//			ROS_INFO("Waiting for action server to start.");
+//			ac.waitForServer(); //will wait for infinite time
+//			ROS_INFO("Action server started, sending goal.");
+//
+//			LLcfg.LL_VELconfigure(true,2,2,0,0,0,2);
+//
+//			navcon_msgs::GoToPointGoal goal;
+//			goal.T1.point.x = north1;
+//			goal.T1.point.y = east1;
+//			goal.T2.point.x = north2;
+//			goal.T2.point.y = east2;
+//			goal.yaw = heading;
+//			goal.speed = speed;
+//			goal.radius = radius;
+//
+//
+//			ac.sendGoal(goal,
+//							boost::bind(&utils::Go2PointFA_CB::doneCb, G2P_FA, _1, _2),
+//							boost::bind(&utils::Go2PointFA_CB::activeCb, G2P_FA),
+//							boost::bind(&utils::Go2PointFA_CB::feedbackCb, G2P_FA, _1));
+//
+//		} else {
+//
+//			boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+//			ac.cancelGoalsAtAndBeforeTime(ros::Time::now());
+//
+//			enableController("UALF_enable",false);
+//			enableController("HDG_enable",false);
+//			LLcfg.LL_VELconfigure(false,1,1,0,0,0,1);
+//		}
+
 	}
 
 	/*********************************************************

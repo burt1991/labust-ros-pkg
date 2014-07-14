@@ -73,7 +73,18 @@
         pkg="labust_mission" 
         type="mission_exec" >
 
-	<remap from="stateHatAbs" to="stateHatAbsSlow" />
+	<!--<remap from="stateHatAbs" to="stateHatAbsSlow" />-->
+       <!--<param name="xml_save_path" type="string" value="$(arg xml_save_path)" />-->
+
+    </node>
+
+    <node 
+	if="$(arg mission_execution)" 
+        name="data_event_node" 
+        pkg="labust_mission" 
+        type="data_event_manager" >
+
+	<!--<remap from="stateHatAbs" to="stateHatAbsSlow" />-->
        <!--<param name="xml_save_path" type="string" value="$(arg xml_save_path)" />-->
 
     </node>
@@ -84,7 +95,7 @@
         pkg="labust_mission" 
         type="mission_parser" >
 
-	<remap from="stateHatAbs" to="stateHatAbsSlow" />
+	<!--<remap from="stateHatAbs" to="stateHatAbsSlow" />-->
         <param name="xml_save_path" type="string" value="$(arg xml_save_path)" />
 
     </node>
@@ -92,13 +103,13 @@
     <!-- ========================================================= -->
     <!-- == rostopic-tools nodes ================================= -->
     <!-- ========================================================= -->
-    <node  
+   <!-- <node  
         name="throttle" 
         pkg="topic_tools" 
         type="throttle" 
 	args="messages stateHatAbs 1.0 stateHatAbsSlow" >
        
-    </node>
+    </node>-->
 
 
     <!-- ========================================================= -->

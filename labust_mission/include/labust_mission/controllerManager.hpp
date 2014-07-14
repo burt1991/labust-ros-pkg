@@ -482,7 +482,7 @@ using namespace labust::controller;
 			goal.dof = dof;
 			goal.hysteresis = hysteresis;
 			goal.reference = reference;
-			goal.sampling_rate = 0.1;
+			goal.sampling_rate = sampling_rate;
 
 			ac6.sendGoal(goal,
 							boost::bind(&utils::ISO_CB::doneCb, ISO, _1, _2),

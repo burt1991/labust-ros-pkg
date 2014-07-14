@@ -145,24 +145,16 @@ namespace labust {
 														it != receivedPrimitive.event.onEventNext.end(); ++it){
 
 					/* For each primitive event check if it is true */
-
-					//ROS_ERROR("%d", *it);
-
-				//	ROS_ERROR("Na event %d gotTo %d. Event je %d",receivedPrimitive.event.onEventStop[i++],*it, data->eventsVar[receivedPrimitive.event.onEventStop[i++]]);
-				if(flag = data->eventsVar[receivedPrimitive.event.onEventStop[i++]]){
-						//flag = 1;
-						//nextPrimitive = *it;
-					ROS_ERROR("ispis: %d", receivedPrimitive.event.onEventStop[i++]);
+					if(data->eventsVar[receivedPrimitive.event.onEventNextActive[i++]-1] == 1){
+						flag = 1;
+						nextPrimitive = *it;
+						ROS_ERROR("Aktivan event: %d", receivedPrimitive.event.onEventNextActive[i-1]);
+						checkEventFlag = false;
+						mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 					}
 
 					/* First true event has priority */
 					if (flag) break;
-				}
-
-				if(flag == 1){
-					//ROS_ERROR("Event active");
-					checkEventFlag = false;
-					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 				}
 			}
 		}
@@ -173,7 +165,7 @@ namespace labust {
 			receivedPrimitive = *data;
 
 			/* Check if received primitive has active events */
-			if(receivedPrimitive.event.onEventStop.empty() == 0){
+			if(receivedPrimitive.event.onEventNextActive.empty() == 0){
 				checkEventFlag = true;
 			}
 

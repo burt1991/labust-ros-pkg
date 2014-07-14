@@ -132,7 +132,7 @@ namespace labust {
 
 		void DataManager::updateMissionVar(int missionVarID, double value){
 
-			missionVar.at(missionVarID) = value;
+			missionVar.at(missionVarID-1) = value;
 			/* OVDJE DODAJ KAKO DA HENDLA EXCEPTION */
 		}
 

@@ -102,7 +102,7 @@ namespace labust {
 			//template <typename primitiveType>
 			void serializePrimitive(int id, vector<uint8_t> serializedData);
 
-			void onEventNextParse();
+			void onEventNextParse(XMLElement *elem2);
 
 			/*****************************************************************
 			 ***  Class variables
@@ -301,8 +301,8 @@ namespace labust {
 
 						   /* Reset data */
 							newTimeout = 0;
-							eventsActive.clear();
-							eventsGoToNext.clear();
+							onEventNextActive.clear();
+							onEventNext.clear();
 
 							/* Initialize service call data */
 							misc_msgs::EvaluateExpression evalExpr;
@@ -345,22 +345,9 @@ namespace labust {
 									   evalExpr.request.expression = elem2->GetText();
 									   newHeading = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
-								   } else if(primitiveParamName.compare("onEventStop") == 0){
+								   } else if(primitiveParamName.compare("onEventNext") == 0){
 
-									   std::string goToId = elem2->Attribute("goToId");
-
-									   if(goToId.empty()==0){
-									   if(strcmp(goToId.c_str(),"breakpoint") == 0){
-										   eventsGoToNext.push_back(breakpoint);
-									   }else{
-										   eventsGoToNext.push_back(atoi(goToId.c_str()));
-									   }
-								   } else {
-									   eventsGoToNext.push_back(ID+1);
-								   }
-										eventsActive.push_back(atoi(elem2->GetText()));
-										//eventID = atof(elem2->GetText());
-										//primitiveHasEvent = true;
+									   onEventNextParse(elem2);
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -394,19 +381,9 @@ namespace labust {
 									   evalExpr.request.expression = elem2->GetText();
 									   newVictoryRadius = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
-								   } else if(primitiveParamName.compare("onEventStop") == 0){
+								   } else if(primitiveParamName.compare("onEventNext") == 0){
 
-									    std::string goToId = elem2->Attribute("goToId");
-
-										if(goToId.empty()==0){
-										   eventsGoToNext.push_back(atoi(goToId.c_str()));
-										} else {
-										   eventsGoToNext.push_back(ID+1);
-										}
-
-										eventsActive.push_back(atoi(elem2->GetText()));
-										//eventID = atof(elem2->GetText());
-										//primitiveHasEvent = true;
+									   onEventNextParse(elem2);
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -442,25 +419,9 @@ namespace labust {
 									   evalExpr.request.expression = elem2->GetText();
 									   newTimeout = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
-								   } else if(primitiveParamName.compare("onEventStop") == 0){
+								   } else if(primitiveParamName.compare("onEventNext") == 0){
 
-									    std::string goToId = elem2->Attribute("goToId");
-
-										if(goToId.empty()==0){
-											 if(strcmp(goToId.c_str(),"breakpoint") == 0){
-												   eventsGoToNext.push_back(breakpoint);
-											   }else{
-												   eventsGoToNext.push_back(atoi(goToId.c_str()));
-												// breakpoint = ID;
-											   }
-
-										} else {
-										   eventsGoToNext.push_back(ID+1);
-										}
-
-										eventsActive.push_back(atoi(elem2->GetText()));
-										//eventID = atof(elem2->GetText());
-									//	primitiveHasEvent = true;
+									   onEventNextParse(elem2);
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -497,22 +458,9 @@ namespace labust {
 									   evalExpr.request.expression = elem2->GetText();
 									   newTimeout = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
-								   } else if(primitiveParamName.compare("onEventStop") == 0){
+								   } else if(primitiveParamName.compare("onEventNext") == 0){
 
-									   std::string goToId = elem2->Attribute("goToId");
-									   if(goToId.empty()==0){
-										   if(strcmp(goToId.c_str(),"breakpoint") == 0){
-											   eventsGoToNext.push_back(breakpoint);
-										   }else{
-											   eventsGoToNext.push_back(atoi(goToId.c_str()));
-										   }
-									   } else {
-										   eventsGoToNext.push_back(ID+1);
-									   }
-
-									   eventsActive.push_back(atoi(elem2->GetText()));
-
-									  // primitiveHasEvent = true;
+									   onEventNextParse(elem2);
 								   }
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
@@ -543,23 +491,11 @@ namespace labust {
 									   evalExpr.request.expression = elem2->GetText();
 									   newTimeout = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
-								   } else if(primitiveParamName.compare("onEventStop") == 0){
+								   } else if(primitiveParamName.compare("onEventNext") == 0){
 
-									   std::string goToId = elem2->Attribute("goToId");
-									   if(goToId.empty()==0){
-										   if(strcmp(goToId.c_str(),"breakpoint") == 0){
-											   eventsGoToNext.push_back(1);
-										   }else{
-											   eventsGoToNext.push_back(atoi(goToId.c_str()));
-										   }
-									   } else {
-										   eventsGoToNext.push_back(ID+1);
-									   }
-
-									   eventsActive.push_back(atoi(elem2->GetText()));
-									   //eventID = atof(elem2->GetText());
-									   //primitiveHasEvent = true;
+									   onEventNextParse(elem2);
 								   }
+
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
 							   return course_keeping_UA;
@@ -579,22 +515,22 @@ namespace labust {
 		   }
 		}
 
-		void MissionParser::onEventNextParse(){
+		void MissionParser::onEventNextParse(XMLElement *elem2){
 
 			//string Event = elem2->Attribute("event");
 			string primitiveNext = elem2->GetText();
 
 			if(primitiveNext.empty()==0){
-				if(strcmp(primitveNext.c_str(),"bkp") == 0){
+				if(strcmp(primitiveNext.c_str(),"bkp") == 0){
 					onEventNext.push_back(breakpoint);
 				}else{
-					onEventNext.push_back(atoi(onEvent.c_str()));
+					onEventNext.push_back(atoi(primitiveNext.c_str()));
 				}
 			} else {
-					onEventNext.push_back(ID+1);
+					onEventNext.push_back(ID+1); // provjeri teba li ovo
 			}
 
-			onEventNextActive.push_back(atoi(elem2->GetText()));
+			onEventNextActive.push_back(atoi(elem2->Attribute("event")));
 		}
 
 
@@ -735,8 +671,8 @@ namespace labust {
 			sendContainer.primitiveID = id;
 			sendContainer.primitiveData = serializedData;
 			sendContainer.event.timeout = newTimeout;
-			sendContainer.event.onEventStop = eventsActive;
-			sendContainer.event.onEventNext = eventsGoToNext;
+			sendContainer.event.onEventNextActive = onEventNextActive;
+			sendContainer.event.onEventNext = onEventNext;
 
 			pubSendPrimitive.publish(sendContainer);
 		}

@@ -98,7 +98,7 @@ namespace labust {
 			vector<uint8_t> eventsState;
 
 			for(vector<string>::iterator it = events.begin(); it != events.end(); ++it){
-				//ROS_ERROR("debug");
+
 				uint8_t tmp = (evaluateStringExpression((*it).c_str()) == 1.0)?1:0;
 				eventsState.push_back(tmp);
 			}

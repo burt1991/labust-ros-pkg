@@ -517,7 +517,6 @@ namespace labust {
 
 		void MissionParser::onEventNextParse(XMLElement *elem2){
 
-			//string Event = elem2->Attribute("event");
 			string primitiveNext = elem2->GetText();
 
 			if(primitiveNext.empty()==0){

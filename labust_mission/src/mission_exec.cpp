@@ -1,4 +1,3 @@
-//\todo testirati sto u slucaju da je neki uvjet aktivan odmah po pokretanju primitiva
 /*********************************************************************
  * mission_exec.cpp
  *
@@ -246,14 +245,14 @@ FSM(MissionSelect)
 		{
 			ROS_ERROR("iso primitive active");
 
-			misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(ME->receivedPrimitive.primitiveData);
-			CM->course_keeping_UA(true,data.course, data.speed);
+			misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(ME->receivedPrimitive.primitiveData);
+			CM->ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
 
 			ME->setTimeout(ME->receivedPrimitive.event.timeout);
 
 			FSM_ON_STATE_EXIT_BGN{
 
-				CM->course_keeping_UA(false,0,0);
+				CM->ISOprimitive(false,0,0,0,0,0);
 
 				ME->oldPosition.north = CM->Xpos;
 				ME->oldPosition.east = CM->Ypos;

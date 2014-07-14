@@ -66,6 +66,7 @@
 #include <misc_msgs/DynamicPositioning.h>
 #include <misc_msgs/CourseKeepingFA.h>
 #include <misc_msgs/CourseKeepingUA.h>
+#include <misc_msgs/ISO.h>
 #include <misc_msgs/ExternalEvent.h>
 #include <misc_msgs/MissionSetup.h>
 #include <misc_msgs/DataEventsContainer.h>

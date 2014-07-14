@@ -53,6 +53,8 @@
 #include <navcon_msgs/CourseKeepingAction.h>
 #include <navcon_msgs/DynamicPositioningAction.h>
 #include <navcon_msgs/GoToPointAction.h>
+#include <navcon_msgs/DOFIdentificationAction.h>
+
 
 #include <decision_making/SynchCout.h>
 #include <decision_making/BT.h>
@@ -219,6 +221,42 @@ struct Go2PointUA_CB {
 				// ROS_INFO("Got Feedback of length %lu", feedback->sequence.size());
 				   if((counter++)%10 == 0)
 					   ROS_ERROR("Feedback - distance: %f", feedback->distance);
+			   }
+		};
+
+
+struct ISO_CB {
+
+			typedef navcon_msgs::DOFIdentificationGoal Goal;
+			typedef navcon_msgs::DOFIdentificationResult Result;
+			typedef navcon_msgs::DOFIdentificationFeedback Feedback;
+
+			int counter;
+
+			ISO_CB():counter(0){
+
+			}
+
+			// Called once when the goal completes
+			void doneCb(const actionlib::SimpleClientGoalState& state, const Result::ConstPtr& result)
+			   {
+
+				 ROS_ERROR("iso - Finished in state [%s]", state.toString().c_str());
+				 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+			   }
+
+			  // Called once when the goal becomes active
+			   void activeCb()
+			   {
+				 ROS_ERROR("Goal just went active iso");
+			   }
+
+			   // Called every time feedback is received for the goal
+			   void feedbackCb(const Feedback::ConstPtr& feedback)
+			   {
+				// ROS_INFO("Got Feedback of length %lu", feedback->sequence.size());
+				  // if((counter++)%10 == 0)
+				   ROS_ERROR("Feedback - dof: %d, error: %f, oscilation_num: %d", feedback->dof, feedback->error, feedback->oscillation_num);
 			   }
 		};
 

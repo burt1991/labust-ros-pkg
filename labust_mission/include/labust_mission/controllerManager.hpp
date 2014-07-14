@@ -87,6 +87,8 @@ utils::CourseKeepingUA_CB CK_UA;
 utils::DPprimitive_CB DP_FA;
 utils::Go2PointFA_CB G2P_FA;
 utils::Go2PointUA_CB G2P_UA;
+utils::ISO_CB ISO;
+
 
 //typedef actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> Client;
 //actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> *ac_ptr;
@@ -136,7 +138,7 @@ namespace labust
 			void course_keeping_UA(bool enable, double course, double speed);
 
 			/* Self-oscillations identification */
-			void ISO(bool enable);
+			void ISOprimitive(bool enable, int dof, double command, double hysteresis, double reference, double sampling_rate);
 
 			/*********************************************************
 			 *** High Level Controllers
@@ -212,6 +214,8 @@ namespace labust
 			actionlib::SimpleActionClient<navcon_msgs::DynamicPositioningAction> ac3;
 			actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac4;
 			actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac5;
+			actionlib::SimpleActionClient<navcon_msgs::DOFIdentificationAction> ac6;
+
 		};
 
 	}
@@ -237,7 +241,8 @@ using namespace labust::controller;
 											ac2("go2point_UA", true),
 											ac3("DPprimitive", true),
 											ac4("course_keeping_FA", true),
-											ac5("course_keeping_UA", true)
+											ac5("course_keeping_UA", true),
+											ac6("Identification", true)
 	{
 
 	}
@@ -458,42 +463,41 @@ using namespace labust::controller;
 		}
 	}
 
-	void ControllerManager::ISO(bool enable){
+	void ControllerManager::ISOprimitive(bool enable, int dof, double command, double hysteresis, double reference, double sampling_rate){
 
-//		static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
-//
-//		if(enable){
-//
-//			ROS_INFO("Waiting for action server to start.");
-//			ac.waitForServer(); //will wait for infinite time
-//			ROS_INFO("Action server started, sending goal.");
-//
-//			LLcfg.LL_VELconfigure(true,2,2,0,0,0,2);
-//
-//			navcon_msgs::GoToPointGoal goal;
-//			goal.T1.point.x = north1;
-//			goal.T1.point.y = east1;
-//			goal.T2.point.x = north2;
-//			goal.T2.point.y = east2;
-//			goal.yaw = heading;
-//			goal.speed = speed;
-//			goal.radius = radius;
-//
-//
-//			ac.sendGoal(goal,
-//							boost::bind(&utils::Go2PointFA_CB::doneCb, G2P_FA, _1, _2),
-//							boost::bind(&utils::Go2PointFA_CB::activeCb, G2P_FA),
-//							boost::bind(&utils::Go2PointFA_CB::feedbackCb, G2P_FA, _1));
-//
-//		} else {
-//
-//			boost::this_thread::sleep(boost::posix_time::milliseconds(200));
-//			ac.cancelGoalsAtAndBeforeTime(ros::Time::now());
-//
-//			enableController("UALF_enable",false);
-//			enableController("HDG_enable",false);
-//			LLcfg.LL_VELconfigure(false,1,1,0,0,0,1);
-//		}
+		//static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
+
+		if(enable){
+
+			ROS_INFO("Waiting for action server to start.");
+			ac6.waitForServer(); //will wait for infinite time
+			ROS_INFO("Action server started, sending goal.");
+
+			int velcon[6] = {0,0,0,0,0,0};
+			velcon[dof] = 3;
+			LLcfg.LL_VELconfigure(true,velcon[0], velcon[1], velcon[2], velcon[3], velcon[4], velcon[5]);
+
+			navcon_msgs::DOFIdentificationGoal goal;
+			goal.command = command;
+			goal.dof = dof;
+			goal.hysteresis = hysteresis;
+			goal.reference = reference;
+			goal.sampling_rate = 0.1;
+
+			ac6.sendGoal(goal,
+							boost::bind(&utils::ISO_CB::doneCb, ISO, _1, _2),
+							boost::bind(&utils::ISO_CB::activeCb, ISO),
+							boost::bind(&utils::ISO_CB::feedbackCb, ISO, _1));
+
+		} else {
+
+			boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+			ac6.cancelGoalsAtAndBeforeTime(ros::Time::now());
+
+			enableController("UALF_enable",false);
+			enableController("HDG_enable",false);
+			LLcfg.LL_VELconfigure(false,1,1,0,0,0,1);
+		}
 
 	}
 

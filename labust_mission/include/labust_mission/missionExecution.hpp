@@ -135,11 +135,11 @@ namespace labust {
 
 		void MissionExecution::onDataEventsContainer(const misc_msgs::DataEventsContainer::ConstPtr& data){
 
-			/* Reset flag and counters */
-			int flag = 0, i = 0;
-
 			/* If primitve has active events */
 			if(checkEventFlag){
+
+				/* Reset flag and counters */
+				int flag = 0, i = 0;
 
 				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
 														it != receivedPrimitive.event.onEventNext.end(); ++it){

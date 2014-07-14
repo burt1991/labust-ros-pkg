@@ -83,6 +83,8 @@ namespace labust {
 
 			void courseKeepingUA(double course, double speed);
 
+			void ISOprimitive(int dof, double command, double hysteresis, double reference, double sampling_rate);
+
 			int parseMission(int id, string xmlFile);
 
 			int parseEvents(string xmlFile);
@@ -109,7 +111,10 @@ namespace labust {
 			 ****************************************************************/
 
 			int ID, lastID, eventID;
+			int newDOF;
 			double newXpos, newYpos, newVictoryRadius, newSpeed, newCourse, newHeading, newTimeout;
+			double newCommand, newHysteresis, newReference, newSamplingTime;
+
 
 			string xmlFile;
 			string missionEvents, missionParams;
@@ -134,7 +139,6 @@ namespace labust {
 				missionEvents(""){
 
 			/* Subscribers */
-//			subRequestPrimitive = nh.subscribe<std_msgs::Bool>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
 			subRequestPrimitive = nh.subscribe<std_msgs::UInt16>("requestPrimitive",1,&MissionParser::onRequestPrimitive, this);
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1,&MissionParser::onEventString, this);
 			subReceiveXmlPath = nh.subscribe<misc_msgs::StartParser>("startParse",1,&MissionParser::onReceiveXmlPath, this);
@@ -155,12 +159,10 @@ namespace labust {
 
 		void MissionParser::sendPrimitve(){
 
-
 			ROS_ERROR("%s",xmlFile.c_str());
 
 			ROS_ERROR("%d",ID);
 			int status = parseMission(ID, xmlFile);
-			//int status = 0;
 			ROS_ERROR("%s", primitives[status]);
 
 			switch(status){
@@ -184,6 +186,7 @@ namespace labust {
 					break;
 
 				case course_keeping_FA:
+
 					ROS_ERROR("Course = %f, Heading = %f, Speed = %f", newCourse, newHeading, newSpeed);
 					courseKeepingFA(newCourse, newHeading, newSpeed);
 					break;
@@ -192,6 +195,12 @@ namespace labust {
 
 					ROS_ERROR("Course = %f, Speed = %f", newCourse, newSpeed);
 					courseKeepingUA(newCourse, newSpeed);
+					break;
+
+				case iso:
+
+					ROS_ERROR("DOF = %d, command = %f, hysteresis = %f, reference = %f, sampling_rate = %f", newDOF, newCommand, newHysteresis, newReference, newSamplingTime);
+					ISOprimitive(newDOF, newCommand, newHysteresis, newReference, newSamplingTime);
 					break;
 
 				case none:
@@ -265,6 +274,18 @@ namespace labust {
 			serializePrimitive(course_keeping_UA, labust::utilities::serializeMsg(data));
 		}
 
+		void MissionParser::ISOprimitive(int dof, double command, double hysteresis, double reference, double sampling_rate){
+
+			misc_msgs::ISO data;
+			data.dof = dof;
+			data.command = command;
+			data.hysteresis = hysteresis;
+			data.reference = reference;
+			data.sampling_rate = sampling_rate;
+
+			serializePrimitive(iso, labust::utilities::serializeMsg(data));
+		}
+
 
 		/* Function for parsing primitives in XML mission file */
 		int MissionParser::parseMission(int id, string xmlFile){
@@ -316,8 +337,7 @@ namespace labust {
 
 								   XMLElement *elem2 = primitiveParam->ToElement();
 								   string primitiveParamName = elem2->Attribute("name");
-								   //ROS_ERROR("%s", primitiveParamName.c_str());
-								   std::string missionEvents = "";
+
 								   if(primitiveParamName.compare("north") == 0){
 
 									   evalExpr.request.expression = elem2->GetText();
@@ -398,7 +418,6 @@ namespace labust {
 
 								   XMLElement *elem2 = primitiveParam->ToElement();
 								   string primitiveParamName = elem2->Attribute("name");
-								   //ROS_ERROR("%s", primitiveParamName.c_str());
 
 								   if(primitiveParamName.compare("north") == 0){
 
@@ -436,11 +455,9 @@ namespace labust {
 
 								   XMLElement *elem2 = primitiveParam->ToElement();
 								   string primitiveParamName = elem2->Attribute("name");
-								   //ROS_ERROR("%s", primitiveParamName.c_str());
 
 								   if(primitiveParamName.compare("course") == 0){
 
-									  // newCourse = atof(elem2->GetText());
 									   evalExpr.request.expression = elem2->GetText();
 									   newCourse = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 
@@ -475,7 +492,6 @@ namespace labust {
 
 								   XMLElement *elem2 = primitiveParam->ToElement();
 								   string primitiveParamName = elem2->Attribute("name");
-								   //ROS_ERROR("%s", primitiveParamName.c_str());
 
 								   if(primitiveParamName.compare("course") == 0){
 
@@ -500,6 +516,49 @@ namespace labust {
 							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
 
 							   return course_keeping_UA;
+
+								/* Case: ISO ************************/
+							}else if (primitiveName.compare("iso") == 0){
+
+							   primitiveParam = primitive->FirstChildElement("param");
+							   do{
+
+								   XMLElement *elem2 = primitiveParam->ToElement();
+								   string primitiveParamName = elem2->Attribute("name");
+
+								   if(primitiveParamName.compare("dof") == 0){
+
+									   evalExpr.request.expression = elem2->GetText();
+									   newDOF = int((labust::utilities::callService(srvExprEval, evalExpr)).response.result);
+
+								   } else if(primitiveParamName.compare("command") == 0){
+
+									   evalExpr.request.expression = elem2->GetText();
+									   newCommand = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+
+								   } else if(primitiveParamName.compare("hysteresis") == 0){
+
+									   evalExpr.request.expression = elem2->GetText();
+									   newHysteresis = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+
+								   } else if(primitiveParamName.compare("reference") == 0){
+
+									   evalExpr.request.expression = elem2->GetText();
+									   newReference = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+
+								   } else if(primitiveParamName.compare("sampling_rate") == 0){
+
+									   evalExpr.request.expression = elem2->GetText();
+									   newSamplingTime = (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+
+								   } else if(primitiveParamName.compare("onEventNext") == 0){
+
+									   onEventNextParse(elem2);
+								   }
+
+							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
+
+							   return iso;
 						  }
 					   }
 				   } while(primitive = primitive->NextSiblingElement("primitive"));

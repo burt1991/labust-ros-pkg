@@ -242,6 +242,7 @@ struct ISO_CB {
 			   {
 
 				 ROS_ERROR("iso - Finished in state [%s]", state.toString().c_str());
+				 ROS_ERROR("Result - DOF: %d, alpha: %f, beta: %f, betaa: %f, delta %f, wn: %f", result->dof,result->alpha, result->beta, result->betaa, result->delta, result->wn);
 				 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 			   }
 
@@ -254,8 +255,6 @@ struct ISO_CB {
 			   // Called every time feedback is received for the goal
 			   void feedbackCb(const Feedback::ConstPtr& feedback)
 			   {
-				// ROS_INFO("Got Feedback of length %lu", feedback->sequence.size());
-				  // if((counter++)%10 == 0)
 				   ROS_ERROR("Feedback - dof: %d, error: %f, oscilation_num: %d", feedback->dof, feedback->error, feedback->oscillation_num);
 			   }
 		};

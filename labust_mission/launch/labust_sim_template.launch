@@ -78,6 +78,14 @@
 
    <node pkg="labust_sim" type="imu_sim" name="imu_sim">
   	<remap from="meas_odom" to="meas_odom_noisy" if="$(optenv USE_NOISE 0)" />
+   </node>	
+
+    <!-- ========================================================= -->
+    <!-- == DVL sensor simulation node =========================== -->
+    <!-- ========================================================= -->
+
+   <node pkg="labust_sim" type="dvl_sim" name="dvl_sim">
+  	<remap from="meas_odom" to="meas_odom_noisy" if="$(optenv USE_NOISE 0)" />
    </node>		
 
     <!-- ========================================================= -->

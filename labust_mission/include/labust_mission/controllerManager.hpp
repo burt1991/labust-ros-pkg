@@ -469,13 +469,37 @@ using namespace labust::controller;
 
 		if(enable){
 
+			//self.velconName = rospy.get_param("~velcon_name","velcon")
+			//self.model_update = rospy.Publisher("model_update", ModelParamsUpdate)
+			ros::NodeHandle ph("~");
+			string velconName;
+			ph.param<string>("velcon_name",velconName,"velcon");
+
+            const char *names[7] = {"Surge", "Sway", "Heave", "Roll", "Pitch", "Yaw", "Altitude"};
+
 			ROS_INFO("Waiting for action server to start.");
 			ac6.waitForServer(); //will wait for infinite time
 			ROS_INFO("Action server started, sending goal.");
 
+			/* configure velocity controller for identification */
 			int velcon[6] = {0,0,0,0,0,0};
-			velcon[dof] = 3;
+			if(dof == navcon_msgs::DOFIdentificationGoal::Altitude){
+				velcon[navcon_msgs::DOFIdentificationGoal::Heave] = 3;
+			} else {
+				velcon[dof] = 3;
+			}
+
+			string tmp = velconName + "/" + names[dof] + "_ident_amplitude";
+			nh_ptr->setParam(tmp.c_str(), command);
+			tmp.assign(velconName + "/" + names[dof] + "_ident_hysteresis");
+			nh_ptr->setParam(tmp.c_str(), hysteresis);
+			tmp.assign(velconName + "/" + names[dof] + "_ident_ref");
+			nh_ptr->setParam(tmp.c_str(), reference);
+
 			LLcfg.LL_VELconfigure(true,velcon[0], velcon[1], velcon[2], velcon[3], velcon[4], velcon[5]);
+
+			//ROS_ERROR("DOF = %d, command = %f, hysteresis = %f, reference = %f, sampling_rate = %f", dof, command, hysteresis, reference, sampling_rate);
+
 
 			navcon_msgs::DOFIdentificationGoal goal;
 			goal.command = command;
@@ -500,6 +524,17 @@ using namespace labust::controller;
 		}
 
 	}
+
+//    def onModelUpdate(self, result, use_linear):
+//        update = ModelParamsUpdate()
+//        update.dof = result.dof
+//        update.alpha = result.alpha
+//        update.beta = result.beta
+//        update.betaa = result.betaa
+//        update.delta = result.delta
+//        update.wn = result.wn
+//        update.use_linear = use_linear
+//        self.model_update.publish(update)
 
 	/*********************************************************
 	 * High Level Controllers

@@ -87,7 +87,7 @@
 	</node>-->
 
         <!-- Joystick -->
-        <include if="$(arg use_joy)" file="$(find labust_launchers)/launch/common/joy.launch"/>
+        <include file="$(find labust_launchers)/launch/common/joy.launch"/>
 
 
     <!-- ========================================================= -->

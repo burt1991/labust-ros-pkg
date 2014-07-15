@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>labust_allocation</name>
+  <version>0.0.60</version>
+  <description>
+      The package contains thruster allocation and thruster nonlinearity compensation. 
+   </description>
+
+  <maintainer email="dula.nad@gmail.com">Gyula Nagy</maintainer>
+  <license>BSD</license>
+  <url type="website">http://wiki.ros.org/labust_allocation</url>
+  <author email="dula.nad@gmail.com">Gyula Nagy</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>auv_msgs</build_depend>
+  <build_depend>nodelet</build_depend>
+  <build_depend>roscpp</build_depend>
+  
+  <run_depend>auv_msgs</run_depend>
+  <run_depend>nodelet</run_depend>
+  <run_depend>roscpp</run_depend>
+
+  <export>
+      <rosdoc config="rosdoc.yaml" />
+  </export>
+</package>

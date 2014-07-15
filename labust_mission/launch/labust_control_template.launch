@@ -134,7 +134,8 @@
             name="station_keeping">
 
 		    <remap from="Enable" to="FADP_enable" />
-		    <remap from="ref" to="TrackPoint" />
+		   <!-- <remap from="ref" to="TrackPoint" />  OVO JE DULA STAVIO U IZRAELU--> 
+		   
 
 		</node>
 

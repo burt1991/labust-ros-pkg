@@ -73,6 +73,7 @@
 #include <navcon_msgs/CourseKeepingAction.h>
 #include <navcon_msgs/DynamicPositioningAction.h>
 #include <navcon_msgs/GoToPointAction.h>
+#include <navcon_msgs/DOFIdentificationAction.h>
 
 /*********************************************************************
  ***  Global variables
@@ -86,6 +87,8 @@ utils::CourseKeepingUA_CB CK_UA;
 utils::DPprimitive_CB DP_FA;
 utils::Go2PointFA_CB G2P_FA;
 utils::Go2PointUA_CB G2P_UA;
+utils::ISO_CB ISO;
+
 
 //typedef actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> Client;
 //actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> *ac_ptr;
@@ -134,6 +137,9 @@ namespace labust
 			/* Course keeping underactuated  primitive */
 			void course_keeping_UA(bool enable, double course, double speed);
 
+			/* Self-oscillations identification */
+			void ISOprimitive(bool enable, int dof, double command, double hysteresis, double reference, double sampling_rate);
+
 			/*********************************************************
 			 *** High Level Controllers
 			 ********************************************************/
@@ -163,9 +169,6 @@ namespace labust
 			/* Low-level velocity controller */
 			void LL_VELcontroller(bool enable);
 
-			/* Self-oscillations identification */
-			void LL_ISO(bool enable);
-
 			/*********************************************************
 			 *** Helper functions
 			 ********************************************************/
@@ -176,9 +179,10 @@ namespace labust
 			/* Enable controller */
 			void enableController(const std::string serviceName, bool enable);
 
-			/* Get state estimates */
+			/* Get state estimates used in control loop */
 			void stateHatCallback(const auv_msgs::NavSts::ConstPtr& data);
 
+			/* Get absolute state estimates */
 			void stateHatAbsCallback(const auv_msgs::NavSts::ConstPtr& data);
 
 
@@ -204,6 +208,14 @@ namespace labust
 			ros::Subscriber subStateHat;
 			ros::Subscriber subStateHatAbs;
 			utils::LowLevelConfigure LLcfg;
+
+			actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac;
+			actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac2;
+			actionlib::SimpleActionClient<navcon_msgs::DynamicPositioningAction> ac3;
+			actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac4;
+			actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac5;
+			actionlib::SimpleActionClient<navcon_msgs::DOFIdentificationAction> ac6;
+
 		};
 
 	}
@@ -224,7 +236,13 @@ using namespace labust::controller;
 											LL_VELenable(false),
 											Xpos(0.0),
 											Ypos(0.0),
-											YawPos(0.0)
+											YawPos(0.0),
+											ac("go2point_FA", true),
+											ac2("go2point_UA", true),
+											ac3("DPprimitive", true),
+											ac4("course_keeping_FA", true),
+											ac5("course_keeping_UA", true),
+											ac6("Identification", true)
 	{
 
 	}
@@ -251,7 +269,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::go2point_FA(bool enable, double north1, double east1, double north2, double east2, double speed, double heading, double radius){
 
-		static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
 
 		if(enable){
 
@@ -292,7 +310,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::go2point_UA(bool enable, double north1, double east1, double north2, double east2, double speed, double radius){
 
-		static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac2("go2point_UA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac2("go2point_UA", true);
 
 		if(enable){
 
@@ -334,7 +352,7 @@ using namespace labust::controller;
 
 	void ControllerManager::dynamic_positioning(bool enable, double north, double east, double heading){
 
-		static actionlib::SimpleActionClient<navcon_msgs::DynamicPositioningAction> ac3("DPprimitive", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::DynamicPositioningAction> ac3("DPprimitive", true);
 
 		if(enable){
 
@@ -376,7 +394,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::course_keeping_FA(bool enable, double course, double speed, double heading){
 
-		static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac4("course_keeping_FA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac4("course_keeping_FA", true);
 
 		if(enable){
 
@@ -412,7 +430,7 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::course_keeping_UA(bool enable, double course, double speed){
 
-		static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac5("course_keeping_UA", true);
+		//static actionlib::SimpleActionClient<navcon_msgs::CourseKeepingAction> ac5("course_keeping_UA", true);
 
 		if(enable){
 
@@ -444,6 +462,79 @@ using namespace labust::controller;
 			LLcfg.LL_VELconfigure(false,1,1,0,0,0,1);
 		}
 	}
+
+	void ControllerManager::ISOprimitive(bool enable, int dof, double command, double hysteresis, double reference, double sampling_rate){
+
+		//static actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac("go2point_FA", true);
+
+		if(enable){
+
+			//self.velconName = rospy.get_param("~velcon_name","velcon")
+			//self.model_update = rospy.Publisher("model_update", ModelParamsUpdate)
+			ros::NodeHandle ph("~");
+			string velconName;
+			ph.param<string>("velcon_name",velconName,"velcon");
+
+            const char *names[7] = {"Surge", "Sway", "Heave", "Roll", "Pitch", "Yaw", "Altitude"};
+
+			ROS_INFO("Waiting for action server to start.");
+			ac6.waitForServer(); //will wait for infinite time
+			ROS_INFO("Action server started, sending goal.");
+
+			/* configure velocity controller for identification */
+			int velcon[6] = {0,0,0,0,0,0};
+			if(dof == navcon_msgs::DOFIdentificationGoal::Altitude){
+				velcon[navcon_msgs::DOFIdentificationGoal::Heave] = 3;
+			} else {
+				velcon[dof] = 3;
+			}
+
+			string tmp = velconName + "/" + names[dof] + "_ident_amplitude";
+			nh_ptr->setParam(tmp.c_str(), command);
+			tmp.assign(velconName + "/" + names[dof] + "_ident_hysteresis");
+			nh_ptr->setParam(tmp.c_str(), hysteresis);
+			tmp.assign(velconName + "/" + names[dof] + "_ident_ref");
+			nh_ptr->setParam(tmp.c_str(), reference);
+
+			LLcfg.LL_VELconfigure(true,velcon[0], velcon[1], velcon[2], velcon[3], velcon[4], velcon[5]);
+
+			//ROS_ERROR("DOF = %d, command = %f, hysteresis = %f, reference = %f, sampling_rate = %f", dof, command, hysteresis, reference, sampling_rate);
+
+
+			navcon_msgs::DOFIdentificationGoal goal;
+			goal.command = command;
+			goal.dof = dof;
+			goal.hysteresis = hysteresis;
+			goal.reference = reference;
+			goal.sampling_rate = sampling_rate;
+
+			ac6.sendGoal(goal,
+							boost::bind(&utils::ISO_CB::doneCb, ISO, _1, _2),
+							boost::bind(&utils::ISO_CB::activeCb, ISO),
+							boost::bind(&utils::ISO_CB::feedbackCb, ISO, _1));
+
+		} else {
+
+			boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+			ac6.cancelGoalsAtAndBeforeTime(ros::Time::now());
+
+			enableController("UALF_enable",false);
+			enableController("HDG_enable",false);
+			LLcfg.LL_VELconfigure(false,1,1,0,0,0,1);
+		}
+
+	}
+
+//    def onModelUpdate(self, result, use_linear):
+//        update = ModelParamsUpdate()
+//        update.dof = result.dof
+//        update.alpha = result.alpha
+//        update.beta = result.beta
+//        update.betaa = result.betaa
+//        update.delta = result.delta
+//        update.wn = result.wn
+//        update.use_linear = use_linear
+//        self.model_update.publish(update)
 
 	/*********************************************************
 	 * High Level Controllers

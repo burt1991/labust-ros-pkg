@@ -70,190 +70,49 @@ namespace labust {
 
 			EventEvaluation();
 
-			int checkEventState(auv_msgs::NavSts data, std::string expression_str);
+			vector<uint8_t> evaluateEvents(vector<string> events);
 
 			double evaluateStringExpression(std::string expression_str);
 
-			void updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table);
+			void updateSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames);
 
-			void onReceiveExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data);
+			void initializeSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames);
 
-			void setExternalEvents();
-
-			void onStateHat(const auv_msgs::NavSts::ConstPtr& data);
+			void resetSymbolTable();
 
 			/*********************************************************************
 			 ***  Class variables
 			 ********************************************************************/
 
-			ros::Subscriber subExternalEvents;
-			ros::Subscriber subStateHatAbs;
-
-
-			std::vector<misc_msgs::ExternalEvent> externalEventContainer;
-
-			double x,y,z,psi;
-
-		};
-
-		EventEvaluation::EventEvaluation():x(0.0),y(0.0),z(0.0),psi(0.0){
-
-			ros::NodeHandle nh;
-			subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",5, &EventEvaluation::onReceiveExternalEvent, this); // Ovdej si uvao promjenu s 5 na 1
-			subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &EventEvaluation::onStateHat, this);
-
-
-			externalEventContainer.resize(5); // 5 eksternih evenata
-
-			setExternalEvents();
-		}
-
-		int EventEvaluation::checkEventState(auv_msgs::NavSts data, std::string expression_str){
+		private:
 
 			symbol_table_t symbol_table;
-			//updateData(data, &symbol_table);
+		};
 
-			/* Read estimated values */
-			double u = data.body_velocity.x;
-			double v = data.body_velocity.y;
-			double w = data.body_velocity.z;
-			double r = data.orientation_rate.yaw;
-			 x = data.position.north;
-			 y = data.position.east;
-			 z = data.position.depth;
-			 psi = data.orientation.yaw;
+		EventEvaluation::EventEvaluation(){
 
-			double x_var = data.position_variance.north;
-			double y_var = data.position_variance.east;
-			double z_var = data.position_variance.depth;
-			double psi_var = data.orientation_variance.yaw;
-
-			double alt = data.altitude;
-
-			symbol_table.add_constants();
-
-			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
-
-				double value = (*it).value;
-				std::string eventName = (*it).description.c_str();
-
-				symbol_table.create_variable(eventName.c_str());
-				symbol_table.get_variable(eventName.c_str())->ref() = double(value);
-
-			}
-
-			symbol_table.add_variable("u",u);
-			symbol_table.add_variable("v",v);
-			symbol_table.add_variable("w",w);
-			symbol_table.add_variable("r",r);
-			symbol_table.add_variable("x",x);
-			symbol_table.add_variable("y",y);
-			symbol_table.add_variable("z",z);
-			symbol_table.add_variable("psi",psi);
-			symbol_table.add_variable("x_var",x_var);
-			symbol_table.add_variable("y_var",y_var);
-			symbol_table.add_variable("z_var",z_var);
-			symbol_table.add_variable("psi_var",psi_var);
-			symbol_table.add_variable("alt",alt);
-
-			expression_t expression;
-			expression.register_symbol_table(symbol_table);
-
-			parser_t parser;
-
-			//ROS_ERROR("vrijednost: %f",symbol_table.get_variable("event1")->value());
-
-			if (!parser.compile(expression_str,expression))
-			{
-			  ROS_ERROR("Error: %s\tExpression: %s\n",parser.error().c_str(),expression_str.c_str());
-
-			  for (std::size_t i = 0; i < parser.error_count(); ++i)
-			  {
-				 error_t error = parser.get_error(i);
-				 ROS_ERROR("Error: %02d Position: %02d Type: [%s] Msg: %s Expr: %s\n",
-						static_cast<int>(i),
-						static_cast<int>(error.token.position),
-						exprtk::parser_error::to_str(error.mode).c_str(),
-						error.diagnostic.c_str(),
-						expression_str.c_str());
-			  }
-			  return -1;
-			}
-
-			double result = expression.value();
-
-			//ROS_ERROR("RESULT: %10.5f\n",result);
-			if(result == 1)
-				return 1;
-			else
-				return 0;
 		}
+
+		vector<uint8_t> EventEvaluation::evaluateEvents(vector<string> events){
+
+			vector<uint8_t> eventsState;
+
+			for(vector<string>::iterator it = events.begin(); it != events.end(); ++it){
+
+				uint8_t tmp = (evaluateStringExpression((*it).c_str()) == 1.0)?1:0;
+				eventsState.push_back(tmp);
+			}
+
+			return eventsState;
+		}
+
 
 		double EventEvaluation::evaluateStringExpression(std::string expression_str){
 
-			//ROS_ERROR("PROVJERAVAM STRING %s", expression_str.c_str());
-
-			symbol_table_t symbol_table;
-			//updateData(data, &symbol_table);
-
-			/* Read estimated values */
-//			double u = data.body_velocity.x;
-//			double v = data.body_velocity.y;
-//			double w = data.body_velocity.z;
-//			double r = data.orientation_rate.yaw;
-//			double x = data.position.north;
-//			double y = data.position.east;
-//			double z = data.position.depth;
-//			double psi = data.orientation.yaw;
-//
-//			double x_var = data.position_variance.north;
-//			double y_var = data.position_variance.east;
-//			double z_var = data.position_variance.depth;
-//			double psi_var = data.orientation_variance.yaw;
-//
-//			double alt = data.altitude;
-
-			symbol_table.add_constants();
-
-			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
-
-				double value = (*it).value;
-				std::string eventName = (*it).description.c_str();
-
-				symbol_table.create_variable(eventName.c_str());
-				symbol_table.get_variable(eventName.c_str())->ref() = double(value);
-			}
-
-//			symbol_table.add_variable("u",u);
-//			symbol_table.add_variable("v",v);
-//			symbol_table.add_variable("w",w);
-//			symbol_table.add_variable("r",r);
-			//ROS_ERROR("x: %f, y: %f", x, y);
-			symbol_table.add_variable("x",x);
-			symbol_table.add_variable("y",y);
-			symbol_table.add_variable("z",z);
-			symbol_table.add_variable("psi",psi);
-
-
-
-			//symbol_table.add_variable("course",course);
-
-			//symbol_table.add_variable("startLawnX",startLawnX);
-			//symbol_table.add_variable("startLawnY",startLawnY);
-
-
-//			symbol_table.add_variable("x_var",x_var);
-//			symbol_table.add_variable("y_var",y_var);
-//			symbol_table.add_variable("z_var",z_var);
-//			symbol_table.add_variable("psi_var",psi_var);
-//			symbol_table.add_variable("alt",alt);
-
 			expression_t expression;
 			expression.register_symbol_table(symbol_table);
 
 			parser_t parser;
-
-			//ROS_ERROR("vrijednost: %f",symbol_table.get_variable("event1")->value());
 
 			if (!parser.compile(expression_str,expression))
 			{
@@ -272,100 +131,68 @@ namespace labust {
 			  return -1;
 			}
 
-			//ROS_ERROR(" expression Value %f", expression.value());
-			//course = expression.value(); /////////////// TEMP ////////////////////////////////////////////////////////////////7
-			return  expression.value();
-
+			return expression.value();
 		}
 
-		void EventEvaluation::updateData(auv_msgs::NavSts data, symbol_table_t *symbol_table){
+		void EventEvaluation::initializeSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames){
 
-//			/* Read estimated values */
-//						double u = data.body_velocity.x;
-//						double v = data.body_velocity.y;
-//						double w = data.body_velocity.z;
-//						double r = data.orientation_rate.yaw;
-//						 x = data.position.north;
-//						 y = data.position.east;
-//						 z = data.position.depth;
-//						 psi = data.orientation.yaw;
-//
-//						double x_var = data.position_variance.north;
-//						double y_var = data.position_variance.east;
-//						double z_var = data.position_variance.depth;
-//						double psi_var = data.orientation_variance.yaw;
-//
-//						double alt = data.altitude;
-//
-//						symbol_table.add_constants();
-//
-//						for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
-//
-//							double value = (*it).value;
-//							std::string eventName = (*it).description.c_str();
-//
-//							symbol_table.create_variable(eventName.c_str());
-//							symbol_table.get_variable(eventName.c_str())->ref() = double(value);
-//
-//						}
-//
-//						symbol_table.add_variable("u",u);
-//						symbol_table.add_variable("v",v);
-//						symbol_table.add_variable("w",w);
-//						symbol_table.add_variable("r",r);
-//						symbol_table.add_variable("x",x);
-//						symbol_table.add_variable("y",y);
-//						symbol_table.add_variable("z",z);
-//						symbol_table.add_variable("psi",psi);
-//						symbol_table.add_variable("x_var",x_var);
-//						symbol_table.add_variable("y_var",y_var);
-//						symbol_table.add_variable("z_var",z_var);
-//						symbol_table.add_variable("psi_var",psi_var);
-//						symbol_table.add_variable("alt",alt);
+			symbol_table.add_constants();
 
-
-		}
-
-		void EventEvaluation::onReceiveExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data){
-
-			misc_msgs::ExternalEvent tmp;
-			tmp = externalEventContainer.at((data->id)-1);
-			tmp.id = data->id;
-			//tmp.description = data->description; // overwrites event name
-			tmp.value = data->value;
-			externalEventContainer.at((data->id)-1) = tmp;
-
-			//ROS_ERROR("EVENT: %d, VRIJEDNOST: %f", tmp.id, tmp.value);
-
-		}
-
-		void EventEvaluation::setExternalEvents(){
+			double tmp = 0.0;
+			symbol_table.add_variable("u",tmp);
+			symbol_table.add_variable("v",tmp);
+			symbol_table.add_variable("w",tmp);
+			symbol_table.add_variable("r",tmp);
+			symbol_table.add_variable("x",tmp);
+			symbol_table.add_variable("y",tmp);
+			symbol_table.add_variable("z",tmp);
+			symbol_table.add_variable("psi",tmp);
+			symbol_table.add_variable("x_var",tmp);
+			symbol_table.add_variable("y_var",tmp);
+			symbol_table.add_variable("z_var",tmp);
+			symbol_table.add_variable("psi_var",tmp);
+			symbol_table.add_variable("alt",tmp);
 
 			int i = 0;
+			for(vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
-			for(std::vector<misc_msgs::ExternalEvent>::iterator it = externalEventContainer.begin() ; it != externalEventContainer.end(); ++it){
-				std::string externName = "event";
-				i++;
-				externName.append(static_cast<ostringstream*>( &(ostringstream() << i) )->str());
+				string varName = missionVarNames[i++];
 
-				(*it).id = i;
-				(*it).description = externName.c_str();
-				(*it).value = 0;
-				ROS_ERROR("%d, %s",i,externName.c_str());
+				symbol_table.create_variable(varName.c_str());
+				symbol_table.get_variable(varName.c_str())->ref() = double(tmp);
 			}
 		}
 
+		void EventEvaluation::updateSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames){
 
-		void EventEvaluation::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
+			symbol_table.get_variable("u")->ref() = stateVar[u];
+			symbol_table.get_variable("v")->ref() = stateVar[v];
+			symbol_table.get_variable("w")->ref() = stateVar[w];
+			symbol_table.get_variable("r")->ref() = stateVar[r];
+			symbol_table.get_variable("x")->ref() = stateVar[x];
+			symbol_table.get_variable("y")->ref() = stateVar[y];
+			symbol_table.get_variable("z")->ref() = stateVar[z];
+			symbol_table.get_variable("psi")->ref() = stateVar[psi];
+			symbol_table.get_variable("x_var")->ref() = stateVar[x_var];
+			symbol_table.get_variable("y_var")->ref() = stateVar[y_var];
+			symbol_table.get_variable("z_var")->ref() = stateVar[z_var];
+			symbol_table.get_variable("psi_var")->ref() = stateVar[psi_var];
+			symbol_table.get_variable("alt")->ref() = stateVar[alt];
 
-			 x = data->position.north;
-			 y = data->position.east;
-			 z = data->position.depth;
-			 psi = data->orientation.yaw;
+			int i = 0;
+			for(std::vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
+				string varName = missionVarNames[i++];
+
+				double value = (*it);
+				symbol_table.get_variable(varName.c_str())->ref() = double(value);
+			}
+		}
+
+		void EventEvaluation::resetSymbolTable(){
+			symbol_table.clear();
 		}
 	}
 }
-
 
 #endif /* EVENTEVALUATION_HPP_ */

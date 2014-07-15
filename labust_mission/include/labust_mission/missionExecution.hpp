@@ -45,7 +45,6 @@
 
 
 #include <labust_mission/labustMission.hpp>
-#include <labust_mission/eventEvaluation.hpp>
 #include <exprtk/exprtk.hpp>
 
 #include <decision_making/SynchCout.h>
@@ -81,6 +80,8 @@ namespace labust {
 
 			void onStateHat(const auv_msgs::NavSts::ConstPtr& data);
 
+			void onDataEventsContainer(const misc_msgs::DataEventsContainer::ConstPtr& data);
+
 			void onEventString(const std_msgs::String::ConstPtr& msg);
 
 			void onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data);
@@ -88,9 +89,6 @@ namespace labust {
 			/*********************************************************************
 			 *** Helper functions
 			 ********************************************************************/
-
-			template <typename primitiveType>
-			primitiveType deserializePrimitive(std::vector<uint8_t> primitiveData);
 
 			void requestPrimitive();
 
@@ -103,25 +101,17 @@ namespace labust {
 			 ********************************************************************/
 
 			ros::NodeHandle nh_;
-
-			misc_msgs::SendPrimitive receivedPrimitive;
+			ros::Timer timer;
 			ros::Publisher pubRequestPrimitive;
-
-			ros::Subscriber subStateHatAbs;
-			ros::Subscriber subEventString;
-			ros::Subscriber subReceivePrimitive;
+			ros::Subscriber subDataEventsContainer, subEventString, subReceivePrimitive;
 
 			auv_msgs::NED oldPosition; /* Remember last primitive end point */
-
-			ros::Timer timer;
-
-			labust::event::EventEvaluation EE;
+			misc_msgs::SendPrimitive receivedPrimitive;
 
 			bool checkEventFlag;
-
 			int nextPrimitive;
 
-			std::vector<std::string> eventsActive;
+			vector<string> eventsActive;
 		};
 
 		/*****************************************************************
@@ -131,101 +121,52 @@ namespace labust {
 		MissionExecution::MissionExecution(ros::NodeHandle& nh):checkEventFlag(false),nextPrimitive(1){
 
 			/* Subscribers */
-			subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &MissionExecution::onStateHat, this);
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1, &MissionExecution::onEventString, this);
 			subReceivePrimitive = nh.subscribe<misc_msgs::SendPrimitive>("sendPrimitive",1, &MissionExecution::onReceivePrimitive, this);
+			subDataEventsContainer = nh.subscribe<misc_msgs::DataEventsContainer>("dataEventsContainer",1, &MissionExecution::onDataEventsContainer, this);
 
 			/* Publishers */
-			//pubRequestPrimitive = nh.advertise<std_msgs::Bool>("requestPrimitive",1);
 			pubRequestPrimitive = nh.advertise<std_msgs::UInt16>("requestPrimitive",1);
-
 		}
 
 		/*****************************************************************
 		 ***  ROS Subscriptions Callback
 		 ****************************************************************/
 
-
-		/* On stateHat check if any of active events is true */
-		void MissionExecution::onStateHat(const auv_msgs::NavSts::ConstPtr& data){
-
-			/* Reset flag and counters */
-			int flag  = 0;
-			int i = 0;
+		void MissionExecution::onDataEventsContainer(const misc_msgs::DataEventsContainer::ConstPtr& data){
 
 			/* If primitve has active events */
 			if(checkEventFlag){
+
+				/* Reset flag and counters */
+				int flag = 0, i = 0;
 
 				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
 														it != receivedPrimitive.event.onEventNext.end(); ++it){
 
 					/* For each primitive event check if it is true */
-					if(EE.checkEventState(*data, eventsActive[i++].c_str()) == 1){
+					if(data->eventsVar[receivedPrimitive.event.onEventNextActive[i++]-1] == 1){
 						flag = 1;
 						nextPrimitive = *it;
+						ROS_ERROR("Aktivan event: %d", receivedPrimitive.event.onEventNextActive[i-1]);
+						checkEventFlag = false;
+						mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 					}
-					ROS_ERROR("%s",  eventsActive[i-1].c_str());
 
-					/* First true event has prioritiy */
+					/* First true event has priority */
 					if (flag) break;
 				}
-
-
-				if(flag == 1){
-					//ROS_ERROR("Event active");
-					checkEventFlag = false;
-					mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
-
-				} else if(flag == -1){
-					ROS_ERROR("Event Parser Error");
-					checkEventFlag = false;
-					nextPrimitive = 1;
-					mainEventQueue->riseEvent("/STOP");
-				}
 			}
-		}
-
-		void MissionExecution::onEventString(const std_msgs::String::ConstPtr& msg){
-
-			mainEventQueue->riseEvent(msg->data.c_str());
-			ROS_INFO("EventString: %s",msg->data.c_str());
-			if(strcmp(msg->data.c_str(),"/STOP") == 0){
-				checkEventFlag = false;
-				nextPrimitive = 1;
-			}
-		}
-
-		//////////////////////////////////////////////////////7777
-		//// SREDI OVO
-        /////////////////////////////////////////////////////////////7
-		std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
-			std::stringstream ss(s);
-			std::string item;
-			while (std::getline(ss, item, delim)) {
-				if(!item.empty()){
-					elems.push_back(item);
-				}
-			}
-			return elems;
-		}
-
-		std::vector<std::string> split(const std::string &s, char delim) {
-			std::vector<std::string> elems;
-			split(s, delim, elems);
-			return elems;
 		}
 
 		/* */
 		void MissionExecution::onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data){
 
-			eventsActive.clear();
 			receivedPrimitive = *data;
 
 			/* Check if received primitive has active events */
-			if(receivedPrimitive.event.onEventStop.empty() == 0){
+			if(receivedPrimitive.event.onEventNextActive.empty() == 0){
 				checkEventFlag = true;
-				eventsActive = split(receivedPrimitive.event.onEventStop.c_str(), ':');
-				ROS_ERROR("Primitive has following active states: %s", receivedPrimitive.event.onEventStop.c_str());
 			}
 
 			/* Call primitive */
@@ -256,6 +197,11 @@ namespace labust {
 					mainEventQueue->riseEvent("/COURSE_KEEPING_UA");
 					break;
 
+				case iso:
+
+					mainEventQueue->riseEvent("/ISO");
+					break;
+
 				case none:
 
 					ROS_ERROR("Mission ended.");
@@ -263,33 +209,19 @@ namespace labust {
 			}
 		}
 
+		void MissionExecution::onEventString(const std_msgs::String::ConstPtr& msg){
+
+			mainEventQueue->riseEvent(msg->data.c_str());
+			ROS_INFO("EventString: %s",msg->data.c_str());
+			if(strcmp(msg->data.c_str(),"/STOP") == 0){
+				checkEventFlag = false;
+				nextPrimitive = 1;
+			}
+		}
+
 		/*********************************************************************
 		 *** Helper functions
 		 ********************************************************************/
-
-		template <typename primitiveType>
-		primitiveType MissionExecution::deserializePrimitive(std::vector<uint8_t> primitiveData){
-
-			std::vector<uint8_t> my_buffer;
-			primitiveType my_primitive;
-
-			my_buffer = primitiveData;
-
-			uint32_t serial_size = ros::serialization::serializationLength(my_primitive);
-
-			uint8_t *iter = &my_buffer.front();
-
-			ser::IStream stream(iter, serial_size);
-			ser::deserialize(stream, my_primitive);
-
-			return my_primitive;
-		}
-
-//		void MissionExecution::requestPrimitive(){
-//			std_msgs::Bool req;
-//			req.data = true;
-//			pubRequestPrimitive.publish(req);
-//		}
 
 		void MissionExecution::requestPrimitive(){
 			std_msgs::UInt16 req;

@@ -5,13 +5,15 @@ project(labust_allocation)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  std_msgs
   auv_msgs
   nodelet
+  snippets
   roscpp
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Eigen REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -23,10 +25,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES labust_allocation
+  INCLUDE_DIRS include
+  LIBRARIES labust_allocation
 #  CATKIN_DEPENDS auv_msgs nodelet roscpp
-#  DEPENDS system_lib
+  DEPENDS eigen
 )
 
 ###########
@@ -35,15 +37,16 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
 include_directories(
+  include
+  ${Eigen_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-# add_library(labust_allocation
-#   src/${PROJECT_NAME}/labust_allocation.cpp
-# )
+## The main project 
+file(GLOB SRC src/${PROJECT_NAME}/*.cpp)
+file(GLOB HPP include/labust/allocation/*.hpp) 
+add_library(labust_allocation ${SRC} ${HPP})
 
 ## Declare a cpp executable
 # add_executable(labust_allocation_node src/labust_allocation_node.cpp)
@@ -56,6 +59,14 @@ include_directories(
 # target_link_libraries(labust_allocation_node
 #   ${catkin_LIBRARIES}
 # )
+
+##########
+## Docs ##
+##########
+add_custom_target(docs_${PROJECT_NAME} 
+  rosdoc_lite -o ${CATKIN_DEVEL_PREFIX}/docs/${PROJECT_NAME} 
+  ${CMAKE_CURRENT_LIST_DIR}
+)
 
 #############
 ## Install ##
@@ -72,18 +83,18 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS labust_allocation labust_allocation_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS labust_allocation
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(DIRECTORY include/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+   PATTERN ".svn" EXCLUDE
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>ident_so</name>
-  <version>0.5.0</version>
+  <version>0.0.60</version>
   <description>
       The package contains the library implementation of the closed-loop 
       vehicle model identification by use of self-oscillations. The 
@@ -10,7 +10,7 @@
 
   <maintainer email="dula.nad@gmail.com">Gyula Nagy</maintainer>
   <license>BSD</license>
-  <!-- <url type="website">http://ros.org/wiki/ident_so</url> -->
+  <url type="website">http://ros.org/wiki/ident_so</url>
   <author email="dula.nad@gmail.com">Gyula Nagy</author>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -24,7 +24,6 @@
   <run_depend>actionlib</run_depend>
   
   <export>
-	<!-- <labust_sim plugin="${prefix}/plugins.xml" /> -->
 	<rosdoc config="rosdoc.yaml" />
   </export>
 </package>

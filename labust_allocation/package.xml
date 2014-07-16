@@ -13,15 +13,19 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   
+  <build_depend>std_msgs</build_depend>
   <build_depend>auv_msgs</build_depend>
   <build_depend>nodelet</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>snippets</build_depend>
   
+  <run_depend>std_msgs</run_depend>
   <run_depend>auv_msgs</run_depend>
   <run_depend>nodelet</run_depend>
   <run_depend>roscpp</run_depend>
 
   <export>
-      <rosdoc config="rosdoc.yaml" />
+      <rosdoc config="{prefix}/rosdoc.yaml" />
+      <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 </package>

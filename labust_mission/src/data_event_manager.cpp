@@ -73,15 +73,12 @@ public:
 
 		/* Update all data in DataManager */
 		DM.updateStateVar(data);
-		//ROS_ERROR("update debug");
 
 		if(missionLoaded){
 			/* Update EventEvaluation symbol table and evaluate events */
 			EE.updateSymbolTable(DM.getStateVar(),DM.getMissionVar(),DM.getMissionVarNames());
-			//ROS_ERROR("debug0");
 			DM.updateEventsVar(EE.evaluateEvents(eventsContainer));
 
-			//ROS_ERROR("prosao");
 			/* Publish events data and events states */
 			publishDataEvent(DM.getStateVar(), DM.getMissionVar(), DM.getEventsVar());
 		}
@@ -127,11 +124,9 @@ public:
 		}
 	}
 
-
 	/* Service that evaluates string expression */
 	bool expressionEvaluationService(misc_msgs::EvaluateExpression::Request &req, misc_msgs::EvaluateExpression::Response &res){
 
-		//ROS_ERROR("Evaluating string expression: %s", req.expression.c_str());
 		res.result = EE.evaluateStringExpression(req.expression);
 		return true;
 	}

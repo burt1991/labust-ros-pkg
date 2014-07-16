@@ -87,6 +87,7 @@ namespace labust {
 		private:
 
 			symbol_table_t symbol_table;
+			boost::mutex mtx;
 		};
 
 		EventEvaluation::EventEvaluation(){
@@ -109,6 +110,7 @@ namespace labust {
 
 		double EventEvaluation::evaluateStringExpression(std::string expression_str){
 
+			boost::mutex::scoped_lock lock(mtx);
 			expression_t expression;
 			expression.register_symbol_table(symbol_table);
 
@@ -139,21 +141,15 @@ namespace labust {
 			symbol_table.add_constants();
 
 			double tmp = 0.0;
-			symbol_table.add_variable("u",tmp);
-			symbol_table.add_variable("v",tmp);
-			symbol_table.add_variable("w",tmp);
-			symbol_table.add_variable("r",tmp);
-			symbol_table.add_variable("x",tmp);
-			symbol_table.add_variable("y",tmp);
-			symbol_table.add_variable("z",tmp);
-			symbol_table.add_variable("psi",tmp);
-			symbol_table.add_variable("x_var",tmp);
-			symbol_table.add_variable("y_var",tmp);
-			symbol_table.add_variable("z_var",tmp);
-			symbol_table.add_variable("psi_var",tmp);
-			symbol_table.add_variable("alt",tmp);
+			int i;
 
-			int i = 0;
+			for(i = 0; i < stateHatNum; i++ ){
+
+				symbol_table.create_variable(stateVarNames[i]);
+				symbol_table.get_variable(stateVarNames[i])->ref() = double(tmp);
+			}
+
+			i = 0;
 			for(vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
 				string varName = missionVarNames[i++];
@@ -165,21 +161,17 @@ namespace labust {
 
 		void EventEvaluation::updateSymbolTable(vector<double> stateVar, vector<double> missionVar, vector<string> missionVarNames){
 
-			symbol_table.get_variable("u")->ref() = stateVar[u];
-			symbol_table.get_variable("v")->ref() = stateVar[v];
-			symbol_table.get_variable("w")->ref() = stateVar[w];
-			symbol_table.get_variable("r")->ref() = stateVar[r];
-			symbol_table.get_variable("x")->ref() = stateVar[x];
-			symbol_table.get_variable("y")->ref() = stateVar[y];
-			symbol_table.get_variable("z")->ref() = stateVar[z];
-			symbol_table.get_variable("psi")->ref() = stateVar[psi];
-			symbol_table.get_variable("x_var")->ref() = stateVar[x_var];
-			symbol_table.get_variable("y_var")->ref() = stateVar[y_var];
-			symbol_table.get_variable("z_var")->ref() = stateVar[z_var];
-			symbol_table.get_variable("psi_var")->ref() = stateVar[psi_var];
-			symbol_table.get_variable("alt")->ref() = stateVar[alt];
+			boost::mutex::scoped_lock lock(mtx);
+			double tmp;
+			int i;
 
-			int i = 0;
+			for(i = 0; i < stateHatNum; i++){
+
+				tmp = stateVar[i];
+				symbol_table.get_variable(stateVarNames[i])->ref() = double(tmp);
+			}
+
+		    i = 0;
 			for(std::vector<double>::iterator it = missionVar.begin() ; it != missionVar.end(); ++it){
 
 				string varName = missionVarNames[i++];

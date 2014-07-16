@@ -127,6 +127,15 @@ target_link_libraries(ident_so
 target_link_libraries(test_ident
   ${catkin_LIBRARIES}
 )
+
+##########
+## Docs ##
+##########
+add_custom_target(docs_${PROJECT_NAME} 
+  rosdoc_lite -o ${CATKIN_DEVEL_PREFIX}/docs/${PROJECT_NAME} 
+  ${CMAKE_CURRENT_LIST_DIR}
+)
+
 #############
 ## Install ##
 #############

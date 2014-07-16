@@ -1,0 +1,9 @@
+<library path="lib/liblabust_allocation">
+  <class name="allocation/Scaling" 
+      type="labust::allocation::ScaleAllocation" 
+      base_class_type="nodelet::Nodelet">
+  <description>
+  	This is a scale allocation nodelet.
+  </description>
+  </class>
+</library>

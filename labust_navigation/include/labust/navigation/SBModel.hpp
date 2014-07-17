@@ -42,25 +42,19 @@
 #define SBMODEL_HPP_
 #include <labust/navigation/SSModel.hpp>
 
-namespace labust
-{
-  namespace navigation
-  {
+namespace labust{
+  namespace navigation{
     /**
      * This class implements a EKF filter for the single beacon navigation.
-     *
-     * \todo Extract the update method into a separate file for future use.
-     * \todo Extract the ModelParams to a snippet
      */
-    class SBModel : public SSModel<double>
-    {
+    class SBModel : public SSModel<double>{
+
     	typedef SSModel<double> Base;
     public:
       typedef vector input_type;
       typedef vector output_type;
 
-      struct ModelParams
-      {
+      struct ModelParams{
     	  ModelParams():
     		  alpha(1),
     		  beta(1),
@@ -71,30 +65,17 @@ namespace labust
     		  beta(beta),
     		  betaa(betaa){}
 
-    	  inline double Beta(double val)
-    	  {
+    	  inline double Beta(double val){
     		  return beta + betaa*fabs(val);
     	  }
 
     	  double alpha, beta, betaa;
       };
 
-      //enum {u=0,v,w,p,q,r,xp,yp,zp,phi,theta,psi,xc,yc,b,buoyancy,roll_restore,pitch_restore,altitude, stateNum};
-      enum {u=0,v,r,xp,yp,psi,xc,yc,ub,vb,xb,yb,psib,stateNum}; // vektor stanja bez rb
+      enum {u=0,v,r,xp,yp,psi,xc,yc,buoyancy,b,ub,vb,rb,xb,yb,psib,stateNum}; /* State vector - Full */
+      enum {um=0,vm,zm,psim,dm,ubm,vbm,rbm,xbm,ybm,psibm,measSize}; /* Measurement vector */
+      enum {X=0,Y,Z,N,inputSize}; /* Input vector */
 
-      enum {um=0,vm,psim,d,ubm,vbm,xbm,ybm,psibm,measNum}; // vektor mjerenja
-
-
-      //enum {stateNum = 12};
-//      enum {inputSize = 6};
-//      enum {measSize = 7};
-
-      enum {inputSize = 3};
-      enum {measSize = 9};
-
-      //\todo See how to deal with K_roll
-      enum {X=0,Y,Z,Kroll,M,N};
-        
       /**
        * The default constructor.
        */

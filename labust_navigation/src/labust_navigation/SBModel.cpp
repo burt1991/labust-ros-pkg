@@ -33,11 +33,13 @@
 *
 *  Created on: Feb 25, 2013
 *  Author: Dula Nad
+*
+*  Modified by: Filip Mandic
 *********************************************************************/
 #include <labust/navigation/SBModel.hpp>
 
-#include <boost/numeric/ublas/banded.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
+//#include <boost/numeric/ublas/banded.hpp>
+//#include <boost/numeric/ublas/matrix_proxy.hpp>
 
 using namespace labust::navigation;
 
@@ -65,18 +67,18 @@ void SBModel::initModel()
   //std::cout<<"R:"<<R<<"\n"<<V<<std::endl;
 }
 
-void SBModel::calculateXYInovationVariance(const LDTravModel::matrix& P, double& xin,double &yin)
+void SBModel::calculateXYInovationVariance(const SBModel::matrix& P, double& xin,double &yin)
 {
 	xin = sqrt(P(xp,xp)) + sqrt(R0(xp,xp));
 	yin = sqrt(P(yp,yp)) + sqrt(R0(yp,yp));
 }
 
-double SBModel::calculateAltInovationVariance(const LDTravModel::matrix& P)
+double SBModel::calculateAltInovationVariance(const SBModel::matrix& P)
 {
 	return sqrt(P(altitude,altitude)) + sqrt(R0(altitude,altitude));
 }
 
-void SBModel::calculateUVInovationVariance(const LDTravModel::matrix& P, double& uin,double &vin)
+void SBModel::calculateUVInovationVariance(const SBModel::matrix& P, double& uin,double &vin)
 {
 	uin = sqrt(P(u,u)) + sqrt(R0(v,v));// Greska???
 	vin = sqrt(P(v,v)) + sqrt(R0(v,v));
@@ -212,7 +214,7 @@ void SBModel::derivativeAW()
 	//enum {u=0,v,r,xp,yp,psi,xc,yc,ub,vb,xb,yb,psib,stateNum};
 }
 
-const LDTravModel::output_type& SBModel::update(vector& measurements, vector& newMeas)
+const SBModel::output_type& SBModel::update(vector& measurements, vector& newMeas)
 {
 	std::vector<size_t> arrived;
 	std::vector<double> dataVec;

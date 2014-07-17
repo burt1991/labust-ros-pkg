@@ -80,6 +80,7 @@ add_library(labust_navigation
    src/labust_navigation/XYModel.cpp
    src/labust_navigation/SensorHandlers.cpp
    src/labust_navigation/LDTravModelExtended.cpp
+   src/labust_navigation/SBModel.cpp
 )
 
 ## Declare a cpp executable
@@ -94,6 +95,7 @@ add_executable(static_transform_publisher src/static_transform_publisher/static_
 #add_executable(ekf3d_node src/EKF3D.cpp src/LDTravModelExtended.cpp
 #	include/labust/navigation/LDTravModelExtended.hpp)
 add_executable(ekf3d_node src/nav_node/EKF3D.cpp)
+add_executable(ekf_sb_node src/nav_node/EKF_SB.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(labust_navigation_node labust_navigation_generate_messages_cpp)
@@ -105,6 +107,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(llnode ${catkin_EXPORTED_TARGETS})
  add_dependencies(static_transform_publisher ${catkin_EXPORTED_TARGETS})
  add_dependencies(ekf3d_node ${catkin_EXPORTED_TARGETS})
+ add_dependencies(ekf_sb_node ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Specify libraries to link a library or executable target against
@@ -119,6 +122,7 @@ target_link_libraries(nav_node2 ${catkin_LIBRARIES} labust_navigation)
 target_link_libraries(llnode ${catkin_LIBRARIES})
 target_link_libraries(static_transform_publisher ${catkin_LIBRARIES})
 target_link_libraries(ekf3d_node ${catkin_LIBRARIES} labust_navigation)
+target_link_libraries(ekf_sb_node ${catkin_LIBRARIES} labust_navigation)
 
 #############
 ## Install ##

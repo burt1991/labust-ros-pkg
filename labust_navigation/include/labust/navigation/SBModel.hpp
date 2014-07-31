@@ -40,6 +40,8 @@
 *********************************************************************/
 #ifndef SBMODEL_HPP_
 #define SBMODEL_HPP_
+
+//#include <>
 #include <labust/navigation/SSModel.hpp>
 
 namespace labust{
@@ -72,7 +74,7 @@ namespace labust{
     	  double alpha, beta, betaa;
       };
 
-      enum {u=0,v,r,xp,yp,psi,xc,yc,buoyancy,b,ub,vb,rb,xb,yb,psib,stateNum}; /* State vector - Full */
+      enum {u=0,v,w,r,xp,yp,zp,psi,xc,yc,buoyancy,b,ub,vb,rb,xb,yb,psib,stateNum}; /* State vector - Full */
       enum {um=0,vm,zm,psim,dm,ubm,vbm,rbm,xbm,ybm,psibm,measSize}; /* Measurement vector */
       enum {X=0,Y,Z,N,inputSize}; /* Input vector */
 

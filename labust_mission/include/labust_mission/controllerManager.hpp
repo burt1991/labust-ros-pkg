@@ -65,7 +65,7 @@
 #include <labust_mission/serviceCall.hpp>
 #include <labust_mission/lowLevelConfigure.hpp>
 
-#include <labust_uvapp/ConfigureVelocityController.h>
+#include <navcon_msgs/ConfigureVelocityController.h>
 
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
@@ -623,12 +623,12 @@ using namespace labust::controller;
 	void ControllerManager::LL_VELcontroller(bool enable){
 
 //		if(enable){
-//			utils::callService<labust_uvapp::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
+//			utils::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
 //		} else {
 //			for( int i = 0; i<=5; i++){
 //				velConConf.request.desired_mode[i] = 0;
 //			}
-//				utils::callService<labust_uvapp::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
+//				utils::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
 //		}
 	}
 

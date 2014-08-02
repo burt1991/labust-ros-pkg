@@ -120,8 +120,8 @@ void VelocityControl::onInit()
 	this->updateDynRecConfig();
 }
 
-bool VelocityControl::handleEnableControl(labust_uvapp::EnableControl::Request& req,
-		labust_uvapp::EnableControl::Response& resp)
+bool VelocityControl::handleEnableControl(navcon_msgs::EnableControl::Request& req,
+		navcon_msgs::EnableControl::Response& resp)
 {
 	if (!req.enable)
 	{
@@ -148,8 +148,8 @@ void VelocityControl::updateDynRecConfig()
 	server.updateConfig(config);
 }
 
-bool VelocityControl::handleServerConfig(labust_uvapp::ConfigureVelocityController::Request& req,
-		labust_uvapp::ConfigureVelocityController::Response& resp)
+bool VelocityControl::handleServerConfig(navcon_msgs::ConfigureVelocityController::Request& req,
+		navcon_msgs::ConfigureVelocityController::Response& resp)
 {
 	for (int i=0; i<req.desired_mode.size();++i)
 	{
@@ -208,7 +208,7 @@ void VelocityControl::handleModelUpdate(const navcon_msgs::ModelParamsUpdate::Co
 	PIFFController_tune(&controller[update->dof]);
 }
 
-void VelocityControl::dynrec_cb(labust_uvapp::VelConConfig& config, uint32_t level)
+void VelocityControl::dynrec_cb(navcon_msgs::VelConConfig& config, uint32_t level)
 {
 	this->config = config;
 

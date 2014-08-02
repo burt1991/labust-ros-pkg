@@ -18,7 +18,7 @@ from std_msgs.msg import Bool
 from auv_msgs.msg import Bool6Axis
 from navcon_msgs.srv import EnableControl
 from navcon_msgs.srv import ConfigureAxes
-from labust_uvapp.srv import ConfigureVelocityController
+from navcon_msgs.srv import ConfigureVelocityController
 
 class SimManGui(QtGui.QWidget):
     def __init__(self):

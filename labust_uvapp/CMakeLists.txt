@@ -50,7 +50,7 @@ find_package(catkin REQUIRED COMPONENTS
 ###################################################
 ## Dynamic reconfigure
 ###################################################
-generate_dynamic_reconfigure_options(cfg/VelCon.cfg)
+#generate_dynamic_reconfigure_options(cfg/VelCon.cfg)
 
 ###################################################
 ## Declare things to be passed to other projects ##

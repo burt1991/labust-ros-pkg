@@ -60,8 +60,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES labust_control
+   INCLUDE_DIRS include
+   LIBRARIES pidtoolkit2
    CATKIN_DEPENDS auv_msgs roscpp snippets navcon_msgs sensor_msgs
 #  DEPENDS system_lib
 )

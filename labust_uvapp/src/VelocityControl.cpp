@@ -41,6 +41,7 @@
 #include <labust/tools/DynamicsLoader.hpp>
 #include <labust/math/NumberManipulation.hpp>
 #include <labust/tools/conversions.hpp>
+#include <labust/control/PIFFController.h>
 
 #include <auv_msgs/BodyForceReq.h>
 #include <boost/bind.hpp>
@@ -156,7 +157,7 @@ bool VelocityControl::handleServerConfig(navcon_msgs::ConfigureVelocityControlle
 		if (axis_control[i] != req.desired_mode[i])
 		{
 			axis_control[i] = req.desired_mode[i];
-			controller[i].integratorState = 0;
+			controller[i].internalState = 0;
 		}
 	}
 	this->updateDynRecConfig();
@@ -192,20 +193,20 @@ void VelocityControl::handleManual(const sensor_msgs::Joy::ConstPtr& joy)
 void VelocityControl::handleModelUpdate(const navcon_msgs::ModelParamsUpdate::ConstPtr& update)
 {
 	ROS_INFO("Updating controller parameters for %d DoF",update->dof);
-	controller[update->dof].modelParams[alpha] = update->alpha;
+	controller[update->dof].model.alpha = update->alpha;
 	if (update->use_linear)
 	{
-		controller[update->dof].modelParams[beta] = update->beta;
-		controller[update->dof].modelParams[betaa] = 0;
+		controller[update->dof].model.beta = update->beta;
+		controller[update->dof].model.betaa = 0;
 	}
 	else
 	{
-		controller[update->dof].modelParams[beta] = 0;
-		controller[update->dof].modelParams[betaa] = update->betaa;
+		controller[update->dof].model.beta = 0;
+		controller[update->dof].model.betaa = update->betaa;
 	}
 
 	//Tune controller
-	PIFFController_tune(&controller[update->dof]);
+	PIFF_modelTune(&controller[update->dof], &controller[update->dof].model, controller[update->dof].w);
 }
 
 void VelocityControl::dynrec_cb(navcon_msgs::VelConConfig& config, uint32_t level)
@@ -228,19 +229,19 @@ void VelocityControl::dynrec_cb(navcon_msgs::VelConConfig& config, uint32_t leve
 
 void VelocityControl::handleWindup(const auv_msgs::BodyForceReq::ConstPtr& tau)
 {
-	if (!controller[u].autoTracking) controller[u].tracking = tau->wrench.force.x;
-	if (!controller[v].autoTracking) controller[v].tracking = tau->wrench.force.y;
-	if (!controller[w].autoTracking) controller[w].tracking = tau->wrench.force.z;
-	if (!controller[p].autoTracking) controller[p].tracking = tau->wrench.torque.x;
-	if (!controller[q].autoTracking) controller[q].tracking = tau->wrench.torque.y;
-	if (!controller[r].autoTracking) controller[r].tracking = tau->wrench.torque.z;
+	if (!controller[u].autoWindup) controller[u].extWindup = tau->wrench.force.x;
+	if (!controller[v].autoWindup) controller[v].extWindup = tau->wrench.force.y;
+	if (!controller[w].autoWindup) controller[w].extWindup = tau->wrench.force.z;
+	if (!controller[p].autoWindup) controller[p].extWindup = tau->wrench.torque.x;
+	if (!controller[q].autoWindup) controller[q].extWindup = tau->wrench.torque.y;
+	if (!controller[r].autoWindup) controller[r].extWindup = tau->wrench.torque.z;
 
-	if (!controller[u].autoTracking) controller[u].windup = tau->disable_axis.x;
-	if (!controller[v].autoTracking) controller[v].windup = tau->disable_axis.y;
-	if (!controller[w].autoTracking) controller[w].windup = tau->disable_axis.z;
-	if (!controller[p].autoTracking) controller[p].windup = tau->disable_axis.roll;
-	if (!controller[q].autoTracking) controller[q].windup = tau->disable_axis.pitch;
-	if (!controller[r].autoTracking) controller[r].windup = tau->disable_axis.yaw;
+	if (!controller[u].autoWindup) controller[u].windup = tau->disable_axis.x;
+	if (!controller[v].autoWindup) controller[v].windup = tau->disable_axis.y;
+	if (!controller[w].autoWindup) controller[w].windup = tau->disable_axis.z;
+	if (!controller[p].autoWindup) controller[p].windup = tau->disable_axis.roll;
+	if (!controller[q].autoWindup) controller[q].windup = tau->disable_axis.pitch;
+	if (!controller[r].autoWindup) controller[r].windup = tau->disable_axis.yaw;
 };
 
 void VelocityControl::handleExt(const auv_msgs::BodyForceReq::ConstPtr& tau)
@@ -326,13 +327,12 @@ double VelocityControl::doIdentification(int i)
 	if (ident[i]->isFinished())
 	{
 		//Get parameters
-		SOIdentification::ParameterContainer params;
-		ident[i]->parameters(&params);
-		controller[i].modelParams[alpha] = params[SOIdentification::alpha];
-		controller[i].modelParams[beta] = params[SOIdentification::kx];
-		controller[i].modelParams[betaa] = params[SOIdentification::kxx];
+		const std::vector<double>& params = ident[i]->parameters();
+		controller[i].model.alpha = params[SOIdentification::alpha];
+		controller[i].model.beta = params[SOIdentification::kx];
+		controller[i].model.betaa = params[SOIdentification::kxx];
 		//Tune controller
-		PIFFController_tune(&controller[i]);
+		PIFF_modelTune(&controller[i], &controller[i].model, controller[i].w);
 		//Write parameters to server
 		XmlRpc::XmlRpcValue vparam;
 		vparam.setSize(SOIdentification::numParams);
@@ -392,14 +392,14 @@ void VelocityControl::step()
 					controller[i].desired,
 					controller[i].state,
 					controller[i].output);
-			PIFFController_step(&controller[i], Ts);
+			PIFF_step(&controller[i], Ts);
 			break;
 		case identAxis:
 			controller[i].output = externalIdent?tauExt[i]:doIdentification(i);
 			break;
 		case directAxis:
 			controller[i].output = controller[i].desired;
-			if (controller[i].autoTracking)
+			if (controller[i].autoWindup)
 			{
 				if (fabs(controller[i].desired) > controller[i].outputLimit)
 					controller[i].desired = controller[i].desired/fabs(controller[i].desired)*controller[i].outputLimit;
@@ -427,32 +427,32 @@ void VelocityControl::step()
 	tauach.wrench.torque.y = tau.wrench.torque.y;
 	tauach.wrench.torque.z = tau.wrench.torque.z;
 
-	if (controller[u].autoTracking)
+	if (controller[u].autoWindup)
 	{
 		tauach.disable_axis.x = controller[u].windup;
 		tauach.windup.x = controller[u].windup;
 	}
-	if (controller[v].autoTracking)
+	if (controller[v].autoWindup)
 	{
 		tauach.disable_axis.y = controller[v].windup;
 		tauach.windup.y = controller[v].windup;
 	}
-	if (controller[w].autoTracking)
+	if (controller[w].autoWindup)
 	{
 		tauach.disable_axis.z = controller[w].windup;
 		tauach.windup.z = controller[w].windup;
 	}
-	if (controller[p].autoTracking)
+	if (controller[p].autoWindup)
 	{
 		tauach.disable_axis.roll = controller[p].windup;
 		tauach.windup.roll = controller[p].windup;
 	}
-	if (controller[q].autoTracking)
+	if (controller[q].autoWindup)
 	{
 		tauach.disable_axis.pitch = controller[q].windup;
 		tauach.windup.pitch = controller[q].windup;
 	}
-	if (controller[r].autoTracking)
+	if (controller[r].autoWindup)
 	{
 		tauach.disable_axis.yaw = controller[r].windup;
 		tauach.windup.yaw = controller[r].windup;
@@ -491,8 +491,8 @@ void VelocityControl::initialize_controller()
 	labust::tools::getMatrixParam(nh,"velocity_controller/disable_axis", disAxis);
 	vector manAxis(vector::Ones());
 	labust::tools::getMatrixParam(nh,"velocity_controller/manual_axis", manAxis);
-	vector autoTracking(vector::Zero());
-	labust::tools::getMatrixParam(nh,"velocity_controller/auto_tracking", autoTracking);
+	vector autoWindup(vector::Zero());
+	labust::tools::getMatrixParam(nh,"velocity_controller/auto_tracking", autoWindup);
 
 	labust::simulation::DynamicsParams model;
 	labust::tools::loadDynamicsParams(nh,model);
@@ -505,28 +505,28 @@ void VelocityControl::initialize_controller()
 
 	for (int32_t i = u; i <=r; ++i)
 	{
-		PIDController_init(&controller[i]);
-		controller[i].closedLoopFreq = closedLoopFreq(i);
+		PIDBase_init(&controller[i]);
+		controller[i].w = closedLoopFreq(i);
 		controller[i].outputLimit = outputLimit(i);
-		controller[i].modelParams[alpha] = alphas(i);
-		controller[i].modelParams[beta] = model.Dlin(i,i);
-		controller[i].modelParams[betaa] = model.Dquad(i,i);
-		PIFFController_tune(&controller[i]);
-		controller[i].autoTracking = autoTracking(i);
+		controller[i].model.alpha = alphas(i);
+		controller[i].model.beta = model.Dlin(i,i);
+		controller[i].model.betaa = model.Dquad(i,i);
+		PIFF_modelTune(&controller[i], &controller[i].model, controller[i].w);
+		controller[i].autoWindup = autoWindup(i);
 
 		if (!manAxis(i)) axis_control[i] = controlAxis;
 		if (manAxis(i)) axis_control[i] = manualAxis;
 		if (disAxis(i)) axis_control[i] = disableAxis;
 		suspend_axis[i]=false;
 
-		ph.setParam(dofName[i]+"_Kp",controller[i].gains[Kp]);
-		ph.setParam(dofName[i]+"_Ki",controller[i].gains[Ki]);
+		ph.setParam(dofName[i]+"_Kp",controller[i].Kp);
+		ph.setParam(dofName[i]+"_Ki",controller[i].Ki);
 
 		ROS_INFO("Controller %d:",i);
-		ROS_INFO("ModelParams: %f %f %f",controller[i].modelParams[alpha], controller[i].modelParams[beta],
-				controller[i].modelParams[betaa]);
-		ROS_INFO("Gains: %f %f %f",controller[i].gains[Kp], controller[i].gains[Ki],
-				controller[i].gains[Kt]);
+		ROS_INFO("ModelParams: %f %f %f",controller[i].model.alpha, controller[i].model.beta,
+				controller[i].model.betaa);
+		ROS_INFO("Gains: %f %f %f",controller[i].Kp, controller[i].Ki,
+				controller[i].Kt);
 	}
 
 	ROS_INFO("Velocity controller initialized.");

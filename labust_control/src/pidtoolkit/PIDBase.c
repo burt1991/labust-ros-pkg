@@ -52,6 +52,7 @@ void PIDBase_init(PIDBase* self)
 	self->model.alpha = 0;
 	self->model.beta = 0;
 	self->model.betaa = 0;
+	self->w = 0;
 }
 
 float sat(float u, float low, float high)

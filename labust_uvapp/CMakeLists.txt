@@ -5,7 +5,7 @@ project(labust_uvapp)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS 
-    labust_base 
+    labust_control 
     std_msgs 
     auv_msgs 
     nav_msgs 
@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 	message_generation 
 	geometry_msgs
 	tf2_ros  
+	ident_so
 	snippets)
 
 ## System dependencies are found with CMake's conventions
@@ -88,7 +89,7 @@ add_executable(${PR_NAME}
 	src/velocity_control.cpp 
 	src/VelocityControl.cpp
 	include/labust/control/VelocityControl.hpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+target_link_libraries(${PR_NAME} ${catkin_LIBRARIES})
 
 #set(PR_NAME lf_control)
 #add_executable(${PR_NAME} 

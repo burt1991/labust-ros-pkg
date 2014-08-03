@@ -33,7 +33,7 @@
 *********************************************************************/
 #ifndef VELOCITYCONTROL_HPP_
 #define VELOCITYCONTROL_HPP_
-#include <labust/control/PIDController.h>
+#include <labust/control/PIDBase.h>
 #include <labust/control/SOIdentification.hpp>
 #include <navcon_msgs/VelConConfig.h>
 #include <navcon_msgs/ConfigureVelocityController.h>
@@ -165,7 +165,7 @@ namespace labust
 			/**
 			 * The velocity controllers.
 			 */
-			PIDController controller[r+1];
+			PIDBase controller[r+1];
 			/**
 			 * The identification controllers.
 			 */

@@ -12,10 +12,12 @@
   <author email="dula.nad@gmail.com">Gyula Nagy</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <run_depend>auv_msgs</run_depend>
+  <run_depend>ident_so</run_depend>
   <run_depend>labust_control</run_depend>
+  <run_depend>labust_execution</run_depend>
+  <run_depend>labust_mission</run_depend>
   <run_depend>labust_navigation</run_depend>
-  <run_depend>labust_uvapp</run_depend>
+  <run_depend>labust_primitives</run_depend>
 
   <export>
     <metapackage/>

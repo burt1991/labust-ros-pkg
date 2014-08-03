@@ -13,7 +13,7 @@ import labust_gui
 from python_qt_binding import loadUi, QtCore, QtGui
 from qt_gui.plugin import Plugin
 
-from labust_uvapp.srv import ConfigureVelocityController
+from navcon_msgs.srv import ConfigureVelocityController
 from navcon_msgs.msg import DOFIdentificationAction, DOFIdentificationGoal
 from navcon_msgs.msg import DOFIdentificationResult, DOFIdentificationFeedback
 from navcon_msgs.msg import ModelParamsUpdate

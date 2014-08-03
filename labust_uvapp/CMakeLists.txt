@@ -5,7 +5,7 @@ project(labust_uvapp)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS 
-    labust_base 
+    labust_control 
     std_msgs 
     auv_msgs 
     nav_msgs 
@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 	message_generation 
 	geometry_msgs
 	tf2_ros  
+	ident_so
 	snippets)
 
 ## System dependencies are found with CMake's conventions
@@ -29,28 +30,28 @@ find_package(catkin REQUIRED COMPONENTS
 #######################################
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-   FILES
-   ControllerInfo.msg
-)
+#add_message_files(
+#   FILES
+#   ControllerInfo.msg
+#)
 
 ## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   ConfigureVelocityController.srv
-   EnableControl.srv
-)
+#add_service_files(
+#   FILES
+#   ConfigureVelocityController.srv
+#   EnableControl.srv
+#)
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   std_msgs  # Or other packages containing msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ###################################################
 ## Dynamic reconfigure
 ###################################################
-generate_dynamic_reconfigure_options(cfg/VelCon.cfg)
+#generate_dynamic_reconfigure_options(cfg/VelCon.cfg)
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -62,7 +63,7 @@ generate_dynamic_reconfigure_options(cfg/VelCon.cfg)
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES labust_uvapp
-   CATKIN_DEPENDS labust_base auv_msgs nav_msgs std_msgs roscpp dynamic_reconfigure sensor_msgs tf2_ros #kdl_conversions
+   CATKIN_DEPENDS auv_msgs nav_msgs std_msgs roscpp dynamic_reconfigure sensor_msgs tf2_ros
 #  DEPENDS system_lib
 )
 
@@ -88,45 +89,45 @@ add_executable(${PR_NAME}
 	src/velocity_control.cpp 
 	src/VelocityControl.cpp
 	include/labust/control/VelocityControl.hpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+target_link_libraries(${PR_NAME} ${catkin_LIBRARIES})
 
-set(PR_NAME lf_control)
-add_executable(${PR_NAME} 
-	src/lf_control.cpp 
-	src/LFControl.cpp
-	include/labust/control/LFControl.hpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+#set(PR_NAME lf_control)
+#add_executable(${PR_NAME} 
+#	src/lf_control.cpp 
+#	src/LFControl.cpp
+#	include/labust/control/LFControl.hpp)
+#target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 
-set(PR_NAME dp_control)
-add_executable(${PR_NAME} 
-	src/dp_control.cpp 
-	src/DPControl.cpp
-	include/labust/control/DPControl.hpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+#set(PR_NAME dp_control)
+#add_executable(${PR_NAME} 
+#	src/dp_control.cpp 
+#	src/DPControl.cpp
+#	include/labust/control/DPControl.hpp)
+#target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 
-set(PR_NAME vt_control)
-add_executable(${PR_NAME} 
-	src/vt_control.cpp 
-	src/VirtualTarget.cpp
-	include/labust/control/VirtualTarget.hpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+#set(PR_NAME vt_control)
+#add_executable(${PR_NAME} 
+#	src/vt_control.cpp 
+#	src/VirtualTarget.cpp
+#	include/labust/control/VirtualTarget.hpp)
+#target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 
-set(PR_NAME hdg_control)
-add_executable(${PR_NAME} 
-	src/hdg_control.cpp 
-	src/HeadingControl.cpp
-	include/labust/control/HeadingControl.hpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+#set(PR_NAME hdg_control)
+#add_executable(${PR_NAME} 
+#	src/hdg_control.cpp 
+#	src/HeadingControl.cpp
+#	include/labust/control/HeadingControl.hpp)
+#target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 
-set(PR_NAME hdg_test)
-add_executable(${PR_NAME} 
-	src/test/hdg_test.cpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+#set(PR_NAME hdg_test)
+#add_executable(${PR_NAME} 
+#	src/test/hdg_test.cpp)
+#target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 
-set(PR_NAME lf_test)
-add_executable(${PR_NAME} 
-	src/test/lf_test.cpp)
-target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
+#set(PR_NAME lf_test)
+#add_executable(${PR_NAME} 
+#	src/test/lf_test.cpp)
+#target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 
 #set(PR_NAME labust-uvapp)
 #add_library(${PR_NAME} 
@@ -135,19 +136,19 @@ target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 #target_link_libraries(${PR_NAME} ${catkin_LIBRARIES} labust_navcon)
 
 add_dependencies(velocity_control ${PROJECT_NAME}_gencfg)
-add_dependencies(dp_control ${PROJECT_NAME}_gencpp)
-add_dependencies(vt_control ${PROJECT_NAME}_gencpp)
-add_dependencies(lf_control ${PROJECT_NAME}_gencpp)
+#add_dependencies(dp_control ${PROJECT_NAME}_gencpp)
+#add_dependencies(vt_control ${PROJECT_NAME}_gencpp)
+#add_dependencies(lf_control ${PROJECT_NAME}_gencpp)
 add_dependencies(velocity_control ${PROJECT_NAME}_gencpp)
-add_dependencies(hlmanager ${PROJECT_NAME}_gencpp)
+#add_dependencies(hlmanager ${PROJECT_NAME}_gencpp)
 # Add dependencies to the executable
 if (DEFINED catkin_EXPORTED_TARGETS)
+ #add_dependencies(velocity_control ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(dp_control ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(vt_control ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(lf_control ${catkin_EXPORTED_TARGETS})
  add_dependencies(velocity_control ${catkin_EXPORTED_TARGETS})
- add_dependencies(dp_control ${catkin_EXPORTED_TARGETS})
- add_dependencies(vt_control ${catkin_EXPORTED_TARGETS})
- add_dependencies(lf_control ${catkin_EXPORTED_TARGETS})
- add_dependencies(velocity_control ${catkin_EXPORTED_TARGETS})
- add_dependencies(hlmanager ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(hlmanager ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Specify libraries to link a library or executable target against

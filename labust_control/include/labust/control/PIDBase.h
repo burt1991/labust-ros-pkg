@@ -94,6 +94,10 @@ typedef struct PIDBase
 	 * The internal model parameters.
 	 */
 	PT1Model model;
+	/**
+	 * Closed loop frequency.
+	 */
+	float w;
 } PIDBase;
 
 /**

@@ -33,11 +33,11 @@
 *********************************************************************/
 #ifndef VELOCITYCONTROL_HPP_
 #define VELOCITYCONTROL_HPP_
-#include <labust/control/PIDController.h>
+#include <labust/control/PIDBase.h>
 #include <labust/control/SOIdentification.hpp>
-#include <labust_uvapp/VelConConfig.h>
-#include <labust_uvapp/ConfigureVelocityController.h>
-#include <labust_uvapp/EnableControl.h>
+#include <navcon_msgs/VelConConfig.h>
+#include <navcon_msgs/ConfigureVelocityController.h>
+#include <navcon_msgs/EnableControl.h>
 #include <navcon_msgs/ModelParamsUpdate.h>
 #include <dynamic_reconfigure/server.h>
 
@@ -122,17 +122,17 @@ namespace labust
 			/**
 			 * Handle server request for configuration.
 			 */
-			bool handleServerConfig(labust_uvapp::ConfigureVelocityController::Request& req,
-					labust_uvapp::ConfigureVelocityController::Response& resp);
+			bool handleServerConfig(navcon_msgs::ConfigureVelocityController::Request& req,
+					navcon_msgs::ConfigureVelocityController::Response& resp);
 			/**
 			 * Handle the enable control request.
 			 */
-			bool handleEnableControl(labust_uvapp::EnableControl::Request& req,
-					labust_uvapp::EnableControl::Response& resp);
+			bool handleEnableControl(navcon_msgs::EnableControl::Request& req,
+					navcon_msgs::EnableControl::Response& resp);
 			/**
 			 * Dynamic reconfigure callback.
 			 */
-			void dynrec_cb(labust_uvapp::VelConConfig& config, uint32_t level);
+			void dynrec_cb(navcon_msgs::VelConConfig& config, uint32_t level);
 			/**
 			 * The safety test.
 			 */
@@ -165,7 +165,7 @@ namespace labust
 			/**
 			 * The velocity controllers.
 			 */
-			PIDController controller[r+1];
+			PIDBase controller[r+1];
 			/**
 			 * The identification controllers.
 			 */
@@ -210,11 +210,11 @@ namespace labust
 			/**
 			 * The dynamic reconfigure parameters.
 			 */
-			labust_uvapp::VelConConfig config;
+			navcon_msgs::VelConConfig config;
 			/**
 			 * The dynamic reconfigure server.
 			 */
-		  dynamic_reconfigure::Server<labust_uvapp::VelConConfig> server;
+		  dynamic_reconfigure::Server<navcon_msgs::VelConConfig> server;
 		  /**
 		   * Variable access helper mass.
 		   */

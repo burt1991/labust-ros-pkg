@@ -60,8 +60,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES labust_control
+   INCLUDE_DIRS include
+   LIBRARIES pidtoolkit2
    CATKIN_DEPENDS auv_msgs roscpp snippets navcon_msgs sensor_msgs
 #  DEPENDS system_lib
 )
@@ -77,8 +77,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(hlmanager src/hl_node.cpp src/HLManager.cpp
-	include/labust/control/HLManager.hpp)
+#add_executable(hlmanager src/hl_node.cpp src/HLManager.cpp
+#	include/labust/control/HLManager.hpp)
 ## Declare a cpp library
 add_library(pidtoolkit2
    src/pidtoolkit/PIDBase.c
@@ -116,7 +116,7 @@ add_executable(async_merger src/AsyncMerger.cpp)
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(labust_control_node labust_control_generate_messages_cpp)
 if (DEFINED catkin_EXPORTED_TARGETS)
- add_dependencies(hlmanager ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(hlmanager ${catkin_EXPORTED_TARGETS})
  add_dependencies(fadp_controller2 ${catkin_EXPORTED_TARGETS})
  add_dependencies(lf_controller2 ${catkin_EXPORTED_TARGETS})
  add_dependencies(ualf_controller ${catkin_EXPORTED_TARGETS})
@@ -131,7 +131,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
 endif()
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(hlmanager  ${catkin_LIBRARIES})
+#target_link_libraries(hlmanager  ${catkin_LIBRARIES})
 target_link_libraries(nu_manual ${catkin_LIBRARIES})
 target_link_libraries(ref_manual ${catkin_LIBRARIES})
 target_link_libraries(async_merger ${catkin_LIBRARIES})

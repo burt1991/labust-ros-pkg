@@ -45,6 +45,8 @@ void PIFF_modelTune(PIDBase* self,
 	self->model.alpha = model->alpha;
 	self->model.beta = model->beta;
 	self->model.betaa = model->betaa;
+
+	self->w = w;
 }
 
 void PIFF_tune(PIDBase* self, float w)
@@ -52,6 +54,8 @@ void PIFF_tune(PIDBase* self, float w)
 	self->Kp = 2*w;
 	self->Ki = w*w;
 	self->Kd = self->Kt = self->Tf = 0;
+
+	self->w = w;
 }
 
 void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)

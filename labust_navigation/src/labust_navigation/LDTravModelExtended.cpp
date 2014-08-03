@@ -36,10 +36,9 @@
 *********************************************************************/
 #include <labust/navigation/LDTravModelExtended.hpp>
 
-#include <boost/numeric/ublas/banded.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-
 using namespace labust::navigation;
+
+#include <vector>
 
 LDTravModel::LDTravModel():
 		dvlModel(0),

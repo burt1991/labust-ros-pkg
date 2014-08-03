@@ -218,11 +218,6 @@ void VelocityControl::dynrec_cb(navcon_msgs::VelConConfig& config, uint32_t leve
 	{
 		int newMode(0);
 		ph.getParam(dofName[i]+"_mode", newMode);
-		//Stop the identification if it was aborted remotely.
-		if ((axis_control[i] == identAxis) &&
-				(newMode != identAxis) &&
-				(ident[i] != 0)) ident[i].reset();
-
 		axis_control[i] = newMode;
 	}
 }
@@ -308,65 +303,6 @@ void VelocityControl::safetyTest()
 	//if (changed) this->updateDynRecConfig();
 }
 
-double VelocityControl::doIdentification(int i)
-{
-	if (ident[i] == 0)
-	{
-		double C,X,ref;
-		ph.getParam(dofName[i]+"_ident_amplitude",C);
-		ph.getParam(dofName[i]+"_ident_hysteresis",X);
-		ph.getParam(dofName[i]+"_ident_ref",ref);
-		ident[i].reset(new SOIdentification());
-		ident[i]->setRelay(C,X);
-		ident[i]->Ref(ref);
-		//Reset measurement
-		measurement[i] = 0;
-		ROS_INFO("Started indentification of %s DOF.",dofName[i].c_str());
-	}
-
-	if (ident[i]->isFinished())
-	{
-		//Get parameters
-		const std::vector<double>& params = ident[i]->parameters();
-		controller[i].model.alpha = params[SOIdentification::alpha];
-		controller[i].model.beta = params[SOIdentification::kx];
-		controller[i].model.betaa = params[SOIdentification::kxx];
-		//Tune controller
-		PIFF_modelTune(&controller[i], &controller[i].model, controller[i].w);
-		//Write parameters to server
-		XmlRpc::XmlRpcValue vparam;
-		vparam.setSize(SOIdentification::numParams);
-		vparam[0] = params[SOIdentification::alpha];
-		vparam[1] = params[SOIdentification::kx];
-		vparam[2] = params[SOIdentification::kxx];
-		vparam[3] = params[SOIdentification::delta];
-		vparam[4] = params[SOIdentification::wn];
-		nh.setParam(dofName[i]+"_identified_params", vparam);
-		//Stop identification
-		axis_control[i] = disableAxis;
-		ident[i].reset();
-		//Report
-		ROS_INFO("Stoped indentification of %s DOF.",dofName[i].c_str());
-		ROS_INFO("Identified parameters: %f %f %f %f",
-				params[SOIdentification::alpha],
-				params[SOIdentification::kx],
-				params[SOIdentification::kxx],
-				params[SOIdentification::delta],
-				params[SOIdentification::wn]);
-		//Update dynamic parameters
-		this->updateDynRecConfig();
-
-		return 0;
-	}
-
-	if (i>=3)
-	{
-		return ident[i]->step(labust::math::wrapRad(labust::math::wrapRad(ident[i]->Ref())-labust::math::wrapRad(measurement[i])),Ts);
-	}
-
-	return ident[i]->step(ident[i]->Ref()-measurement[i],Ts);
-}
-
 void VelocityControl::step()
 {
 	auv_msgs::BodyForceReq tau, tauach;
@@ -395,7 +331,7 @@ void VelocityControl::step()
 			PIFF_step(&controller[i], Ts);
 			break;
 		case identAxis:
-			controller[i].output = externalIdent?tauExt[i]:doIdentification(i);
+			controller[i].output = externalIdent?tauExt[i]:0;
 			break;
 		case directAxis:
 			controller[i].output = controller[i].desired;
@@ -530,4 +466,14 @@ void VelocityControl::initialize_controller()
 	}
 
 	ROS_INFO("Velocity controller initialized.");
+}
+
+int main(int argc, char* argv[])
+{
+	ros::init(argc,argv,"velocity_control");
+	//Initialize
+	labust::control::VelocityControl controller;
+	//Start execution.
+	controller.start();
+	return 0;
 }

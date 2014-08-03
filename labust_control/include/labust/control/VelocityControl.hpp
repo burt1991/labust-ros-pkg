@@ -34,7 +34,6 @@
 #ifndef VELOCITYCONTROL_HPP_
 #define VELOCITYCONTROL_HPP_
 #include <labust/control/PIDBase.h>
-#include <labust/control/SOIdentification.hpp>
 #include <navcon_msgs/VelConConfig.h>
 #include <navcon_msgs/ConfigureVelocityController.h>
 #include <navcon_msgs/EnableControl.h>
@@ -142,10 +141,6 @@ namespace labust
 			 */
 			void updateDynRecConfig();
 			/**
-			 * Perform the identification step.
-			 */
-			double doIdentification(int i);
-			/**
 			 * The ROS node handles.
 			 */
 			ros::NodeHandle nh,ph;
@@ -166,10 +161,6 @@ namespace labust
 			 * The velocity controllers.
 			 */
 			PIDBase controller[r+1];
-			/**
-			 * The identification controllers.
-			 */
-			boost::shared_ptr<SOIdentification> ident[r+1];
 			/**
 			 * The mesurement needed for identification.
 			 */

@@ -1,0 +1,16 @@
+header:
+  auto
+goal:
+  requester: ''
+  id: 0
+  priority: 0
+twist:
+  linear:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  angular:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+disable_axis: {x: false, y: false, z: false, roll: false, pitch: false, yaw: false}

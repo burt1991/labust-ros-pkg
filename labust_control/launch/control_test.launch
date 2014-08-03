@@ -1,0 +1,15 @@
+<launch>
+  <arg name="is_sim" value="$(optenv IS_SIM 1)" />     
+  <arg name="en_logging" value="$(optenv ENABLE_LOGGING 0)" />     
+  <arg name="use_direct" value="$(optenv USE_DIRECT 0)" />
+
+ 	<rosparam command="load" file="$(find snippets)/data/locations/$(env LOCATION).yaml" />
+  	<rosparam command="load" file="$(env MODEL)" />
+  	
+	<include file="$(find labust_control)/launch/simulator.launch" />
+    	
+  	<include file="$(find labust_control)/launch/control.launch" />
+	
+
+    <node pkg="rqt_gui" name="rqt_gui" type="rqt_gui" />
+</launch>

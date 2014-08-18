@@ -38,6 +38,8 @@
 *********************************************************************/
 #include <labust/navigation/SBModel.hpp>
 #include <vector>
+#include <iostream>
+#include <ros/ros.h>
 
 //#include <boost/numeric/ublas/banded.hpp>
 //#include <boost/numeric/ublas/matrix_proxy.hpp>
@@ -181,6 +183,7 @@ const SBModel::output_type& SBModel::update(vector& measurements, vector& newMea
 
 	for (size_t i=0; i<newMeas.size(); ++i)
 	{
+		//ROS_ERROR("Redni broj mjerenja: %d", i);
 		if (newMeas(i))
 		{
 			arrived.push_back(i);
@@ -189,7 +192,19 @@ const SBModel::output_type& SBModel::update(vector& measurements, vector& newMea
 		}
 	}
 
+	ROS_ERROR("broj mjerenja: %d", arrived.size());
+
+	for( std::vector<size_t>::const_iterator it = arrived.begin(); it != arrived.end(); ++it)
+		ROS_ERROR("%d", *it);
+	//ROS_ERROR_STREAM(std::cout << *it << ' ');
+
+	ROS_ERROR("DEBUG 2-1");
+
+
 	if (dvlModel != 0) derivativeH();
+
+	ROS_ERROR("DEBUG 2-2");
+
 
 	measurement.resize(arrived.size());
 	H = matrix::Zero(arrived.size(),stateNum);
@@ -275,10 +290,14 @@ void SBModel::derivativeH()
 	//Hnl=matrix::Identity(stateNum,stateNum);
 	//ynl = Hnl*x;
 
+	ROS_ERROR("DEBUG 3-1");
+
 	Hnl = matrix::Zero(measSize,stateNum);
 	//ynl = vector::Identity(measSize);
+	ynl = vector::Zero(measSize);
 
-    //enum {um=0,vm,psim,d,ubm,vbm,xbm,ybm,psibm,measNum}; // vektor mjerenja
+	ROS_ERROR("DEBUG 3-2");
+
     //enum {um=0,vm,zm,psim,dm,ubm,vbm,rbm,xbm,ybm,psibm,measSize}; /* Measurement vector */
 
 
@@ -293,6 +312,8 @@ void SBModel::derivativeH()
 		ynl(xbm) = x(xb);
 		ynl(ybm) = x(yb);
 		ynl(psibm) = x(psib);
+
+		ROS_ERROR("DEBUG 3-3");
 
 		//Correct for the nonlinear parts
 		Hnl(um,u) = 1;
@@ -321,5 +342,7 @@ void SBModel::derivativeH()
 		Hnl(xbm,xb) = 1;
 		Hnl(ybm,yb) = 1;
 		Hnl(psibm,psib) = 1;
+
+		ROS_ERROR("DEBUG 3-4");
 }
 

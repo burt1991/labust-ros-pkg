@@ -43,7 +43,7 @@
 #ifndef EKF3D_HPP_
 #define EKF3D_HPP_
 #include <labust/navigation/KFCore.hpp>
-#include <labust/navigation/LDTravModelExtended.hpp>
+#include <labust/navigation/SBModel.hpp>
 #include <labust/navigation/SensorHandlers.hpp>
 #include <labust/math/NumberManipulation.hpp>
 #include <navcon_msgs/ModelParamsUpdate.h>
@@ -68,7 +68,7 @@ namespace labust
 		class Estimator3D
 		{
 			enum{X=0,Y,Z,K,M,N, DoF};
-			typedef labust::navigation::KFCore<labust::navigation::LDTravModel> KFNav;
+			typedef labust::navigation::KFCore<labust::navigation::SBModel> KFNav;
 		public:
 			/**
 			 * Main constructor.
@@ -105,6 +105,10 @@ namespace labust
 			 * Handle the altitude measurement.
 			 */
 			void onAltitude(const std_msgs::Float32::ConstPtr& data);
+			/**
+			 * Handle the range measurement.
+			 */
+			void onRange(const std_msgs::Float32::ConstPtr& data);
 			/**
 			 * Helper method to process measurements.
 			 */

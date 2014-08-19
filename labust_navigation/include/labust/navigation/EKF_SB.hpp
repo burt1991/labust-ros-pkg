@@ -149,7 +149,7 @@ namespace labust
 			/**
 			 * Sensors and input subscribers.
 			 */
-			ros::Subscriber tauAch, depth, altitude, modelUpdate, resetTopic, useGyro, sub, subKFmode;
+			ros::Subscriber tauAch, depth, altitude, modelUpdate, resetTopic, useGyro, sub, subKFmode, range;
 			/**
 			 * The GPS handler.
 			 */

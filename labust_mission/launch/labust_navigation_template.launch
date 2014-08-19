@@ -92,7 +92,7 @@
 	<param name="imu_with_yaw_rate" value="true" />
 	<param name="dvl_model" value="1" />
 	<param name="Ts" value="0.1" />
-	<remap from="gps" to="no_gps" />
+	<!--<remap from="gps" to="no_gps" />-->
 	<!--<remap from="stateHat" to="stateHatSB" />--> 
 	<remap from="meas" to="measSB" /> 
 

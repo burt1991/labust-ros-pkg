@@ -90,9 +90,9 @@
         type="range_meas_sim" 
         name="range_meas_sim_node">
 
-	<!--<param name="imu_with_yaw_rate" value="true" />
-	<param name="dvl_model" value="1" />-->
-	<param name="Trange" value="0.1" />
+	<!--<param name="imu_with_yaw_rate" value="true" />-->
+	<param name="dvl_model" value="1" />
+	<param name="Trange" value="1.0" />
 	
 	<!--<remap from="stateHat" to="stateHatSB" />--> 
 

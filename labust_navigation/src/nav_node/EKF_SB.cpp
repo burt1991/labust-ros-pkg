@@ -61,7 +61,7 @@ using namespace labust::navigation;
 Estimator3D::Estimator3D():
 		tauIn(KFNav::vector::Zero(KFNav::inputSize)),
 		measurements(KFNav::vector::Zero(KFNav::stateNum)),
-		newMeas(KFNav::vector::Zero(KFNav::stateNum)),
+		newMeas(KFNav::vector::Zero(KFNav::measSize)),
 		alt(0),
 		useYawRate(false),
 		dvl_model(0),
@@ -84,6 +84,7 @@ void Estimator3D::onInit()
 	tauAch = nh.subscribe<auv_msgs::BodyForceReq>("tauAch", 1, &Estimator3D::onTau,this);
 	depth = nh.subscribe<std_msgs::Float32>("depth", 1,	&Estimator3D::onDepth, this);
 	altitude = nh.subscribe<std_msgs::Float32>("altitude", 1, &Estimator3D::onAltitude, this);
+	range = nh.subscribe<std_msgs::Float32>("rangeMeas", 1, &Estimator3D::onRange, this);
 	modelUpdate = nh.subscribe<navcon_msgs::ModelParamsUpdate>("model_update", 1, &Estimator3D::onModelUpdate,this);
 	resetTopic = nh.subscribe<std_msgs::Bool>("reset_nav_covariance", 1, &Estimator3D::onReset,this);
 	useGyro = nh.subscribe<std_msgs::Bool>("use_gyro", 1, &Estimator3D::onUseGyro,this);
@@ -107,9 +108,6 @@ void Estimator3D::onInit()
 	imu.configure(nh);
 
    Pstart = nav.getStateCovariance();
-//Rstart = nav.R;
- // ROS_ERROR("NAVIGATION");
-
 }
 
 void Estimator3D::onReset(const std_msgs::Bool::ConstPtr& reset)
@@ -122,16 +120,16 @@ void Estimator3D::onReset(const std_msgs::Bool::ConstPtr& reset)
 
 void Estimator3D::onUseGyro(const std_msgs::Bool::ConstPtr& use_gyro)
 {
-   if (use_gyro->data)
-   {
-      nav.R0(KFNav::psi, KFNav::psi) = gyroVariance;
-      ROS_INFO("Switch to using gyro measurements.");
-   }
-   else
-   {
-      nav.R0(KFNav::psi, KFNav::psi) = compassVariance;
-      ROS_INFO("Switch to using compass measurements.");
-   }
+//   if (use_gyro->data)
+//   {
+//      nav.R0(KFNav::psi, KFNav::psi) = gyroVariance;
+//      ROS_INFO("Switch to using gyro measurements.");
+//   }
+//   else
+//   {
+//      nav.R0(KFNav::psi, KFNav::psi) = compassVariance;
+//      ROS_INFO("Switch to using compass measurements.");
+//   }
 }
 
 void Estimator3D::configureNav(KFNav& nav, ros::NodeHandle& nh)
@@ -230,20 +228,23 @@ void Estimator3D::onAltitude(const std_msgs::Float32::ConstPtr& data)
 
 void Estimator3D::onRange(const std_msgs::Float32::ConstPtr& data)
 {
-//	measurements(KFNav::altitude) = data->data;
-//	//Dismiss false altitude
-//	if (fabs(data->data-nav.getState()(KFNav::altitude)) < 10*nav.calculateAltInovationVariance(nav.getStateCovariance()))
-//	{
-//		newMeas(KFNav::altitude) = 1;
-//		alt = data->data;
-//		ROS_INFO("Accepted altitude: meas=%f, estimate=%f, variance=%f",
-//			data->data, nav.getState()(KFNav::altitude), 10* nav.calculateAltInovationVariance(nav.getStateCovariance()));
-//	}
-//	else
-//	{
-//		ROS_INFO("Dissmissed altitude: meas=%f, estimate=%f, variance=%f",
-//			data->data, nav.getState()(KFNav::altitude), 10* nav.calculateAltInovationVariance(nav.getStateCovariance()));
-//	}
+	measurements(KFNav::dm) = data->data;
+	newMeas(KFNav::dm) = 1;
+	// Outlier rejection?
+
+	measurements(KFNav::xbm) = 0;
+	measurements(KFNav::ybm) = 0;
+	measurements(KFNav::psibm) = 0;
+	measurements(KFNav::ubm) = 0;
+	measurements(KFNav::vbm) = 0;
+	measurements(KFNav::rbm) = 0;
+
+	newMeas(KFNav::xbm) = 1;
+	newMeas(KFNav::ybm) = 1;
+	newMeas(KFNav::psibm) = 1;
+	newMeas(KFNav::ubm) = 1;
+	newMeas(KFNav::vbm) = 1;
+	newMeas(KFNav::rbm) = 1;
 };
 
 void Estimator3D::deltaPosCallback(const auv_msgs::NED::ConstPtr& msg){
@@ -251,7 +252,6 @@ void Estimator3D::deltaPosCallback(const auv_msgs::NED::ConstPtr& msg){
 	quadMeasAvailable = true;
 	deltaXpos = msg->north;
 	deltaYpos = msg->east;
-	//ROS_ERROR("PRimio topic");
 }
 
 void Estimator3D::KFmodeCallback(const std_msgs::Bool::ConstPtr& msg){
@@ -294,23 +294,23 @@ void Estimator3D::processMeasurements()
 
 // SINGLE BEACON NAVIGATION HAS NO ABSOLUTE POSITION MEASUREMENTS
 //
-//	if(KFmode == true && absoluteEKF == false)
-//		{
-//			if ((newMeas(KFNav::xp) = newMeas(KFNav::yp) = quadMeasAvailable)){
-//
-//				quadMeasAvailable = false;
-//				measurements(KFNav::xp) = deltaXpos;
-//				measurements(KFNav::yp) = deltaYpos;
-//		    }
-//		} else {
-//
-//			//GPS measurements
-//			if ((newMeas(KFNav::xp) = newMeas(KFNav::yp) = gps.newArrived()))
-//			{
-//				measurements(KFNav::xp) = gps.position().first;
-//				measurements(KFNav::yp) = gps.position().second;
-//			}
-//		}
+	if(KFmode == true && absoluteEKF == false)
+		{
+			if ((/*newMeas(KFNav::xp) = newMeas(KFNav::yp) =*/ quadMeasAvailable)){
+
+				quadMeasAvailable = false;
+				measurements(KFNav::xp) = deltaXpos;
+				measurements(KFNav::yp) = deltaYpos;
+		    }
+		} else {
+
+			//GPS measurements
+			if (/*(newMeas(KFNav::xp) = newMeas(KFNav::yp) = */gps.newArrived())
+			{
+				measurements(KFNav::xp) = gps.position().first;
+				measurements(KFNav::yp) = gps.position().second;
+			}
+		}
 
 		//ROS_ERROR("xp: %4.2f, yp: %4.2f, MODE: %d",measurements(KFNav::xp),measurements(KFNav::yp),KFmode );
 
@@ -466,17 +466,12 @@ void Estimator3D::start()
 	ROS_ERROR("DEBUG 0");
 	while (ros::ok())
 	{
-		ROS_ERROR("DEBUG 1");
 		nav.predict(tauIn);
-		ROS_ERROR("DEBUG 2");
 		processMeasurements();
-		ROS_ERROR("DEBUG 3");
 		bool newArrived(false);
 		for(size_t i=0; i<newMeas.size(); ++i)	if ((newArrived = newMeas(i))) break;
-		ROS_ERROR("DEBUG 4");
-		ROS_ERROR("newArrived: %d", newArrived);
 		if (newArrived)	nav.correct(nav.update(measurements, newMeas));
-		ROS_ERROR("DEBUG 5");
+
 
 		//if (newArrived)	nav.correct(measurements, newMeas);
 

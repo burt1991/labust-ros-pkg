@@ -8,11 +8,11 @@ ekfnav/P: [diagonal, [0.1,0.1,0.1,0.1,0.1,0.1,10000,10000,0.1, 0.1,0.1,  0.1,0, 
 ekfnav/x0: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
 
-#Parameters:	         u     v     w     r     xp    yp   zp     psi   xc     yc   buoyancy  b     ub    vb      rb    xb     yb     psib
-ekfnav_sb/Q: [diagonal, [0.001,0.001,0.001,0.0001,0.001,0.001,0.001,0.0001,0.001, 0.001, 0.001, 0.01, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]]
-#Parameters:	         u   v     w    r   xp  yp  zp    psi  xc   yc   buoyancy   b    ub    vb   rb  xb   yb   psib
-ekfnav_sb/R: [diagonal, [0.01,0.01,0.001,0.01,100,100,0.001,0.03,0.01,0.001,9999,     9999,0.01,0.01,0.01,0.01,0.01,0.01]]
-ekfnav_sb/V: [diagonal, [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
-#Parameters:          u    v   w   r    xp    yp   zp  psi  xc yc buoyancy b   ub    vb      rb    xb     yb     psib
-ekfnav_sb/P: [diagonal, [0.1,0.1,0.1,0.1,10000,10000,0.1, 0.1, 0, 0,    1,    1, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001]]
-ekfnav_sb/x0: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+#Parameters:	         u       v     w      r     xp    yp   zp     psi   xc     yc   buoyancy  b     ub      vb        rb     xb      yb     psib
+ekfnav_sb/Q: [diagonal, [0.01,  0.01,0.001,0.0001,  0.01,0.01,0.001,0.0001,0.001, 0.001, 0.001, 0.01, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001]]
+#Parameters:             um    vm   zm    psim   dm    ubm   vbm   rbm   xbm   ybm  psibm
+ekfnav_sb/R: [diagonal, [ 1,    1, 0.001, 0.001, 0.01,  0.01, 0.01, 0.01, 0.01, 0.01, 0.01]]
+ekfnav_sb/V: [diagonal, [1,1,1,1,1,1,1,1,1,1,1]]
+#Parameters:	         u   v     w  r     xp  yp  zp    psi  xc     yc   buoyancy  b    ub    vb   rb        xb     yb   psib
+ekfnav_sb/P: [diagonal, [0.1,0.1,0.1,0.1,   10, 10,0.1,   0.1, 100, 100,    1,    1,  0.001, 0.001, 0.001, 0.001, 0.001, 0.001]]
+ekfnav_sb/x0: [0,0,0,0,0,0,10,10,0,0,0,0,0,0,0,0,0,0]

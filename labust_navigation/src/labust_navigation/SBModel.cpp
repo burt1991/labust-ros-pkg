@@ -41,9 +41,6 @@
 #include <iostream>
 #include <ros/ros.h>
 
-//#include <boost/numeric/ublas/banded.hpp>
-//#include <boost/numeric/ublas/matrix_proxy.hpp>
-
 using namespace labust::navigation;
 
 SBModel::SBModel():
@@ -196,15 +193,11 @@ const SBModel::output_type& SBModel::update(vector& measurements, vector& newMea
 
 	for( std::vector<size_t>::const_iterator it = arrived.begin(); it != arrived.end(); ++it)
 		ROS_ERROR("%d", *it);
-	//ROS_ERROR_STREAM(std::cout << *it << ' ');
-
-	ROS_ERROR("DEBUG 2-1");
 
 
-	if (dvlModel != 0) derivativeH();
+	//if (dvlModel != 0) derivativeH();
 
-	ROS_ERROR("DEBUG 2-2");
-
+	derivativeH();
 
 	measurement.resize(arrived.size());
 	H = matrix::Zero(arrived.size(),stateNum);
@@ -216,16 +209,16 @@ const SBModel::output_type& SBModel::update(vector& measurements, vector& newMea
 	{
 		measurement(i) = dataVec[i];
 
-		if (dvlModel != 0)
-		{
+		//if (dvlModel != 0)
+		//{
 			H.row(i)=Hnl.row(arrived[i]);
 			y(i) = ynl(arrived[i]);
-		}
-		else
-		{
-			H(i,arrived[i]) = 1;
-			y(i) = x(arrived[i]);
-		}
+		//}
+		//else
+		//{
+		//	H(i,arrived[i]) = 1;
+		//	y(i) = x(arrived[i]);
+		//}
 
 		for (size_t j=0; j<arrived.size(); ++j)
 		{
@@ -248,101 +241,49 @@ void SBModel::estimate_y(output_type& y)
 
 void SBModel::derivativeH()
 {
-//	Hnl=matrix::Identity(stateNum,stateNum);
-//	ynl = Hnl*x;
-//
-//	switch (dvlModel)
-//	{
-//	case 1:
-//		//Correct the nonlinear part
-//		ynl(u) = x(u)+x(xc)*cos(x(psi))+x(yc)*sin(x(psi));
-//		ynl(v) = x(v)-x(xc)*sin(x(psi))+x(yc)*cos(x(psi));
-//
-//		//Correct for the nonlinear parts
-//		Hnl(u,u) = 1;
-//		Hnl(u,xc) = cos(x(psi));
-//		Hnl(u,yc) = sin(x(psi));
-//		Hnl(u,psi) = -x(xc)*sin(x(psi)) + x(yc)*cos(x(psi));
-//
-//		Hnl(v,v) = 1;
-//		Hnl(v,xc) = -sin(x(psi));
-//		Hnl(v,yc) = cos(x(psi));
-//		Hnl(v,psi) = -x(xc)*cos(x(psi)) - x(yc)*sin(x(psi));
-//		break;
-//	case 2:
-//		//Correct the nonlinear part
-//	  y(u) = x(u)*cos(x(psi)) - x(v)*sin(x(psi)) + x(xc);
-//	  y(v) = x(u)*sin(x(psi)) + x(v)*cos(x(psi)) + x(yc);
-//
-//	  //Correct for the nonlinear parts
-//		Hnl(u,xc) = 1;
-//		Hnl(u,u) = cos(x(psi));
-//		Hnl(u,v) = -sin(x(psi));
-//		Hnl(u,psi) = -x(u)*sin(x(psi)) - x(v)*cos(x(psi));
-//
-//		Hnl(v,yc) = 1;
-//		Hnl(v,u) = sin(x(psi));
-//		Hnl(v,v) = cos(x(psi));
-//		Hnl(v,psi) = x(u)*cos(x(psi)) - x(v)*sin(x(psi));
-//		break;
-//	}
-
-	//Hnl=matrix::Identity(stateNum,stateNum);
-	//ynl = Hnl*x;
-
-	ROS_ERROR("DEBUG 3-1");
 
 	Hnl = matrix::Zero(measSize,stateNum);
-	//ynl = vector::Identity(measSize);
 	ynl = vector::Zero(measSize);
-
-	ROS_ERROR("DEBUG 3-2");
 
     //enum {um=0,vm,zm,psim,dm,ubm,vbm,rbm,xbm,ybm,psibm,measSize}; /* Measurement vector */
 
+	ynl(um) = x(u)+x(xc)*cos(x(psi))+x(yc)*sin(x(psi));
+	ynl(vm) = x(v)-x(xc)*sin(x(psi))+x(yc)*cos(x(psi));
+	ynl(zm) = x(zp);
+	ynl(psim) = x(psi);
+	ynl(dm) = sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
+	ynl(ubm) = x(ub);
+	ynl(vbm) = x(vb);
+	ynl(rbm) = x(rb);
+	ynl(xbm) = x(xb);
+	ynl(ybm) = x(yb);
+	ynl(psibm) = x(psib);
 
-		ynl(um) = x(u)+x(xc)*cos(x(psi))+x(yc)*sin(x(psi));
-		ynl(vm) = x(v)-x(xc)*sin(x(psi))+x(yc)*cos(x(psi));
-		ynl(zm) = x(zp);
-		ynl(psim) = x(psi);
-		ynl(dm) = sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
-		ynl(ubm) = x(ub);
-		ynl(vbm) = x(vb);
-		ynl(rbm) = x(rb);
-		ynl(xbm) = x(xb);
-		ynl(ybm) = x(yb);
-		ynl(psibm) = x(psib);
+	Hnl(um,u) = 1;
+	Hnl(um,xc) = cos(x(psi));
+	Hnl(um,yc) = sin(x(psi));
+	Hnl(um,psi) = -x(xc)*sin(x(psi)) + x(yc)*cos(x(psi));
 
-		ROS_ERROR("DEBUG 3-3");
+	Hnl(vm,v) = 1;
+	Hnl(vm,xc) = -sin(x(psi));
+	Hnl(vm,yc) = cos(x(psi));
+	Hnl(vm,psi) = -x(xc)*cos(x(psi)) - x(yc)*sin(x(psi));
 
-		//Correct for the nonlinear parts
-		Hnl(um,u) = 1;
-		Hnl(um,xc) = cos(x(psi));
-		Hnl(um,yc) = sin(x(psi));
-		Hnl(um,psi) = -x(xc)*sin(x(psi)) + x(yc)*cos(x(psi));
+	Hnl(zm,zp) = 1;
 
-		Hnl(vm,v) = 1;
-		Hnl(vm,xc) = -sin(x(psi));
-		Hnl(vm,yc) = cos(x(psi));
-		Hnl(vm,psi) = -x(xc)*cos(x(psi)) - x(yc)*sin(x(psi));
+	Hnl(psim,psi) = 1;
 
-		Hnl(zm,zp) = 1;
+	Hnl(dm,xp) = (x(xp)-x(xb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
+	Hnl(dm,yp) = (x(yp)-x(yb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
+	Hnl(dm,zp) = x(zp)/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
+	Hnl(dm,xb) = -(x(xp)-x(xb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
+	Hnl(dm,yb) = -(x(yp)-x(yb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
 
-		Hnl(psim,psi) = 1;
-
-		Hnl(dm,xp) = (x(xp)-x(xb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
-		Hnl(dm,yp) = (x(yp)-x(yb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
-		Hnl(dm,zp) = x(zp)/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
-		Hnl(dm,xb) = -(x(xp)-x(xb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
-		Hnl(dm,yb) = -(x(yp)-x(yb))/sqrt(pow((x(xp)-x(xb)),2)+pow((x(yp)-x(yb)),2)+pow(x(zp),2));
-
-		Hnl(ubm,ub) = 1;
-		Hnl(vbm,vb) = 1;
-		Hnl(rbm,rb) = 1;
-		Hnl(xbm,xb) = 1;
-		Hnl(ybm,yb) = 1;
-		Hnl(psibm,psib) = 1;
-
-		ROS_ERROR("DEBUG 3-4");
+	Hnl(ubm,ub) = 1;
+	Hnl(vbm,vb) = 1;
+	Hnl(rbm,rb) = 1;
+	Hnl(xbm,xb) = 1;
+	Hnl(ybm,yb) = 1;
+	Hnl(psibm,psib) = 1;
 }
 

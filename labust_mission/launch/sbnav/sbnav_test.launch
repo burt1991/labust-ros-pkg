@@ -92,13 +92,10 @@
 
 	<!--<param name="imu_with_yaw_rate" value="true" />-->
 	<param name="dvl_model" value="1" />
-	<param name="Trange" value="1.0" />
+	<param name="Trange" value="2.0" />
 	
 	<!--<remap from="stateHat" to="stateHatSB" />--> 
-
-
         <!--<param name="absoluteEKF" value="false" />-->
-
     </node> 
 
 

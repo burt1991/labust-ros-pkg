@@ -46,12 +46,13 @@
 #include <auv_msgs/Bool6Axis.h>
 #include <navcon_msgs/ConfigureVelocityController.h>
 #include <ros/ros.h>
-#include <labust_mission/serviceCall.hpp>
+//#include <labust_mission/serviceCall.hpp>
+#include <labust_mission/utils.hpp>
 
 extern ros::NodeHandle *nh_ptr;
 
 
-namespace utils {
+namespace labust {
 
 	class LowLevelConfigure {
 
@@ -122,7 +123,7 @@ namespace utils {
 			if(velConConf.request.desired_mode[5] = yaw){nuAxis.yaw = true;}
 
 			AXESconfigure(nuAxis);
-			utils::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
+			utilities::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
 		} else {
 
 			/* Disable all degrees of freedom */
@@ -138,7 +139,7 @@ namespace utils {
 			nuAxis.yaw = false;
 
 			AXESconfigure(nuAxis);
-			utils::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
+			utilities::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
 		}
 	}
 
@@ -150,7 +151,7 @@ namespace utils {
 
 		navcon_msgs::ConfigureAxes nu_cfg;
 		nu_cfg.request.disable_axis = nu_bool;
-		utils::callService<navcon_msgs::ConfigureAxes>(clientConfigureAxes, nu_cfg);
+		utilities::callService<navcon_msgs::ConfigureAxes>(clientConfigureAxes, nu_cfg);
 	}
 
 }

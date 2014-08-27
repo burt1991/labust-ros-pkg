@@ -51,10 +51,9 @@
     <arg name="xml_save_path" value ="$(find labust_mission)/data/mission.xml" /> 
     <arg name="mission_execution_INTEGRATED" default="false" />
     <arg name="mission_execution" default="true" />
-    <arg name="mission_parser" default="false" />
-    <arg name="neptus_parser" default="false" />
-    <arg name="parseGUI" default="false" />
-    <arg name="use_mm" value="$(optenv USE_MULTIMASTER 0)" />
+    <arg name="mission_parser" default="true" />
+    <arg name="neptus_parser" default="true" />
+    <arg name="parseGUI" default="true" />
    
     <!-- Simulation settings ===================================== -->  
 
@@ -71,21 +70,35 @@
     <!-- Navigation settings ======================================== -->
 
     <arg name="ekfAbs" default="true" />
+    <arg name="ekfSB" default="true" />
 
     <!-- Vehicle settings ======================================== -->
 
     <arg name="vehicle" value ="pladypos" /> 
     <rosparam command="load" file="$(env MODEL)" />
 
-    <!-- Visualization settings ======================================== -->
-
-    <arg name="use_visualization" value="$(optenv USE_VISUALIZATION 0)" />
-
 
     <!-- ========================================================= -->
     <!-- == Launch includes ====================================== -->
     <!-- ========================================================= -->
- 
+
+    <!-- Mission specific include ================================ -->
+
+     <node 
+	if="$(arg ekfSB)"
+        pkg="labust_navigation" 
+        type="range_meas_sim" 
+        name="range_meas_sim_node">
+
+	<!--<param name="imu_with_yaw_rate" value="true" />-->
+	<param name="dvl_model" value="1" />
+	<param name="Trange" value="2.0" />
+	
+	<!--<remap from="stateHat" to="stateHatSB" />--> 
+        <!--<param name="absoluteEKF" value="false" />-->
+    </node> 
+
+
     <!-- labust_sim include ====================================== -->
 
     <include
@@ -95,16 +108,11 @@
 
     <!-- labust_navigation include =============================== -->
 
-    <group>
-  	  <include file="$(find labust_mission)/launch/pladypos/static_frames.launch" />
-	  <remap from="gps" to="fix_spatial" />
-	  <remap from="imu" to="imu_spatial" />
- 	  <include file="$(find labust_mission)/launch/labust_navigation_template.launch">
-        	<arg name="ekfAbs" value="$(arg ekfAbs)" /> 
-    	  </include>
-  	  <!-- <include file="$(find labust_mission)/launch/pladypos/navigation.launch" /> -->
-    </group>
+    <include file="$(find labust_mission)/launch/labust_navigation_template.launch">
 
+        <arg name="ekfAbs" value="$(arg ekfAbs)" />
+        <arg name="ekfSB" value="$(arg ekfSB)" />
+    </include>
 
     <!-- labust_control include ================================== -->
 
@@ -131,11 +139,8 @@
 
     </include>
 
-    <include file="$(find labust_mission)/launch/pladypos/sensors.launch" />
-    <node pkg="rosbag" type="record" name="rosbag" args="-a -o /extern/bags/navcon" />
-    <include file="$(find pladypos)/launch/pladyposv2_driver.launch" />
+    <!-- labust_visualization include ============================ -->
 
-     <group if="$(arg use_mm)">
-  	<include file="$(find caddy_launch)/launch/caddy/multi_master.launch" />
-     </group>
+    <include file="$(find labust_mission)/launch/labust_visualization_template.launch"> </include>
+
 </launch>

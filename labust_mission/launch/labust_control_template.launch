@@ -78,17 +78,12 @@
     <!-- == joy node ============================================= -->
     <!-- ========================================================= -->
 
-   <!-- <node 
-	if="$(arg use_joy)"
-        pkg="joy" 
-        type="joy_node" 
-        name="joystick">
-
-	</node>-->
-
-        <!-- Joystick -->
-        <include file="$(find labust_launchers)/launch/common/joy.launch"/>
-
+    <node 
+		if="$(arg use_joy)" 
+		pkg="joy"  
+		type="joy_node" 
+		name="joystick">
+	</node>
 
     <!-- ========================================================= -->
     <!-- == Identification node ================================== -->
@@ -110,7 +105,7 @@
     <!-- ========================================================= -->
 
 	<node 
-        pkg="labust_uvapp" 
+        pkg="labust_control" 
         type="velocity_control" 
         name="velcon">
 

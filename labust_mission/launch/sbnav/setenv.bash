@@ -5,18 +5,17 @@ export MODEL=`rospack find snippets`/data/models/pladypos.yaml
 export ALLOCATION_MODEL=`rospack find snippets`/data/allocations/x_horizontal.yaml
 
 #Input
-export JOYSTICK=/dev/input/js1
+export JOYSTICK=/dev/input/js0
 export USE_JOY=1
 
 #Simulation variables
-export IS_SIM=0
-export USE_NOISE=0
-export USE_VISUALIZATION=0
+export IS_SIM=1
+export USE_NOISE=1
+export USE_VISUALIZATION=1
 
 #Location for simulation or predefined position
 export LOCATION=labos
 export USE_LOCAL_FIX=1
-export TOPSIDE=1
 
 #Control configuration
 export USE_IDENTIFICATION=1

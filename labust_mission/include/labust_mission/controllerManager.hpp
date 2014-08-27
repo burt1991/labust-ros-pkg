@@ -62,7 +62,8 @@
 
 #include <labust_mission/labustMission.hpp>
 #include <labust_mission/primitiveActionClient.hpp>
-#include <labust_mission/serviceCall.hpp>
+//#include <labust_mission/serviceCall.hpp>
+#include <labust_mission/utils.hpp>
 #include <labust_mission/lowLevelConfigure.hpp>
 
 #include <navcon_msgs/ConfigureVelocityController.h>
@@ -207,7 +208,7 @@ namespace labust
 			ros::Publisher pubStateRef;
 			ros::Subscriber subStateHat;
 			ros::Subscriber subStateHatAbs;
-			utils::LowLevelConfigure LLcfg;
+			labust::LowLevelConfigure LLcfg;
 
 			actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac;
 			actionlib::SimpleActionClient<navcon_msgs::GoToPointAction> ac2;
@@ -656,7 +657,7 @@ using namespace labust::controller;
 		navcon_msgs::EnableControl enabler;
 		enabler.request.enable = enable;
 		ros::ServiceClient clientControllerEnabler = nh_ptr->serviceClient<navcon_msgs::EnableControl>(serviceName);
-		utils::callService<navcon_msgs::EnableControl>(clientControllerEnabler,enabler);
+		utilities::callService<navcon_msgs::EnableControl>(clientControllerEnabler,enabler);
 	}
 
 	/*

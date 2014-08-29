@@ -46,7 +46,6 @@
 #include <auv_msgs/Bool6Axis.h>
 #include <navcon_msgs/ConfigureVelocityController.h>
 #include <ros/ros.h>
-//#include <labust_mission/serviceCall.hpp>
 #include <labust_mission/utils.hpp>
 
 extern ros::NodeHandle *nh_ptr;

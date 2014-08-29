@@ -62,7 +62,6 @@
 
 #include <labust_mission/labustMission.hpp>
 #include <labust_mission/primitiveActionClient.hpp>
-//#include <labust_mission/serviceCall.hpp>
 #include <labust_mission/utils.hpp>
 #include <labust_mission/lowLevelConfigure.hpp>
 

@@ -154,6 +154,7 @@ bool VelocityControl::handleServerConfig(navcon_msgs::ConfigureVelocityControlle
 {
 	for (int i=0; i<req.desired_mode.size();++i)
 	{
+		if (req.desired_mode[i] == -1) continue;
 		if (axis_control[i] != req.desired_mode[i])
 		{
 			axis_control[i] = req.desired_mode[i];

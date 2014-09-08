@@ -91,6 +91,10 @@ add_executable(dvl_sim src/sim_sensors/DvlSim.cpp)
 target_link_libraries(dvl_sim ${catkin_LIBRARIES})
 add_executable(gps_sim src/sim_sensors/GPSSim.cpp)
 target_link_libraries(gps_sim ${catkin_LIBRARIES})
+add_executable(usbl_sim src/sim_sensors/USBLSim.cpp src/sim_sensors/USBLGenHWSim.cpp)
+target_link_libraries(usbl_sim ${catkin_LIBRARIES})
+add_executable(acoustic_medium src/sim_sensors/AcousticMedium.cpp)
+target_link_libraries(acoustic_medium ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

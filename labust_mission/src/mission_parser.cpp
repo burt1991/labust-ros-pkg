@@ -101,7 +101,6 @@ namespace labust {
 			 ***  Helper functions
 			 ****************************************************************/
 
-			//template <typename primitiveType>
 			void serializePrimitive(int id, vector<uint8_t> serializedData);
 
 			void onEventNextParse(XMLElement *elem2);
@@ -328,9 +327,26 @@ namespace labust {
 							/* Initialize service call data */
 							misc_msgs::EvaluateExpression evalExpr;
 
+							 /* Case: placeholder *****************************/
+						   if(primitiveName.compare("placeholder") == 0){
+
+							   primitiveParam = primitive->FirstChildElement("param");
+							   do{
+
+								   XMLElement *elem2 = primitiveParam->ToElement();
+								   string primitiveParamName = elem2->Attribute("name");
+
+								   if(primitiveParamName.compare("onEventNext") == 0){
+
+									   onEventNextParse(elem2);
+								   }
+							   } while(primitiveParam = primitiveParam->NextSiblingElement("param"));
+
+							   return placeholder;
+
 
 						   /* Case: go2point_FA *****************************/
-						   if(primitiveName.compare("go2point_FA") == 0){
+						   } else if(primitiveName.compare("go2point_FA") == 0){
 
 							   primitiveParam = primitive->FirstChildElement("param");
 							   do{

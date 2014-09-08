@@ -1,3 +1,45 @@
+#/*********************************************************************
+ #* topic_transform.py
+ #*
+ #*  Created on: Aug 29, 2014
+ #*      Author: Filip Mandic
+ #*
+ #********************************************************************/
+
+#/*********************************************************************
+#* Software License Agreement (BSD License)
+#*
+#*  Copyright (c) 2014, LABUST, UNIZG-FER
+#*  All rights reserved.
+#*
+#*  Redistribution and use in source and binary forms, with or without
+#*  modification, are permitted provided that the following conditions
+#*  are met:
+#*
+#*   * Redistributions of source code must retain the above copyright
+#*     notice, this list of conditions and the following disclaimer.
+#*   * Redistributions in binary form must reproduce the above
+#*     copyright notice, this list of conditions and the following
+#*     disclaimer in the documentation and/or other materials provided
+#*     with the distribution.
+#*   * Neither the name of the LABUST nor the names of its
+#*     contributors may be used to endorse or promote products derived
+#*     from this software without specific prior written permission.
+#*
+#*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+#*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+#*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+#*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+#*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+#*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+#*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#*  POSSIBILITY OF SUCH DAMAGE.
+#*********************************************************************/
+
 #!/usr/bin/env python
 import rospy
 
@@ -5,7 +47,6 @@ from misc_msgs.msg import ExternalEvent
 
 from std_msgs.msg import *
 from auv_msgs.msg import *
-
 
 class TopicTransform():
     
@@ -17,26 +58,18 @@ class TopicTransform():
         tmpList = self.msg_field.split("/")
         
         parentData = data
-        print tmpList
+
         for field in tmpList:
-            print field
             parentData = getattr(parentData,field)
-        
         
         eventData = ExternalEvent()
         eventData.id = self.eventID
         eventData.value = parentData
         
-        #print eventData
         self.pubExternalEvent.publish(eventData)
         
     def setup(self):
         
-        # in ROS, nodes are unique named. If two nodes with the same
-        # node are launched, the previous one is kicked off. The 
-        # anonymous=True flag means that rospy will choose a unique
-        # name for our 'listener' node so that multiple listeners can
-        # run simultaenously.
         rospy.init_node('topic_transform', anonymous=True)
         
         topic_name = rospy.get_param('~topic_name')
@@ -46,28 +79,21 @@ class TopicTransform():
         tmp = rospy.get_param('~msg_type')  
         tmpList = tmp.split("/")
         msg_package = tmpList[0]
-        #print msg_package
-        #rospy.logerr("I heard %s",msg_package)
         msg_type = tmpList[1]
-        #rospy.logerr("I heard %s",msg_type)
-        
+ 
         self.msg_field = ""
         self.msg_field = rospy.get_param('~msg_field')
-        
-               
+                
         if msg_package == "std_msgs":
             msgType = getattr(std_msgs.msg, msg_type)
             
         elif msg_package == "auv_msgs":
             msgType = getattr(auv_msgs.msg, msg_type)
-            
-            
+                   
         self.pubExternalEvent = rospy.Publisher("externalEvent", ExternalEvent, queue_size=20)
         
         rospy.Subscriber(topic_name, msgType, self.callback)
     
-    
-        # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
         
 if __name__ == '__main__':

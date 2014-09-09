@@ -202,6 +202,11 @@ namespace labust {
 					ISOprimitive(newDOF, newCommand, newHysteresis, newReference, newSamplingTime);
 					break;
 
+				case placeholder:
+
+					serializePrimitive(placeholder, std::vector<uint8_t>());
+					break;
+
 				case none:
 
 					ROS_ERROR("Mission ended.");

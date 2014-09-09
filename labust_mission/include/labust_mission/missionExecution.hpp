@@ -202,6 +202,11 @@ namespace labust {
 					mainEventQueue->riseEvent("/ISO");
 					break;
 
+				case placeholder:
+
+					mainEventQueue->riseEvent("/PLACEHOLDER");
+					break;
+
 				case none:
 
 					ROS_ERROR("Mission ended.");

@@ -65,7 +65,7 @@ namespace ser = ros::serialization;
 
 EventQueue* mainEventQueue;
 ros::NodeHandle *nh_ptr;
-ControllerManager* CM = NULL;
+labust::controller::ControllerManager* CM = NULL;
 MissionExecution* ME = NULL;
 
 
@@ -85,6 +85,7 @@ FSM(MissionSelect)
 	{
 		Wait_state,
 		Dispatcher_state,
+		placeholder_state,
 		go2point_FA_state,
 		go2point_UA_state,
 		dynamic_positioning_state,
@@ -119,6 +120,7 @@ FSM(MissionSelect)
 
 			FSM_TRANSITIONS
 			{
+				FSM_ON_EVENT("/PLACEHOLDER", FSM_NEXT(placeholder_state));
 				FSM_ON_EVENT("/GO2POINT_FA", FSM_NEXT(go2point_FA_state));
 				FSM_ON_EVENT("/GO2POINT_UA", FSM_NEXT(go2point_UA_state));
 				FSM_ON_EVENT("/DYNAMIC_POSITIONING", FSM_NEXT(dynamic_positioning_state));
@@ -126,6 +128,16 @@ FSM(MissionSelect)
 				FSM_ON_EVENT("/COURSE_KEEPING_UA", FSM_NEXT(course_keeping_UA_state));
 				FSM_ON_EVENT("/ISO", FSM_NEXT(iso_state));
 				FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
+			}
+		}
+		FSM_STATE(placeholder_state)
+		{
+			ROS_ERROR("Placeholder active");
+
+			FSM_TRANSITIONS
+			{
+				FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
+				FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
 			}
 		}
 		FSM_STATE(go2point_FA_state)

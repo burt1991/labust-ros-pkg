@@ -129,7 +129,7 @@ void AcousticMedium::onMediumData(const underwater_msgs::MediumTransmission::Con
 		double ttime = data->duration + outRep->range/vs;
 
 		outRep->sender = data->sender;
-		//outRep->duration = ?;
+		outRep->duration = ttime;
 		outRep->receiver = it->first;
 
 		//Add to transmission queue

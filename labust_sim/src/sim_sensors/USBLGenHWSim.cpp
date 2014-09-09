@@ -42,7 +42,7 @@ USBLGenHWSim::USBLGenHWSim():
 		acousticId(0),
 		acSpeed(100),
 		acHeaderSize(16),
-		hwDelay(30000)
+		hwDelay(15000)
 {
 	this->onInit();
 }

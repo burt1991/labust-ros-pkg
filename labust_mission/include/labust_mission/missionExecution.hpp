@@ -53,6 +53,8 @@
 #include <decision_making/ROSTask.h>
 #include <decision_making/DecisionMaking.h>
 
+#include <boost/function.hpp>
+
 extern decision_making::EventQueue* mainEventQueue;
 
 namespace ser = ros::serialization;
@@ -74,6 +76,81 @@ namespace labust {
 
 			MissionExecution(ros::NodeHandle& nh);
 
+			//template <typename primitiveType>
+		    void evaluatePrimitive(string primitiveString){
+
+				misc_msgs::EvaluateExpression evalExpr;
+				primitiveStrContainer = labust::utilities::split(primitiveString, ':');
+
+				for(vector<string>::iterator it = primitiveStrContainer.begin(); it != primitiveStrContainer.end(); it = it + 2){
+
+					evalExpr.request.expression = (*(it+1)).c_str();
+					primitiveMap[*it] =  (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+				}
+			}
+
+			/*****************************************************************
+			 ***  State machine primitive states
+			 ****************************************************************/
+
+		    void dynamic_postitioning_state(){
+
+		    	if(!timeoutActive)
+		    		setTimeout(receivedPrimitive.event.timeout);
+
+				if(refreshRate>0){
+
+					evaluatePrimitive(receivedPrimitive.primitiveString.data);
+					CM.dynamic_positioning(true,primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
+					ROS_ERROR("MAP");
+					if(!refreshActive)
+						setRefreshRate(refreshRate, boost::bind(&MissionExecution::dynamic_postitioning_state, this));
+
+				} else {
+					misc_msgs::DynamicPositioning data = labust::utilities::deserializeMsg<misc_msgs::DynamicPositioning>(receivedPrimitive.primitiveData);
+					CM.dynamic_positioning(true,data.point.north,data.point.east, data.heading);
+					oldPosition = data.point;
+				}
+		    }
+
+		    void go2point_FA_state(){
+		    	misc_msgs::Go2PointFA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointFA>(receivedPrimitive.primitiveData);
+				CM.go2point_FA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.heading, data.victoryRadius);
+
+				oldPosition = data.point;
+
+		    }
+
+		    void go2point_UA_state(){
+		    	misc_msgs::Go2PointUA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointUA>(receivedPrimitive.primitiveData);
+		    			   	CM.go2point_UA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.victoryRadius);
+
+		    			   	oldPosition = data.point;
+
+		    }
+
+		    void course_keeping_FA_state(){
+		    	misc_msgs::CourseKeepingFA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingFA>(receivedPrimitive.primitiveData);
+		    				   	CM.course_keeping_FA(true,data.course, data.speed, data.heading);
+
+		    				   	setTimeout(receivedPrimitive.event.timeout);
+
+		    }
+
+		    void course_keeping_UA_state(){
+		    	misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(receivedPrimitive.primitiveData);
+		    			   	CM.course_keeping_UA(true,data.course, data.speed);
+
+		    			   	setTimeout(receivedPrimitive.event.timeout);
+		    }
+
+		    void iso_state(){
+		    	misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(receivedPrimitive.primitiveData);
+		    				CM.ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
+
+		    				setTimeout(receivedPrimitive.event.timeout);
+		    }
+
 			/*****************************************************************
 			 ***  ROS Subscriptions Callback
 			 ****************************************************************/
@@ -94,6 +171,8 @@ namespace labust {
 
 			void setTimeout(double timeout);
 
+			void setRefreshRate(double timeout, boost::function<void(void)> onRefreshCallback );
+
 			void onTimeout(const ros::TimerEvent& timer);
 
 			/*********************************************************************
@@ -101,32 +180,58 @@ namespace labust {
 			 ********************************************************************/
 
 			ros::NodeHandle nh_;
-			ros::Timer timer;
+			ros::Timer timer, refreshRateTimer;
 			ros::Publisher pubRequestPrimitive;
 			ros::Subscriber subDataEventsContainer, subEventString, subReceivePrimitive;
 
 			auv_msgs::NED oldPosition; /* Remember last primitive end point */
 			misc_msgs::SendPrimitive receivedPrimitive;
 
-			bool checkEventFlag;
+			bool checkEventFlag, refreshActive, timeoutActive;
 			int nextPrimitive;
 
-			vector<string> eventsActive;
+			vector<string> eventsActive, primitiveStrContainer;
+
+			map<string, double> primitiveMap;
+
+			ros::ServiceClient srvExprEval;
+
+			double refreshRate;
+
+			labust::controller::ControllerManager CM;
+
 		};
 
 		/*****************************************************************
 		 ***  Class functions
 		 ****************************************************************/
 
-		MissionExecution::MissionExecution(ros::NodeHandle& nh):checkEventFlag(false),nextPrimitive(1){
+		MissionExecution::MissionExecution(ros::NodeHandle& nh):checkEventFlag(false),
+																	nextPrimitive(1),
+																	refreshActive(false),
+																	timeoutActive(false),
+																	refreshRate(0.0),
+																	CM(nh){
 
-			/* Subscribers */
+			/** Subscribers */
 			subEventString = nh.subscribe<std_msgs::String>("eventString",1, &MissionExecution::onEventString, this);
 			subReceivePrimitive = nh.subscribe<misc_msgs::SendPrimitive>("sendPrimitive",1, &MissionExecution::onReceivePrimitive, this);
 			subDataEventsContainer = nh.subscribe<misc_msgs::DataEventsContainer>("dataEventsContainer",1, &MissionExecution::onDataEventsContainer, this);
 
-			/* Publishers */
+			/** Publishers */
 			pubRequestPrimitive = nh.advertise<std_msgs::UInt16>("requestPrimitive",1);
+
+			/** Service */
+			srvExprEval = nh.serviceClient<misc_msgs::EvaluateExpression>("evaluate_expression");
+
+			primitiveMap.insert(std::pair<string, double>("north", 0.0));
+			primitiveMap.insert(std::pair<string, double>("east", 0.0));
+			primitiveMap.insert(std::pair<string, double>("heading", 0.0));
+			primitiveMap.insert(std::pair<string, double>("course", 0.0));
+			primitiveMap.insert(std::pair<string, double>("speed", 0.0));
+			primitiveMap.insert(std::pair<string, double>("victory_radius", 0.0));
+
+
 		}
 
 		/*****************************************************************
@@ -150,6 +255,7 @@ namespace labust {
 						nextPrimitive = *it;
 						ROS_ERROR("Aktivan event: %d", receivedPrimitive.event.onEventNextActive[i-1]);
 						checkEventFlag = false;
+						refreshActive = false;
 						mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 					}
 
@@ -163,6 +269,7 @@ namespace labust {
 		void MissionExecution::onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data){
 
 			receivedPrimitive = *data;
+			refreshRate = data->refreshRate;
 
 			/* Check if received primitive has active events */
 			if(receivedPrimitive.event.onEventNextActive.empty() == 0){
@@ -219,7 +326,11 @@ namespace labust {
 			mainEventQueue->riseEvent(msg->data.c_str());
 			ROS_INFO("EventString: %s",msg->data.c_str());
 			if(strcmp(msg->data.c_str(),"/STOP") == 0){
+				timer.stop();
+				refreshRateTimer.stop();
+				refreshActive = false;
 				checkEventFlag = false;
+				timeoutActive = false;
 				nextPrimitive = 1;
 			}
 		}
@@ -229,6 +340,14 @@ namespace labust {
 		 ********************************************************************/
 
 		void MissionExecution::requestPrimitive(){
+
+			// PROVJERI OVO
+			timer.stop();
+			refreshRateTimer.stop();
+			refreshActive = false;
+			checkEventFlag = false;
+			timeoutActive = false;
+
 			std_msgs::UInt16 req;
 			req.data = nextPrimitive++;
 			pubRequestPrimitive.publish(req);
@@ -240,14 +359,29 @@ namespace labust {
 		   	if(timeout != 0){
 		   		ROS_ERROR("Setting timeout: %f", timeout);
 				timer = nh_.createTimer(ros::Duration(timeout), &MissionExecution::onTimeout, this, true);
+				timeoutActive = true;
+		   	}
+		}
+
+		void MissionExecution::setRefreshRate(double timeout,  boost::function<void(void)> onRefreshCallback){
+
+		   	if(timeout != 0){
+		   		ROS_ERROR("Setting refresh rate: %f", timeout);
+		   		refreshRateTimer = nh_.createTimer(ros::Duration(timeout), boost::bind(onRefreshCallback), false);
+		   		refreshActive = true;
 		   	}
 		}
 
 		void MissionExecution::onTimeout(const ros::TimerEvent& timer){
 
 			ROS_ERROR("Timeout");
-			mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
+			refreshRateTimer.stop();
+			refreshActive = false;
 			checkEventFlag = false;
+			timeoutActive = false;
+			mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
 
 		}
 	}

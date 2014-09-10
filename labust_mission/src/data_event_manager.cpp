@@ -55,16 +55,16 @@ public:
 
 		ros::NodeHandle nh;
 
-		/* Subscriber */
+		/** Subscriber */
 		subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1,&DataEventManager::onStateHat,this);
 		subMissionSetup = nh.subscribe<misc_msgs::MissionSetup>("missionSetup",1,&DataEventManager::onMissionSetup,this);
 		subExternalEvents= nh.subscribe<misc_msgs::ExternalEvent>("externalEvent",1, &DataEventManager::onExternalEvent, this);
 		subEventString = nh.subscribe<std_msgs::String>("eventString",1, &DataEventManager::onEventString, this);
 
-		/* Publisher */
+		/** Publisher */
 		pubDataEventsContainer = nh.advertise<misc_msgs::DataEventsContainer>("dataEventsContainer",1);
 
-		/* Service */
+		/** Service */
 		srvEvaluateExpression = nh.advertiseService("evaluate_expression", &DataEventManager::expressionEvaluationService,this);
 	}
 

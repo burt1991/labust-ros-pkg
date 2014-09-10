@@ -79,7 +79,7 @@
  ***  Global variables
  ********************************************************************/
 
-extern ros::NodeHandle *nh_ptr;
+//extern ros::NodeHandle *nh_ptr;
 
 /* Primitive callbacks */
 utils::CourseKeepingFA_CB CK_FA;
@@ -111,7 +111,7 @@ namespace labust
 			 ********************************************************/
 
 			/* Constructor */
-			ControllerManager();
+			ControllerManager(ros::NodeHandle nh);
 
 			/* Initial configuration */
 			void start();
@@ -227,7 +227,7 @@ using namespace labust::controller;
 	/*
 	 * Constructor
 	 */
-	ControllerManager::ControllerManager(): LF_FAenable(false),
+	ControllerManager::ControllerManager(ros::NodeHandle nh): LF_FAenable(false),
 											LF_UAenable(false),
 											HDGenable(false),
 											DPenable(false),
@@ -242,23 +242,18 @@ using namespace labust::controller;
 											ac3("DPprimitive", true),
 											ac4("course_keeping_FA", true),
 											ac5("course_keeping_UA", true),
-											ac6("Identification", true)
+											ac6("Identification", true),
+											LLcfg(nh)
 	{
 
-	}
-
-	void ControllerManager::start(){
-
 		/* Publishers */
-		pubStateRef = nh_ptr->advertise<auv_msgs::NavSts>("stateRef", 1);
+		pubStateRef = nh.advertise<auv_msgs::NavSts>("stateRef", 1);
 
 		/* Subscribers */
-		subStateHat = nh_ptr->subscribe<auv_msgs::NavSts>("stateHat",1, &ControllerManager::stateHatCallback,this);
-		subStateHatAbs = nh_ptr->subscribe<auv_msgs::NavSts>("stateHatAbs",1, &ControllerManager::stateHatAbsCallback,this);
-
-		/* Low level configure */
-		LLcfg.start();
+		subStateHat = nh.subscribe<auv_msgs::NavSts>("stateHat",1, &ControllerManager::stateHatCallback,this);
+		subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &ControllerManager::stateHatAbsCallback,this);
 	}
+
 
 	/*********************************************************
 	 *** Controller primitives
@@ -363,7 +358,9 @@ using namespace labust::controller;
 
 			//DPcontroller(true);
 			//HDGcontroller(true);
+
 			LLcfg.LL_VELconfigure(true,2,2,0,0,0,2);
+
 
 
 			navcon_msgs::DynamicPositioningGoal goal;
@@ -471,7 +468,7 @@ using namespace labust::controller;
 
 			//self.velconName = rospy.get_param("~velcon_name","velcon")
 			//self.model_update = rospy.Publisher("model_update", ModelParamsUpdate)
-			ros::NodeHandle ph("~");
+			ros::NodeHandle nh, ph("~");
 			string velconName;
 			ph.param<string>("velcon_name",velconName,"velcon");
 
@@ -490,11 +487,11 @@ using namespace labust::controller;
 			}
 
 			string tmp = velconName + "/" + names[dof] + "_ident_amplitude";
-			nh_ptr->setParam(tmp.c_str(), command);
+			nh.setParam(tmp.c_str(), command);
 			tmp.assign(velconName + "/" + names[dof] + "_ident_hysteresis");
-			nh_ptr->setParam(tmp.c_str(), hysteresis);
+			nh.setParam(tmp.c_str(), hysteresis);
 			tmp.assign(velconName + "/" + names[dof] + "_ident_ref");
-			nh_ptr->setParam(tmp.c_str(), reference);
+			nh.setParam(tmp.c_str(), reference);
 
 			LLcfg.LL_VELconfigure(true,velcon[0], velcon[1], velcon[2], velcon[3], velcon[4], velcon[5]);
 
@@ -653,9 +650,10 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::enableController(const std::string serviceName, bool enable){
 
+		ros::NodeHandle nh;
 		navcon_msgs::EnableControl enabler;
 		enabler.request.enable = enable;
-		ros::ServiceClient clientControllerEnabler = nh_ptr->serviceClient<navcon_msgs::EnableControl>(serviceName);
+		ros::ServiceClient clientControllerEnabler = nh.serviceClient<navcon_msgs::EnableControl>(serviceName);
 		utilities::callService<navcon_msgs::EnableControl>(clientControllerEnabler,enabler);
 	}
 

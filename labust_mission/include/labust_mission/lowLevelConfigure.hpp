@@ -48,7 +48,7 @@
 #include <ros/ros.h>
 #include <labust_mission/utils.hpp>
 
-extern ros::NodeHandle *nh_ptr;
+//extern ros::NodeHandle *nh_ptr;
 
 
 namespace labust {
@@ -57,12 +57,11 @@ namespace labust {
 
 	public:
 
-		LowLevelConfigure();
+		LowLevelConfigure(ros::NodeHandle nh);
 
 		/*************************************************************
 		 *** Class functions
 		 ************************************************************/
-		void start();
 
 		void LL_VELconfigure(bool enable, int x, int y, int z, int pitch, int roll, int yaw);
 
@@ -79,7 +78,7 @@ namespace labust {
 		ros::ServiceClient clientConfigureVelocitiyController;
 	};
 
-	LowLevelConfigure::LowLevelConfigure() // nuAxis(false),
+	LowLevelConfigure::LowLevelConfigure(ros::NodeHandle nh) // nuAxis(false),
 											// velConConf(0)
 	{
 		nuAxis.x = false;
@@ -92,13 +91,11 @@ namespace labust {
 		for( int i = 0; i<=5; i++){
 			velConConf.request.desired_mode[i] = 0;
 		}
+
+		clientConfigureAxes = nh.serviceClient<navcon_msgs::ConfigureAxes>("ConfigureAxes");
+		clientConfigureVelocitiyController = nh.serviceClient<navcon_msgs::ConfigureVelocityController>("ConfigureVelocityController");
 	}
 
-	void LowLevelConfigure::start(){
-
-		clientConfigureAxes = nh_ptr->serviceClient<navcon_msgs::ConfigureAxes>("ConfigureAxes");
-		clientConfigureVelocitiyController = nh_ptr->serviceClient<navcon_msgs::ConfigureVelocityController>("ConfigureVelocityController");
-	}
 
 	/*
 	 * Low-level velocity controller configure

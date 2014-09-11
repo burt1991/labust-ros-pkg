@@ -52,24 +52,15 @@
 #include <decision_making/ROSTask.h>
 #include <decision_making/DecisionMaking.h>
 
-#include <boost/thread.hpp>
-
-using namespace std;
 using namespace decision_making;
 using namespace tinyxml2;
-using namespace labust::mission;
-
-namespace ser = ros::serialization;
 
 /*********************************************************************
 *** Global variables
 *********************************************************************/
 
 EventQueue* mainEventQueue;
-//ros::NodeHandle *nh_ptr;
-//labust::controller::ControllerManager* CM = NULL;
-MissionExecution* ME = NULL;
-
+labust::mission::MissionExecution* ME = NULL;
 
 struct MainEventQueue{
 MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
@@ -77,8 +68,8 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 };
 
 /*********************************************************************
-	*** Finite State Machine
-	*********************************************************************/
+ *** Finite State Machine
+ *********************************************************************/
 
 	/* Mission selection  */
 	FSM(MissionSelect)
@@ -104,6 +95,10 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 
 				FSM_ON_STATE_EXIT_BGN{
 
+					/** Wait for data and events initialization */
+					ros::Rate(ros::Duration(1.0)).sleep();
+
+					/** Get current vehicle position */
 					ME->oldPosition.north = ME->CM.Xpos;
 					ME->oldPosition.east = ME->CM.Ypos;
 
@@ -148,12 +143,6 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 
 				ME->go2point_FA_state();
 
-
-//				misc_msgs::Go2PointFA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointFA>(ME->receivedPrimitive.primitiveData);
-//			   	CM->go2point_FA(true,ME->oldPosition.north,ME->oldPosition.east,data.point.north,data.point.east, data.speed, data.heading, data.victoryRadius);
-//
-//			   	ME->oldPosition = data.point;
-
 				FSM_ON_STATE_EXIT_BGN{
 
 					ME->CM.go2point_FA(false,0,0,0,0,0,0,0);
@@ -170,13 +159,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 			{
 				ROS_ERROR("go2point_UA primitive active");
 
-//				misc_msgs::Go2PointUA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointUA>(ME->receivedPrimitive.primitiveData);
-//			   	CM->go2point_UA(true,ME->oldPosition.north,ME->oldPosition.east,data.point.north,data.point.east, data.speed, data.victoryRadius);
-//
-//			   	ME->oldPosition = data.point;
-
 				ME->go2point_UA_state();
-
 
 				FSM_ON_STATE_EXIT_BGN{
 
@@ -194,25 +177,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 			{
 				ROS_ERROR("dynamic_positioning primitive active");
 
-
-
 				ME->dynamic_postitioning_state();
-
-//				if(ME->refreshRate>0){
-//
-//					ME->refreshActive = true;
-//					while(ME->refreshActive){
-//						ME->evaluatePrimitive(ME->receivedPrimitive.primitiveString.data);
-//						ConMan.dynamic_positioning(true,ME->primitiveMap["north"], ME->primitiveMap["east"], ME->primitiveMap["heading"]);
-//						ROS_ERROR("MAP");
-//						boost::this_thread::sleep(boost::posix_time::seconds(ME->receivedPrimitive.refreshRate));
-//					}
-//
-//				} else {
-//					misc_msgs::DynamicPositioning data = labust::utilities::deserializeMsg<misc_msgs::DynamicPositioning>(ME->receivedPrimitive.primitiveData);
-//				   	ConMan.dynamic_positioning(true,data.point.north,data.point.east, data.heading);
-//				   	ME->oldPosition = data.point;
-//				}
 
 				FSM_ON_STATE_EXIT_BGN{
 
@@ -230,12 +195,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 			{
 				ROS_ERROR("course_keeping_FA primitive active");
 
-//				misc_msgs::CourseKeepingFA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingFA>(ME->receivedPrimitive.primitiveData);
-//			   	CM->course_keeping_FA(true,data.course, data.speed, data.heading);
-//
-//			   	ME->setTimeout(ME->receivedPrimitive.event.timeout);
 				ME->course_keeping_FA_state();
-
 
 				FSM_ON_STATE_EXIT_BGN{
 
@@ -255,11 +215,6 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 			FSM_STATE(course_keeping_UA_state)
 			{
 				ROS_ERROR("course_keeping_UA primitive active");
-
-//				misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(ME->receivedPrimitive.primitiveData);
-//			   	CM->course_keeping_UA(true,data.course, data.speed);
-//
-//			   	ME->setTimeout(ME->receivedPrimitive.event.timeout);
 
 				ME->course_keeping_UA_state();
 
@@ -282,11 +237,6 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 			FSM_STATE(iso_state)
 			{
 				ROS_ERROR("iso primitive active");
-
-//				misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(ME->receivedPrimitive.primitiveData);
-//				CM->ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
-//
-//				ME->setTimeout(ME->receivedPrimitive.event.timeout);
 
 				ME->iso_state();
 
@@ -311,28 +261,6 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 	}
 
 
-//class StateMachine{
-//
-//public:
-//	StateMachine(){
-//
-//		ConMan.start();
-//		CM = &ConMan;
-//		//FsmMissionSelect(NULL, mainEventQueue);
-//
-//	}
-//
-//	~StateMachine(){
-//
-//	}
-//
-//	FSM(MissionSelect);
-//
-//	ControllerManager ConMan;
-//
-//	labust::controller::ControllerManager* CM = NULL;
-//};
-
 /*********************************************************************
  ***  Main function
  ********************************************************************/
@@ -342,19 +270,13 @@ int main(int argc, char** argv){
 	ros::init(argc, argv, "ControllerFSM");
 	ros_decision_making_init(argc, argv);
 	ros::NodeHandle nh;
-	//nh_ptr = &nh;
 
 	/* Start Mission Execution */
-	MissionExecution MissExec(nh);
+	labust::mission::MissionExecution MissExec(nh);
 	ME = &MissExec;
 
 	/* Global event queue */
 	MainEventQueue meq;
-
-	/* Start Controller Manager */
-	//ControllerManager ConMan;
-	//ConMan.start();
-	//CM = &ConMan;
 
 	/* Start state machine */
 	ros::AsyncSpinner spinner(2);

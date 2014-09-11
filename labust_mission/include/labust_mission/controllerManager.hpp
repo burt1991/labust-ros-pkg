@@ -246,10 +246,10 @@ using namespace labust::controller;
 											LLcfg(nh)
 	{
 
-		/* Publishers */
+		/** Publishers */
 		pubStateRef = nh.advertise<auv_msgs::NavSts>("stateRef", 1);
 
-		/* Subscribers */
+		/** Subscribers */
 		subStateHat = nh.subscribe<auv_msgs::NavSts>("stateHat",1, &ControllerManager::stateHatCallback,this);
 		subStateHatAbs = nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &ControllerManager::stateHatAbsCallback,this);
 	}
@@ -360,8 +360,6 @@ using namespace labust::controller;
 			//HDGcontroller(true);
 
 			LLcfg.LL_VELconfigure(true,2,2,0,0,0,2);
-
-
 
 			navcon_msgs::DynamicPositioningGoal goal;
 			goal.T1.point.x = north;
@@ -662,13 +660,10 @@ using namespace labust::controller;
 	 */
 	void ControllerManager::stateHatCallback(const auv_msgs::NavSts::ConstPtr& data){
 
-		//meas = data; // Isprobaj ovo
 		posVariance = data->position_variance;
 	}
 
 	void ControllerManager::stateHatAbsCallback(const auv_msgs::NavSts::ConstPtr& data){
-
-		//meas = data; // Isprobaj ovo
 
 		Xpos = data->position.north;
 		Ypos = data->position.east;

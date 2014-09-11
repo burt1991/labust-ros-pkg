@@ -101,12 +101,18 @@ namespace labust {
 				if(refreshRate>0){
 
 					evaluatePrimitive(receivedPrimitive.primitiveString.data);
-					CM.dynamic_positioning(true,primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
-					ROS_ERROR("MAP");
+					CM.dynamic_positioning(true, primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
+					oldPosition.north = primitiveMap["north"];
+					oldPosition.east = primitiveMap["east"];
+
+					ROS_ERROR("DP: %f. %f, %f",primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
+
 					if(!refreshActive)
 						setRefreshRate(refreshRate, boost::bind(&MissionExecution::dynamic_postitioning_state, this));
 
 				} else {
+
+					ROS_ERROR("Debug");
 					misc_msgs::DynamicPositioning data = labust::utilities::deserializeMsg<misc_msgs::DynamicPositioning>(receivedPrimitive.primitiveData);
 					CM.dynamic_positioning(true,data.point.north,data.point.east, data.heading);
 					oldPosition = data.point;
@@ -114,41 +120,98 @@ namespace labust {
 		    }
 
 		    void go2point_FA_state(){
-		    	misc_msgs::Go2PointFA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointFA>(receivedPrimitive.primitiveData);
-				CM.go2point_FA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.heading, data.victoryRadius);
 
-				oldPosition = data.point;
+		    	if(!timeoutActive)
+		    		setTimeout(receivedPrimitive.event.timeout);
 
+				if(refreshRate>0){
+					evaluatePrimitive(receivedPrimitive.primitiveString.data);
+					CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
+					oldPosition.north = primitiveMap["north"];
+					oldPosition.east = primitiveMap["east"];
+
+					if(!refreshActive)
+						setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_FA_state, this));
+
+
+				} else {
+
+					misc_msgs::Go2PointFA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointFA>(receivedPrimitive.primitiveData);
+					CM.go2point_FA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.heading, data.victoryRadius);
+					oldPosition = data.point;
+				}
 		    }
 
 		    void go2point_UA_state(){
-		    	misc_msgs::Go2PointUA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointUA>(receivedPrimitive.primitiveData);
-		    			   	CM.go2point_UA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.victoryRadius);
 
-		    			   	oldPosition = data.point;
+		    	if(!timeoutActive)
+		    		setTimeout(receivedPrimitive.event.timeout);
 
+		    	if(refreshRate>0){
+		    						evaluatePrimitive(receivedPrimitive.primitiveString.data);
+		    						CM.go2point_UA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["victory_radius"]);
+		    						oldPosition.north = primitiveMap["north"];
+		    						oldPosition.east = primitiveMap["east"];
+
+		    						if(!refreshActive)
+		    							setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_UA_state, this));
+
+
+		    					} else {
+
+					misc_msgs::Go2PointUA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointUA>(receivedPrimitive.primitiveData);
+					CM.go2point_UA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.victoryRadius);
+					oldPosition = data.point;
+				}
 		    }
 
 		    void course_keeping_FA_state(){
-		    	misc_msgs::CourseKeepingFA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingFA>(receivedPrimitive.primitiveData);
-		    				   	CM.course_keeping_FA(true,data.course, data.speed, data.heading);
 
-		    				   	setTimeout(receivedPrimitive.event.timeout);
+		    	if(!timeoutActive)
+		    		setTimeout(receivedPrimitive.event.timeout);
 
+				if(refreshRate>0){
+
+					evaluatePrimitive(receivedPrimitive.primitiveString.data);
+					CM.course_keeping_FA(true, primitiveMap["course"], primitiveMap["speed"], primitiveMap["heading"]);
+
+					if(!refreshActive)
+						setRefreshRate(refreshRate, boost::bind(&MissionExecution::course_keeping_FA_state, this));
+
+
+				} else {
+
+					misc_msgs::CourseKeepingFA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingFA>(receivedPrimitive.primitiveData);
+					CM.course_keeping_FA(true,data.course, data.speed, data.heading);
+				}
 		    }
 
 		    void course_keeping_UA_state(){
-		    	misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(receivedPrimitive.primitiveData);
-		    			   	CM.course_keeping_UA(true,data.course, data.speed);
 
-		    			   	setTimeout(receivedPrimitive.event.timeout);
+		    	if(!timeoutActive)
+		    		setTimeout(receivedPrimitive.event.timeout);
+
+		    	if(refreshRate>0){
+
+					evaluatePrimitive(receivedPrimitive.primitiveString.data);
+					CM.course_keeping_UA(true, primitiveMap["course"], primitiveMap["speed"]);
+
+					if(!refreshActive)
+						setRefreshRate(refreshRate, boost::bind(&MissionExecution::course_keeping_UA_state, this));
+
+				} else {
+					misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(receivedPrimitive.primitiveData);
+					CM.course_keeping_UA(true,data.course, data.speed);
+				}
 		    }
 
 		    void iso_state(){
-		    	misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(receivedPrimitive.primitiveData);
-		    				CM.ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
 
-		    				setTimeout(receivedPrimitive.event.timeout);
+		    	if(!timeoutActive)
+		    		setTimeout(receivedPrimitive.event.timeout);
+
+				misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(receivedPrimitive.primitiveData);
+				CM.ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
 		    }
 
 			/*****************************************************************
@@ -174,6 +237,8 @@ namespace labust {
 			void setRefreshRate(double timeout, boost::function<void(void)> onRefreshCallback );
 
 			void onTimeout(const ros::TimerEvent& timer);
+
+			void onPrimitiveEndReset();
 
 			/*********************************************************************
 			 ***  Class variables
@@ -221,17 +286,16 @@ namespace labust {
 			/** Publishers */
 			pubRequestPrimitive = nh.advertise<std_msgs::UInt16>("requestPrimitive",1);
 
-			/** Service */
+			/** Services */
 			srvExprEval = nh.serviceClient<misc_msgs::EvaluateExpression>("evaluate_expression");
 
+			/** Define primitive parameters  */
 			primitiveMap.insert(std::pair<string, double>("north", 0.0));
 			primitiveMap.insert(std::pair<string, double>("east", 0.0));
 			primitiveMap.insert(std::pair<string, double>("heading", 0.0));
 			primitiveMap.insert(std::pair<string, double>("course", 0.0));
 			primitiveMap.insert(std::pair<string, double>("speed", 0.0));
 			primitiveMap.insert(std::pair<string, double>("victory_radius", 0.0));
-
-
 		}
 
 		/*****************************************************************
@@ -240,26 +304,26 @@ namespace labust {
 
 		void MissionExecution::onDataEventsContainer(const misc_msgs::DataEventsContainer::ConstPtr& data){
 
-			/* If primitve has active events */
+			/** If primitive has active events */
 			if(checkEventFlag){
 
-				/* Reset flag and counters */
+				/** Reset flag and counters */
 				int flag = 0, i = 0;
 
 				for(std::vector<uint8_t>::iterator it = receivedPrimitive.event.onEventNext.begin() ;
 														it != receivedPrimitive.event.onEventNext.end(); ++it){
 
-					/* For each primitive event check if it is true */
+					/** For each primitive event check if it is true */
 					if(data->eventsVar[receivedPrimitive.event.onEventNextActive[i++]-1] == 1){
 						flag = 1;
 						nextPrimitive = *it;
-						ROS_ERROR("Aktivan event: %d", receivedPrimitive.event.onEventNextActive[i-1]);
-						checkEventFlag = false;
-						refreshActive = false;
+						ROS_ERROR("Event active:: %d", receivedPrimitive.event.onEventNextActive[i-1]);
+
+						onPrimitiveEndReset();
 						mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 					}
 
-					/* First true event has priority */
+					/** First true event has priority */
 					if (flag) break;
 				}
 			}
@@ -271,12 +335,12 @@ namespace labust {
 			receivedPrimitive = *data;
 			refreshRate = data->refreshRate;
 
-			/* Check if received primitive has active events */
+			/** Check if received primitive has active events */
 			if(receivedPrimitive.event.onEventNextActive.empty() == 0){
 				checkEventFlag = true;
 			}
 
-			/* Call primitive */
+			/** Call primitive */
 			switch(data->primitiveID){
 
 				case go2point_FA:
@@ -321,38 +385,27 @@ namespace labust {
 			}
 		}
 
-		void MissionExecution::onEventString(const std_msgs::String::ConstPtr& msg){
-
-			mainEventQueue->riseEvent(msg->data.c_str());
-			ROS_INFO("EventString: %s",msg->data.c_str());
-			if(strcmp(msg->data.c_str(),"/STOP") == 0){
-				timer.stop();
-				refreshRateTimer.stop();
-				refreshActive = false;
-				checkEventFlag = false;
-				timeoutActive = false;
-				nextPrimitive = 1;
-			}
-		}
 
 		/*********************************************************************
 		 *** Helper functions
 		 ********************************************************************/
 
-		void MissionExecution::requestPrimitive(){
+		void MissionExecution::onEventString(const std_msgs::String::ConstPtr& msg){
 
-			// PROVJERI OVO
-			timer.stop();
-			refreshRateTimer.stop();
-			refreshActive = false;
-			checkEventFlag = false;
-			timeoutActive = false;
+			mainEventQueue->riseEvent(msg->data.c_str());
+			ROS_INFO("EventString: %s",msg->data.c_str());
+			if(strcmp(msg->data.c_str(),"/STOP") == 0){
+				onPrimitiveEndReset();
+				nextPrimitive = 1;
+			}
+		}
+
+		void MissionExecution::requestPrimitive(){
 
 			std_msgs::UInt16 req;
 			req.data = nextPrimitive++;
 			pubRequestPrimitive.publish(req);
 		}
-
 
 		void MissionExecution::setTimeout(double timeout){
 
@@ -375,14 +428,18 @@ namespace labust {
 		void MissionExecution::onTimeout(const ros::TimerEvent& timer){
 
 			ROS_ERROR("Timeout");
-
-			refreshRateTimer.stop();
-			refreshActive = false;
-			checkEventFlag = false;
-			timeoutActive = false;
+			onPrimitiveEndReset();
 			mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+		}
 
+		void MissionExecution::onPrimitiveEndReset(){
 
+			/** Stop refresh rate timer */
+			refreshRateTimer.stop();
+			/** Stop timeout timer */
+			timer.stop();
+		    /** Reset execution flags */
+			refreshActive = timeoutActive = checkEventFlag = false;
 		}
 	}
 }

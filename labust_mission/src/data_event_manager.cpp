@@ -98,7 +98,8 @@ public:
 	/* On external change of mission variable update data manager */
 	void onExternalEvent(const misc_msgs::ExternalEvent::ConstPtr& data){
 
-		DM.updateMissionVar(data->id, data->value);
+		if((data->id > 0) && (data->id <= DM.getMissionVar().size()) )
+			DM.updateMissionVar(data->id, data->value);
 	}
 
 	/* Callback that initializes mission parameters and events */

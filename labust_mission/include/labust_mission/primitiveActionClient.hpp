@@ -135,7 +135,9 @@ namespace utils {
 			void doneCb(const actionlib::SimpleClientGoalState& state, const Result::ConstPtr& result)
 			   {
 				 ROS_ERROR("DPprimitive - Finished in state [%s]", state.toString().c_str());
-				 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
+				 if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
+					 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 			   }
 
 			  // Called once when the goal becomes active

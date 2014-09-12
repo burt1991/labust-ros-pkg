@@ -50,17 +50,11 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/array.hpp>
 
-namespace labust
-{
+namespace labust{
 	namespace control{
-		///The course keeping action
-		///\todo Check what happens during the switch
-		///\todo Name remapping of controllers should be implemented similar to ROS remapping ?
-		///\todo Add the ability to update heading in fully actuated without full recalculation
-	 	///\todo Enable high level controllers using controllerManager class
-		///\todo DP underactuated
-		struct DPprimitive : protected ExecutorBase<navcon_msgs::DynamicPositioningAction>
-		{
+
+		struct DPprimitive : protected ExecutorBase<navcon_msgs::DynamicPositioningAction>{
+
 			typedef navcon_msgs::DynamicPositioningGoal Goal;
 			typedef navcon_msgs::DynamicPositioningResult Result;
 
@@ -72,90 +66,41 @@ namespace labust
 				headingEnabled(false),
 				processNewGoal(false){};
 
-			void init()
-			{
+			void init(){
 				ros::NodeHandle ph("~");
-//				ph.param("underactuated",underactuated,underactuated);
-//
-//				controllers.name.resize(numcnt);
-//				controllers.state.resize(numcnt, false);
-//				std::string temp("ualf");
-//				ph.param("ualf_name",temp,temp);
-//				controllers.name[ualf] = temp;
-//				temp = "falf";
-//				ph.param("falf_name",temp,temp);
-//				controllers.name[falf] = temp;
-//				temp = "heading";
-//				ph.param("heading_name",temp,temp);
-//				controllers.name[heading] = temp;
 			}
 
-			void onGoal()
-			{
+			void onGoal(){
+
 				boost::mutex::scoped_lock l(state_mux);
 				ROS_DEBUG("On goal.");
 				//Set the flag to avoid disabling controllers on preemption
+
+			//	if(aserver->isActive()){
+
+				//	aserver->setPreempted();
+				//}
+
 				processNewGoal = true;
 				Goal::ConstPtr new_goal = aserver->acceptNewGoal();
 				processNewGoal = false;
-				//Check if course keeping is possible.
-//				if (new_goal->speed == 0)
-//				{
-//					ROS_WARN("Cannot perform course keeping without forward speed.");
-//					aserver->setAborted(Result(), "Forward speed is zero.");
-//				}
+
 
 				//if ((goal == 0) || (new_goal->course != goal->course))
-				if ((goal == 0) || (new_goal->T1.point.x != goal->T1.point.x)
-								|| (new_goal->T1.point.y != goal->T1.point.y)
-								|| (new_goal->yaw != goal->yaw))
-				{
+//				if ((goal == 0) || (new_goal->T1.point.x != goal->T1.point.x)
+//								|| (new_goal->T1.point.y != goal->T1.point.y)
+//								|| (new_goal->yaw != goal->yaw))
+//				{
+
+				if (goal == 0){
+
 					//Save new goal
 					goal = new_goal;
-					//ROS_DEBUG("Change course: %f", new_goal->course);
-					//Calculate new line if target changed
-//					Eigen::Vector3d T1,T2;
-//					T1<<lastState.position.north,
-//							lastState.position.east,
-//							0;
-//					T2<<lastState.position.north + 10*cos(new_goal->course),
-//							lastState.position.east + 10*sin(new_goal->course),
-//							0;
-//					line.setLine(T1,T2);
-//
-//					enum{xp=0,yp,zp};
-//					geometry_msgs::TransformStamped transform;
-//					transform.transform.translation.x = T1(xp);
-//					transform.transform.translation.y = T1(yp);
-//					transform.transform.translation.z = T1(zp);
-//					labust::tools::quaternionFromEulerZYX(0, 0, line.gamma(),
-//							transform.transform.rotation);
-//					transform.child_frame_id = "course_frame";
-//					transform.header.frame_id = "local";
-//					transform.header.stamp = ros::Time::now();
-//					broadcaster.sendTransform(transform);
 
 					//Update reference
-					//The underactuated controller will auto-enable itself
 					stateRef.publish(step(lastState));
                     enableController = true;
 
-					//Enable overactuated controllers
-//					if (!underactuated)
-//					{
-//						controllers.state[falf] = true;
-//						controllers.state[heading] = true;
-//					}
-//					else
-//					{
-//						double delta = labust::math::wrapRad(lastState.orientation.yaw - line.gamma());
-//						ROS_DEBUG("Delta: %f",delta);
-//						if (fabs(delta) < M_PI_2)
-//						{
-//							controllers.state[ualf] = true;
-//							controllers.state[heading] = false;
-//						}
-//					}
 					this->updateControllers();
 				}
 
@@ -179,8 +124,7 @@ namespace labust
 				aserver->setPreempted();
 			};
 
-			void updateControllers()
-			{
+			void updateControllers(){
 
 				/* Enable high level controllers */
 				ros::NodeHandle nh;
@@ -196,20 +140,21 @@ namespace labust
 				cl.call(a);
 			}
 
-			void onStateHat(const auv_msgs::NavSts::ConstPtr& estimate)
-			{
+			void onStateHat(const auv_msgs::NavSts::ConstPtr& estimate){
+
 				boost::mutex::scoped_lock l(state_mux);
-				if (aserver->isActive())
-				{
+
+				if (aserver->isActive()){
+
 					stateRef.publish(step(*estimate));
 				}
-				else if (goal != 0)
-				{
+				else if (goal != 0){
+
 						goal.reset();
 						ROS_INFO("Stopping controllers.");
 						controllers.state.assign(numcnt, false);
                         enableController = false;
-						this->updateControllers();
+						//this->updateControllers();
 				}
 
 				lastState = *estimate;
@@ -221,36 +166,10 @@ namespace labust
 
 				ref->position.north = goal->T1.point.x;
 				ref->position.east = goal->T1.point.y;
-				//ref->body_velocity.x = goal->speed;
 				ref->orientation.yaw = goal->yaw;
-				//ref->header.frame_id = "course_frame";
 				ref->header.frame_id = "local";
-
-				//Check underactuated behaviour
-//				if (underactuated)
-//				{
-//					ref->orientation.yaw = line.gamma();
-//					double delta = labust::math::wrapRad(state.orientation.yaw - line.gamma());
-//					ROS_DEBUG("Delta, gamma: %f, %f",delta, line.gamma());
-//					if (controllers.state[heading] && (fabs(delta) < M_PI/3))
-//					{
-//							//disable heading and activate ualf
-//							controllers.state[heading] = false;
-//							controllers.state[ualf] = true;
-//							this->updateControllers();
-//							ref->header.frame_id = "course_frame";
-//					}
-//					else if (fabs(delta) >= M_PI/2)
-//					{
-//							//deactivate ualf and activate heading
-//							controllers.state[heading] = true;
-//							controllers.state[ualf] = false;
-//							this->updateControllers();
-//							ref->header.frame_id = "local";
-//					}
-//				}
-
 				ref->header.stamp = ros::Time::now();
+
 				return ref;
 			}
 
@@ -270,8 +189,8 @@ namespace labust
 	}
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
+
 	ros::init(argc,argv,"DPprimitive");
 
 	labust::control::PrimitiveBase<labust::control::DPprimitive> primitive;

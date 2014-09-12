@@ -329,10 +329,21 @@ using namespace labust::controller;
 			goal.speed = speed;
 			goal.radius = radius;
 
+			if(ac2.getState() == actionlib::SimpleClientGoalState::ACTIVE){
+
+				ac2.cancelGoal();
+				ac2.sendGoal(goal,
+								boost::bind(&utils::Go2PointUA_CB::doneCb, G2P_UA, _1, _2),
+								boost::bind(&utils::Go2PointUA_CB::activeCb, G2P_UA),
+								boost::bind(&utils::Go2PointUA_CB::feedbackCb, G2P_UA, _1));
+
+
+			} else {
 			ac2.sendGoal(goal,
 							boost::bind(&utils::Go2PointUA_CB::doneCb, G2P_UA, _1, _2),
 							boost::bind(&utils::Go2PointUA_CB::activeCb, G2P_UA),
 							boost::bind(&utils::Go2PointUA_CB::feedbackCb, G2P_UA, _1));
+			}
 
 		} else {
 
@@ -366,10 +377,28 @@ using namespace labust::controller;
 			goal.T1.point.y = east;
 			goal.yaw = heading;
 
+			if(ac3.getState() == actionlib::SimpleClientGoalState::ACTIVE){
+
+				ROS_ERROR("DEBUG");
+							//ac3.cancelGoal();
+
+
+							ac3.cancelGoalsAtAndBeforeTime(ros::Time::now());
+					      //  boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+							ac3.sendGoal(goal,
+										boost::bind(&utils::DPprimitive_CB::doneCb, DP_FA, _1, _2),
+										boost::bind(&utils::DPprimitive_CB::activeCb, DP_FA),
+										boost::bind(&utils::DPprimitive_CB::feedbackCb, DP_FA, _1));
+
+
+						} else {
+
+							ROS_ERROR("DEBUG2");
 			ac3.sendGoal(goal,
 						boost::bind(&utils::DPprimitive_CB::doneCb, DP_FA, _1, _2),
 						boost::bind(&utils::DPprimitive_CB::activeCb, DP_FA),
 						boost::bind(&utils::DPprimitive_CB::feedbackCb, DP_FA, _1));
+						}
 		} else {
 
 			boost::this_thread::sleep(boost::posix_time::milliseconds(200));

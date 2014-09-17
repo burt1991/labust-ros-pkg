@@ -79,8 +79,6 @@
  ***  Global variables
  ********************************************************************/
 
-//extern ros::NodeHandle *nh_ptr;
-
 /* Primitive callbacks */
 utils::CourseKeepingFA_CB CK_FA;
 utils::CourseKeepingUA_CB CK_UA;

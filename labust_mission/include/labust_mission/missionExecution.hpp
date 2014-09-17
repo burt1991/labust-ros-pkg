@@ -76,7 +76,6 @@ namespace labust {
 
 			MissionExecution(ros::NodeHandle& nh);
 
-			//template <typename primitiveType>
 		    void evaluatePrimitive(string primitiveString){
 
 				misc_msgs::EvaluateExpression evalExpr;
@@ -244,27 +243,44 @@ namespace labust {
 			 ***  Class variables
 			 ********************************************************************/
 
-			ros::NodeHandle nh_;
-			ros::Timer timer, refreshRateTimer;
-			ros::Publisher pubRequestPrimitive;
-			ros::Subscriber subDataEventsContainer, subEventString, subReceivePrimitive;
-
-			auv_msgs::NED oldPosition; /* Remember last primitive end point */
-			misc_msgs::SendPrimitive receivedPrimitive;
-
-			bool checkEventFlag, refreshActive, timeoutActive;
-			int nextPrimitive;
-
-			vector<string> eventsActive, primitiveStrContainer;
-
-			map<string, double> primitiveMap;
-
-			ros::ServiceClient srvExprEval;
-
-			double refreshRate;
-
+			/** Controller manager class */
 			labust::controller::ControllerManager CM;
 
+			/** ROS Node handle */
+			ros::NodeHandle nh_;
+
+			/** Timers */
+			ros::Timer timer, refreshRateTimer;
+
+			/** Publishers */
+			ros::Publisher pubRequestPrimitive;
+
+			/** Subscribers */
+			ros::Subscriber subDataEventsContainer, subEventString, subReceivePrimitive;
+
+			/** Services */
+			ros::ServiceClient srvExprEval;
+
+			/** Remember last primitive end point */
+			auv_msgs::NED oldPosition;
+
+			/** Store last received primitive */
+			misc_msgs::SendPrimitive receivedPrimitive;
+
+			/** Vectors */
+			vector<string> eventsActive, primitiveStrContainer;
+
+			/** Map for storing last primitive data */
+			map<string, double> primitiveMap;
+
+			/** Execution flags */
+			bool checkEventFlag, refreshActive, timeoutActive;
+
+			/** Next primitive to request */
+			int nextPrimitive;
+
+			/** Primitive reference refresh rate */
+			double refreshRate;
 		};
 
 		/*****************************************************************
@@ -302,6 +318,7 @@ namespace labust {
 		 ***  ROS Subscriptions Callback
 		 ****************************************************************/
 
+		/** DataEventsContainer callback  */
 		void MissionExecution::onDataEventsContainer(const misc_msgs::DataEventsContainer::ConstPtr& data){
 
 			/** If primitive has active events */
@@ -315,6 +332,7 @@ namespace labust {
 
 					/** For each primitive event check if it is true */
 					if(data->eventsVar[receivedPrimitive.event.onEventNextActive[i++]-1] == 1){
+
 						flag = 1;
 						nextPrimitive = *it;
 						ROS_ERROR("Event active:: %d", receivedPrimitive.event.onEventNextActive[i-1]);
@@ -329,7 +347,7 @@ namespace labust {
 			}
 		}
 
-		/* */
+		/** ReceivePrimitive topic callback */
 		void MissionExecution::onReceivePrimitive(const misc_msgs::SendPrimitive::ConstPtr& data){
 
 			receivedPrimitive = *data;
@@ -390,6 +408,7 @@ namespace labust {
 		 *** Helper functions
 		 ********************************************************************/
 
+		/** EventString topic callback */
 		void MissionExecution::onEventString(const std_msgs::String::ConstPtr& msg){
 
 			mainEventQueue->riseEvent(msg->data.c_str());
@@ -400,6 +419,7 @@ namespace labust {
 			}
 		}
 
+		/** Request new primitive */
 		void MissionExecution::requestPrimitive(){
 
 			std_msgs::UInt16 req;
@@ -407,6 +427,7 @@ namespace labust {
 			pubRequestPrimitive.publish(req);
 		}
 
+		/** Set primitive timeout */
 		void MissionExecution::setTimeout(double timeout){
 
 		   	if(timeout != 0){
@@ -416,6 +437,7 @@ namespace labust {
 		   	}
 		}
 
+		/** Set primitive reference refresh rate */
 		void MissionExecution::setRefreshRate(double timeout,  boost::function<void(void)> onRefreshCallback){
 
 		   	if(timeout != 0){
@@ -425,6 +447,7 @@ namespace labust {
 		   	}
 		}
 
+		/** On timeout finish primitive execution */
 		void MissionExecution::onTimeout(const ros::TimerEvent& timer){
 
 			ROS_ERROR("Timeout");
@@ -432,6 +455,7 @@ namespace labust {
 			mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 		}
 
+		/** Reset timers and flags */
 		void MissionExecution::onPrimitiveEndReset(){
 
 			/** Stop refresh rate timer */

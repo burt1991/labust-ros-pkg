@@ -43,15 +43,17 @@
 #ifndef LOWLEVELCONFIGURE_HPP_
 #define LOWLEVELCONFIGURE_HPP_
 
+#include <ros/ros.h>
 #include <auv_msgs/Bool6Axis.h>
 #include <navcon_msgs/ConfigureVelocityController.h>
-#include <ros/ros.h>
 #include <labust_mission/utils.hpp>
-
-//extern ros::NodeHandle *nh_ptr;
 
 
 namespace labust {
+
+/*************************************************************
+ *** Class definition
+ ************************************************************/
 
 	class LowLevelConfigure {
 
@@ -78,9 +80,8 @@ namespace labust {
 		ros::ServiceClient clientConfigureVelocitiyController;
 	};
 
-	LowLevelConfigure::LowLevelConfigure(ros::NodeHandle nh) // nuAxis(false),
-											// velConConf(0)
-	{
+	LowLevelConfigure::LowLevelConfigure(ros::NodeHandle nh){
+
 		nuAxis.x = false;
 		nuAxis.y = false;
 		nuAxis.z = false;

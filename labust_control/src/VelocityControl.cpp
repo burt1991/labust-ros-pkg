@@ -232,12 +232,12 @@ void VelocityControl::handleWindup(const auv_msgs::BodyForceReq::ConstPtr& tau)
 	if (!controller[q].autoWindup) controller[q].extWindup = tau->wrench.torque.y;
 	if (!controller[r].autoWindup) controller[r].extWindup = tau->wrench.torque.z;
 
-	if (!controller[u].autoWindup) controller[u].windup = tau->disable_axis.x;
-	if (!controller[v].autoWindup) controller[v].windup = tau->disable_axis.y;
-	if (!controller[w].autoWindup) controller[w].windup = tau->disable_axis.z;
-	if (!controller[p].autoWindup) controller[p].windup = tau->disable_axis.roll;
-	if (!controller[q].autoWindup) controller[q].windup = tau->disable_axis.pitch;
-	if (!controller[r].autoWindup) controller[r].windup = tau->disable_axis.yaw;
+//	if (!controller[u].autoWindup) controller[u].windup = tau->disable_axis.x;
+//	if (!controller[v].autoWindup) controller[v].windup = tau->disable_axis.y;
+//	if (!controller[w].autoWindup) controller[w].windup = tau->disable_axis.z;
+//	if (!controller[p].autoWindup) controller[p].windup = tau->disable_axis.roll;
+//	if (!controller[q].autoWindup) controller[q].windup = tau->disable_axis.pitch;
+//	if (!controller[r].autoWindup) controller[r].windup = tau->disable_axis.yaw;
 };
 
 void VelocityControl::handleExt(const auv_msgs::BodyForceReq::ConstPtr& tau)

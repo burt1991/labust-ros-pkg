@@ -57,7 +57,11 @@ namespace labust
 		{
 			enum {x=0,y};
 
-			ALTControl():Ts(0.1), useIP(false), minAltitude(5), trimOffset(0){};
+			ALTControl():Ts(0.1),
+					useIP(false),
+					minAltitude(5),
+					trimOffset(0),
+					lastRef(0){};
 
 			void init()
 			{
@@ -71,6 +75,16 @@ namespace labust
 				//con.windup = tauAch.disable_axis.z;
   			con.extWindup = -tauAch.windup.z;
 			};
+
+  		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
+  				const auv_msgs::BodyVelocityReq& track)
+  		{
+  			//Tracking external commands while idle (bumpless)
+  			con.desired = ref.altitude;
+  			con.output = con.internalState = track.twist.linear.z;
+  			con.lastState = con.state = state.altitude;
+  			if (!useIP) PIFF_idle(&con, Ts);
+  		};
 
   		void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
   		{

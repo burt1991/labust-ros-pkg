@@ -67,8 +67,20 @@ namespace labust
 			{
 				//Copy into controller
 				//con.windup = tauAch.disable_axis.yaw;
-  				con.extWindup = tauAch.windup.yaw;
+  			con.extWindup = tauAch.windup.yaw;
 			};
+
+  		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
+  				const auv_msgs::BodyVelocityReq& track)
+  		{
+  			//Tracking external commands while idle (bumpless)
+  			con.desired = ref.orientation.yaw;
+  			con.output = con.internalState = track.twist.angular.z;
+  			con.lastState = con.state = useIP?unwrap(state.orientation.yaw):state.orientation.yaw;
+  			float errorWrap = labust::math::wrapRad(
+  								con.desired - con.state);
+  			if (!useIP) PIFF_wffIdle(&con,Ts, errorWrap, ref.orientation_rate.yaw);
+  		};
 
   		void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
   		{

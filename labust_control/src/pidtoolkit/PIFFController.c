@@ -58,6 +58,13 @@ void PIFF_tune(PIDBase* self, float w)
 	self->w = w;
 }
 
+void PIFF_wffIdle(PIDBase* self, float Ts, float error, float ff)
+{
+	self->lastError = error;
+	self->lastRef = self->desired;
+	self->lastFF = ff;
+}
+
 void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 {
 	//Perform windup test if automatic mode is enabled.
@@ -67,22 +74,34 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 		self->windup = (self->windup) ||
 				((self->internalState < self->output) && (error<0));
 		//Set the wind-up sign for cascade controllers.
+		///\todo Deprecate windup sign ?
 		if ((self->windup) && (self->internalState < self->output))	self->windup = -1;
 	}
 	else
 	{
 		//Experimental
-		self->windup = ((self->extWindup > 0) && (error > 0)) ||
-				((self->extWindup < 0) && (error < 0));
+		/*self->windup = ((self->extWindup > 0) && (error > 0)) ||
+				((self->extWindup < 0) && (error < 0));*/
 		//Experimental 2
 		self->windup = (self->extWindup && (error*self->output > 0));
+	}
+
+	//Backward recalculation
+	if ((self->lastI != 0) && self->windup && self->useBackward)
+	{
+		//Calculate the proportional influence
+		float diff = self->track - self->internalState + self->lastI;
+		//If the proportional part is already in windup remove the whole last integral
+		//Otherwise recalculate the integral to be on the edge of windup
+		self->internalState -= ((diff*self->track <= 0)?self->lastI:(self->lastI - diff));
 	}
 
 	//Proportional term
 	self->internalState += self->Kp*(error-self->lastError);
 	//Integral term
 	//Disabled if windup is in progress.
-  if (!self->windup) self->internalState += self->Ki*Ts*error;
+  if (!self->windup) self->internalState += (self->lastI = self->Ki*Ts*error);
+  else self->lastI = 0;
 	//Feed forward term
 	self->internalState += ff - self->lastFF;
 	//Set final output
@@ -97,6 +116,4 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	self->lastRef = self->desired;
 	self->lastFF = ff;
 }
-
-
 

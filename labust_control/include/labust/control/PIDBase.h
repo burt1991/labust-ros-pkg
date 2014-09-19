@@ -72,6 +72,8 @@ typedef struct PIDBase
 	 * Automatic tracking flag.
 	 */
 	char autoWindup;
+	///Backward re-calculation flag
+	char useBackward;
 	/**
 	 * The windup flag
 	 */
@@ -83,12 +85,12 @@ typedef struct PIDBase
 	/**
 	 * Internal state of the backward euler.
 	 */
-	float internalState, lastRef, lastError, lastFF, lastState, llastError, llastState, lastDerivative;
+	float internalState, lastRef, lastError, lastFF, lastState, llastError, llastState, lastDerivative, lastI;
 
 	/**
 	 * The reference, state, output, feedforward, tracking
 	 */
-	float desired, state, output;
+	float desired, state, output, track;
 
 	/**
 	 * The internal model parameters.

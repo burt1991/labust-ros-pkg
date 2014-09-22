@@ -81,7 +81,7 @@ namespace labust
   				const auv_msgs::BodyVelocityReq& track)
   		{
   			//Tracking external commands while idle (bumpless)
-				geometry_msgs::TransformStamped dH;
+			/*	geometry_msgs::TransformStamped dH;
 				dH = buffer.lookupTransform("course_frame", "base_link", ros::Time(0));
 				double roll, pitch, gamma;
 				labust::tools::eulerZYXFromQuaternion(dH.transform.rotation,
@@ -107,7 +107,7 @@ namespace labust
 					R<<cos(gamma),sin(gamma),-sin(gamma),cos(gamma);
 					out = R.transpose()*in;
 					con.output = con.internalState = out(1);
-  			}
+  			} */
   		};
 
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,

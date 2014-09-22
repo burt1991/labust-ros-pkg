@@ -105,9 +105,6 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	//Feed forward term
 	self->internalState += ff - self->lastFF;
 
-	/////////////////////////////////////// Temporary Fix
-	self->internalState = sat(self->internalState, -1, 1);
-
 	//Set final output
 	self->output = self->internalState;
 

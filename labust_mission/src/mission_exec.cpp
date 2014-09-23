@@ -95,6 +95,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 
 				FSM_ON_STATE_EXIT_BGN{
 
+					ROS_ERROR("Starting mission...");
 					/** Wait for data and events initialization */
 					ros::Rate(ros::Duration(1.0)).sleep();
 
@@ -135,6 +136,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 				{
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
 				}
 			}
 			FSM_STATE(go2point_FA_state)
@@ -153,6 +155,8 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 				{
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
+
 				}
 			}
 			FSM_STATE(go2point_UA_state)
@@ -171,6 +175,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 				{
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
 				}
 			}
 			FSM_STATE(dynamic_positioning_state)
@@ -189,6 +194,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 				{
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
 				}
 			}
 			FSM_STATE(course_keeping_FA_state)
@@ -210,6 +216,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 				{
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
 				}
 			}
 			FSM_STATE(course_keeping_UA_state)
@@ -232,6 +239,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 				{
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
 				}
 			}
 			FSM_STATE(iso_state)
@@ -254,6 +262,7 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 				{
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
 				}
 			}
 		}

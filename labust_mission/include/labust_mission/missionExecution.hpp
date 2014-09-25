@@ -76,142 +76,23 @@ namespace labust {
 
 			MissionExecution(ros::NodeHandle& nh);
 
-		    void evaluatePrimitive(string primitiveString){
-
-				misc_msgs::EvaluateExpression evalExpr;
-				primitiveStrContainer = labust::utilities::split(primitiveString, ':');
-
-				for(vector<string>::iterator it = primitiveStrContainer.begin(); it != primitiveStrContainer.end(); it = it + 2){
-
-					evalExpr.request.expression = (*(it+1)).c_str();
-					primitiveMap[*it] =  (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
-				}
-			}
+		    void evaluatePrimitive(string primitiveString);
 
 			/*****************************************************************
 			 ***  State machine primitive states
 			 ****************************************************************/
 
-		    void dynamic_postitioning_state(){
+		    void dynamic_postitioning_state();
 
-		    	if(!timeoutActive)
-		    		setTimeout(receivedPrimitive.event.timeout);
+		    void go2point_FA_state();
 
-				if(refreshRate>0){
+		    void go2point_UA_state();
 
-					evaluatePrimitive(receivedPrimitive.primitiveString.data);
-					CM.dynamic_positioning(true, primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
-					oldPosition.north = primitiveMap["north"];
-					oldPosition.east = primitiveMap["east"];
+		    void course_keeping_FA_state();
 
-					ROS_ERROR("DP: %f. %f, %f",primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
+		    void course_keeping_UA_state();
 
-					if(!refreshActive)
-						setRefreshRate(refreshRate, boost::bind(&MissionExecution::dynamic_postitioning_state, this));
-
-				} else {
-
-					ROS_ERROR("Debug");
-					misc_msgs::DynamicPositioning data = labust::utilities::deserializeMsg<misc_msgs::DynamicPositioning>(receivedPrimitive.primitiveData);
-					CM.dynamic_positioning(true,data.point.north,data.point.east, data.heading);
-					oldPosition = data.point;
-				}
-		    }
-
-		    void go2point_FA_state(){
-
-		    	if(!timeoutActive)
-		    		setTimeout(receivedPrimitive.event.timeout);
-
-				if(refreshRate>0){
-					evaluatePrimitive(receivedPrimitive.primitiveString.data);
-					CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
-					oldPosition.north = primitiveMap["north"];
-					oldPosition.east = primitiveMap["east"];
-
-					if(!refreshActive)
-						setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_FA_state, this));
-
-
-				} else {
-
-					misc_msgs::Go2PointFA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointFA>(receivedPrimitive.primitiveData);
-					CM.go2point_FA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.heading, data.victoryRadius);
-					oldPosition = data.point;
-				}
-		    }
-
-		    void go2point_UA_state(){
-
-		    	if(!timeoutActive)
-		    		setTimeout(receivedPrimitive.event.timeout);
-
-		    	if(refreshRate>0){
-		    						evaluatePrimitive(receivedPrimitive.primitiveString.data);
-		    						CM.go2point_UA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["victory_radius"]);
-		    						oldPosition.north = primitiveMap["north"];
-		    						oldPosition.east = primitiveMap["east"];
-
-		    						if(!refreshActive)
-		    							setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_UA_state, this));
-
-
-		    					} else {
-
-					misc_msgs::Go2PointUA data = labust::utilities::deserializeMsg<misc_msgs::Go2PointUA>(receivedPrimitive.primitiveData);
-					CM.go2point_UA(true,oldPosition.north,oldPosition.east,data.point.north,data.point.east, data.speed, data.victoryRadius);
-					oldPosition = data.point;
-				}
-		    }
-
-		    void course_keeping_FA_state(){
-
-		    	if(!timeoutActive)
-		    		setTimeout(receivedPrimitive.event.timeout);
-
-				if(refreshRate>0){
-
-					evaluatePrimitive(receivedPrimitive.primitiveString.data);
-					CM.course_keeping_FA(true, primitiveMap["course"], primitiveMap["speed"], primitiveMap["heading"]);
-
-					if(!refreshActive)
-						setRefreshRate(refreshRate, boost::bind(&MissionExecution::course_keeping_FA_state, this));
-
-
-				} else {
-
-					misc_msgs::CourseKeepingFA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingFA>(receivedPrimitive.primitiveData);
-					CM.course_keeping_FA(true,data.course, data.speed, data.heading);
-				}
-		    }
-
-		    void course_keeping_UA_state(){
-
-		    	if(!timeoutActive)
-		    		setTimeout(receivedPrimitive.event.timeout);
-
-		    	if(refreshRate>0){
-
-					evaluatePrimitive(receivedPrimitive.primitiveString.data);
-					CM.course_keeping_UA(true, primitiveMap["course"], primitiveMap["speed"]);
-
-					if(!refreshActive)
-						setRefreshRate(refreshRate, boost::bind(&MissionExecution::course_keeping_UA_state, this));
-
-				} else {
-					misc_msgs::CourseKeepingUA data = labust::utilities::deserializeMsg<misc_msgs::CourseKeepingUA>(receivedPrimitive.primitiveData);
-					CM.course_keeping_UA(true,data.course, data.speed);
-				}
-		    }
-
-		    void iso_state(){
-
-		    	if(!timeoutActive)
-		    		setTimeout(receivedPrimitive.event.timeout);
-
-				misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(receivedPrimitive.primitiveData);
-				CM.ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
-		    }
+		    void iso_state();
 
 			/*****************************************************************
 			 ***  ROS Subscriptions Callback
@@ -313,6 +194,103 @@ namespace labust {
 			primitiveMap.insert(std::pair<string, double>("speed", 0.0));
 			primitiveMap.insert(std::pair<string, double>("victory_radius", 0.0));
 		}
+
+	    void MissionExecution::evaluatePrimitive(string primitiveString){
+
+			misc_msgs::EvaluateExpression evalExpr;
+			primitiveStrContainer = labust::utilities::split(primitiveString, ':');
+
+			for(vector<string>::iterator it = primitiveStrContainer.begin(); it != primitiveStrContainer.end(); it = it + 2){
+
+				evalExpr.request.expression = (*(it+1)).c_str();
+				primitiveMap[*it] =  (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
+			}
+		}
+
+		/*****************************************************************
+		 ***  State machine primitive states
+		 ****************************************************************/
+
+	    void MissionExecution::dynamic_postitioning_state(){
+
+	    	/** Activate primitive timeout */
+	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+	    		setTimeout(receivedPrimitive.event.timeout);
+
+	    	/** Evaluate primitive data with current values */
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+			/** Activate primitive */
+			CM.dynamic_positioning(true, primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
+			oldPosition.north = primitiveMap["north"];
+			oldPosition.east = primitiveMap["east"];
+
+			ROS_ERROR("DP: %f. %f, %f",primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
+
+			/** Activate primitive reference refresh */
+			if(!refreshActive && refreshRate > 0)
+				setRefreshRate(refreshRate, boost::bind(&MissionExecution::dynamic_postitioning_state, this));
+	    }
+
+	    void MissionExecution::go2point_FA_state(){
+
+	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+	    		setTimeout(receivedPrimitive.event.timeout);
+
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
+			oldPosition.north = primitiveMap["north"];
+			oldPosition.east = primitiveMap["east"];
+
+			if(!refreshActive && refreshRate > 0)
+				setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_FA_state, this));
+	    }
+
+	    void MissionExecution::go2point_UA_state(){
+
+	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+	    		setTimeout(receivedPrimitive.event.timeout);
+
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+			CM.go2point_UA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["victory_radius"]);
+			oldPosition.north = primitiveMap["north"];
+			oldPosition.east = primitiveMap["east"];
+
+			if(!refreshActive && refreshRate > 0)
+				setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_UA_state, this));
+	    }
+
+	    void MissionExecution::course_keeping_FA_state(){
+
+	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+	    		setTimeout(receivedPrimitive.event.timeout);
+
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+			CM.course_keeping_FA(true, primitiveMap["course"], primitiveMap["speed"], primitiveMap["heading"]);
+
+			if(!refreshActive && refreshRate > 0)
+				setRefreshRate(refreshRate, boost::bind(&MissionExecution::course_keeping_FA_state, this));
+	    }
+
+	    void MissionExecution::course_keeping_UA_state(){
+
+	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+	    		setTimeout(receivedPrimitive.event.timeout);
+
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+			CM.course_keeping_UA(true, primitiveMap["course"], primitiveMap["speed"]);
+
+			if(!refreshActive && refreshRate > 0)
+				setRefreshRate(refreshRate, boost::bind(&MissionExecution::course_keeping_UA_state, this));
+	    }
+
+	    void MissionExecution::iso_state(){
+
+	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+	    		setTimeout(receivedPrimitive.event.timeout);
+
+			misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(receivedPrimitive.primitiveData);
+			CM.ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
+	    }
 
 		/*****************************************************************
 		 ***  ROS Subscriptions Callback
@@ -452,7 +430,7 @@ namespace labust {
 
 			ROS_ERROR("Timeout");
 			onPrimitiveEndReset();
-			mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+			mainEventQueue->riseEvent("/TIMEOUT");
 		}
 
 		/** Reset timers and flags */

@@ -217,7 +217,7 @@ void Estimator3D::onAltitude(const std_msgs::Float32::ConstPtr& data)
 	{
 		newMeas(KFNav::altitude) = 1;
 		alt = data->data;
-		ROS_INFO("Accepted altitude: meas=%f, estimate=%f, variance=%f",
+		ROS_DEBUG("Accepted altitude: meas=%f, estimate=%f, variance=%f",
 			data->data, nav.getState()(KFNav::altitude), 10* nav.calculateAltInovationVariance(nav.getStateCovariance()));
 	}
 	else
@@ -299,7 +299,7 @@ void Estimator3D::processMeasurements()
 		//measurements(KFNav::theta) = imu.orientation()[ImuHandler::pitch];
 		measurements(KFNav::psi) = imu.orientation()[ImuHandler::yaw];
 
-		ROS_INFO("NEW IMU: r=%f, p=%f, y=%f", imu.orientation()[ImuHandler::roll],
+		ROS_DEBUG("NEW IMU: r=%f, p=%f, y=%f", imu.orientation()[ImuHandler::roll],
 				imu.orientation()[ImuHandler::pitch],
 				imu.orientation()[ImuHandler::yaw]);
 

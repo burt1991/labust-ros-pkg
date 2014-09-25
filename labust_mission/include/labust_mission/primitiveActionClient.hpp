@@ -78,7 +78,9 @@ namespace utils {
 					   const Result::ConstPtr& result)
 		   {
 			 ROS_ERROR("CourseKeepingFA - Finished in state [%s]", state.toString().c_str());
-			 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
+			 if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
+				 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 		   }
 
 		  // Called once when the goal becomes active
@@ -107,7 +109,9 @@ namespace utils {
 					   const Result::ConstPtr& result)
 		   {
 			 ROS_ERROR("CourseKeepingUA - Finished in state [%s]", state.toString().c_str());
-			 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
+			 if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
+				 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 		   }
 
 		  // Called once when the goal becomes active
@@ -172,7 +176,9 @@ struct Go2PointFA_CB {
 			void doneCb(const actionlib::SimpleClientGoalState& state, const Result::ConstPtr& result)
 			   {
 				 ROS_ERROR("Go2PointFA - Finished in state [%s]", state.toString().c_str());
-				 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
+				 if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
+					 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 
 			   }
 
@@ -208,7 +214,9 @@ struct Go2PointUA_CB {
 			   {
 
 				 ROS_ERROR("Go2PointUA - Finished in state [%s]", state.toString().c_str());
-				 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
+
+				 if (state == actionlib::SimpleClientGoalState::SUCCEEDED)
+					 mainEventQueue->riseEvent("/PRIMITIVE_FINISHED");
 			   }
 
 			  // Called once when the goal becomes active

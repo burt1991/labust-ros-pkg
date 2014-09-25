@@ -377,7 +377,6 @@ using namespace labust::controller;
 
 			if(ac3.getState() == actionlib::SimpleClientGoalState::ACTIVE){
 
-				ROS_ERROR("DEBUG");
 							//ac3.cancelGoal();
 
 
@@ -391,7 +390,6 @@ using namespace labust::controller;
 
 						} else {
 
-							ROS_ERROR("DEBUG2");
 			ac3.sendGoal(goal,
 						boost::bind(&utils::DPprimitive_CB::doneCb, DP_FA, _1, _2),
 						boost::bind(&utils::DPprimitive_CB::activeCb, DP_FA),

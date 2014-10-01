@@ -114,6 +114,8 @@ void VelocityControl::onInit()
 
 	//Configure the dynamic reconfigure server
 	server.setCallback(boost::bind(&VelocityControl::dynrec_cb, this, _1, _2));
+	//Init tauManual
+	for (int i=0; i<N+1;++i) tauManual[i] = 0;
 
 	initialize_controller();
 	config.__fromServer__(ph);
@@ -191,8 +193,21 @@ void VelocityControl::handleManual(const sensor_msgs::Joy::ConstPtr& joy)
 	tauManual[X] = config.Surge_joy_scale * joy->axes[1];
 	tauManual[Y] = -config.Sway_joy_scale * joy->axes[0];
 	tauManual[Z] = -config.Heave_joy_scale * joy->axes[3];
-	tauManual[K] = 0;
-	tauManual[M] = 0;
+
+	if (joy->buttons.size() >= 4)
+	{
+		double increment = 0.05;
+		if (joy->buttons[1]) tauManual[M] = 0;
+		else if (joy->buttons[2]) tauManual[M] += increment;
+		else if (joy->buttons[3]) tauManual[M] -= increment;
+
+		tauManual[M] = labust::math::coerce(tauManual[M],-config.Pitch_joy_scale, config.Pitch_joy_scale);
+	}
+	else
+	{
+		tauManual[K] = 0;
+		tauManual[M] = 0;
+	}
 	tauManual[N] = -config.Yaw_joy_scale * joy->axes[2];
 	lastMan = ros::Time::now();
 }

@@ -91,23 +91,32 @@ void ImuHandler::onImu(const sensor_msgs::Imu::ConstPtr& data)
 				transform.transform.rotation.x,
 				transform.transform.rotation.y,
 				transform.transform.rotation.z);
-		Eigen::Quaternion<double> result = meas*rot;;
+		Eigen::Quaternion<double> result = meas*rot;
 		//KDL::Rotation::Quaternion(result.x(),result.y(),result.z(),result.w()).GetEulerZYX
 		//		(rpy[yaw],rpy[pitch],rpy[roll]);
 		labust::tools::eulerZYXFromQuaternion(result, rpy[roll], rpy[pitch], rpy[yaw]);
 		rpy[yaw] = unwrap(rpy[yaw]);
 
 		//Transform angular velocities
+		Eigen::Vector3d angvel;
+		angvel<<data->angular_velocity.x,
+				data->angular_velocity.y,
+				data->angular_velocity.z;
+		angvel = meas*angvel;
 
-		pqr[p] = data->angular_velocity.x;
-		pqr[q] = data->angular_velocity.y;
-		pqr[r] = data->angular_velocity.z;
+		pqr[p] = angvel(0);
+		pqr[q] = angvel(1);
+		pqr[r] = angvel(2);
 
 		//Transform the accelerations
+		angvel<<data->linear_acceleration.x,
+				data->linear_acceleration.y,
+				data->linear_acceleration.z;
+		angvel = meas*angvel;
 
-		axyz[ax] = data->linear_acceleration.x;
-		axyz[ay] = data->linear_acceleration.y;
-		axyz[az] = data->linear_acceleration.z;
+		axyz[ax] = angvel(0);
+		axyz[ay] = angvel(1);
+		axyz[az] = angvel(2);
 
 		isNew = true;
 	}

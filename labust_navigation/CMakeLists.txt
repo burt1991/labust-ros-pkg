@@ -81,6 +81,7 @@ add_library(labust_navigation
    src/labust_navigation/SensorHandlers.cpp
    src/labust_navigation/LDTravModelExtended.cpp
    src/labust_navigation/SBModel.cpp
+   src/labust_navigation/SBModelKinematic.cpp
 )
 
 ## Declare a cpp executable
@@ -96,6 +97,7 @@ add_executable(static_transform_publisher src/static_transform_publisher/static_
 #	include/labust/navigation/LDTravModelExtended.hpp)
 add_executable(ekf3d_node src/nav_node/EKF3D.cpp)
 add_executable(ekf_sb_node src/nav_node/EKF_SB.cpp)
+add_executable(ekf_sb_kinematic_node src/nav_node/EKF_SB_kinematic.cpp)
 
 add_executable(range_meas_sim src/sbnav_test/range_meas_sim.cpp)
 ## Add cmake target dependencies of the executable/library
@@ -110,6 +112,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(static_transform_publisher ${catkin_EXPORTED_TARGETS})
  add_dependencies(ekf3d_node ${catkin_EXPORTED_TARGETS})
  add_dependencies(ekf_sb_node ${catkin_EXPORTED_TARGETS})
+ add_dependencies(ekf_sb_kinematic_node ${catkin_EXPORTED_TARGETS})
  add_dependencies(range_meas_sim ${catkin_EXPORTED_TARGETS})
 endif()
 
@@ -126,6 +129,7 @@ target_link_libraries(llnode ${catkin_LIBRARIES})
 target_link_libraries(static_transform_publisher ${catkin_LIBRARIES})
 target_link_libraries(ekf3d_node ${catkin_LIBRARIES} labust_navigation)
 target_link_libraries(ekf_sb_node ${catkin_LIBRARIES} labust_navigation)
+target_link_libraries(ekf_sb_kinematic_node ${catkin_LIBRARIES} labust_navigation)
 target_link_libraries(range_meas_sim ${catkin_LIBRARIES} labust_navigation)
 
 #############

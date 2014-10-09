@@ -114,6 +114,8 @@ void VelocityControl::onInit()
 
 	//Configure the dynamic reconfigure server
 	server.setCallback(boost::bind(&VelocityControl::dynrec_cb, this, _1, _2));
+	//Init tauManual
+	for (int i=0; i<N+1;++i) tauManual[i] = 0;
 
 	initialize_controller();
 	config.__fromServer__(ph);
@@ -154,6 +156,7 @@ bool VelocityControl::handleServerConfig(navcon_msgs::ConfigureVelocityControlle
 {
 	for (int i=0; i<req.desired_mode.size();++i)
 	{
+		if (req.desired_mode[i] == -1) continue;
 		if (axis_control[i] != req.desired_mode[i])
 		{
 			axis_control[i] = req.desired_mode[i];
@@ -166,13 +169,19 @@ bool VelocityControl::handleServerConfig(navcon_msgs::ConfigureVelocityControlle
 
 void VelocityControl::handleReference(const auv_msgs::BodyVelocityReq::ConstPtr& ref)
 {
-	//Copy into controller
-	controller[u].desired = ref->twist.linear.x;
-	controller[v].desired = ref->twist.linear.y;
-	controller[w].desired = ref->twist.linear.z;
-	controller[p].desired = ref->twist.angular.x;
-	controller[q].desired = ref->twist.angular.y;
-	controller[r].desired = ref->twist.angular.z;
+	double nuRef[numcnt];
+	labust::tools::pointToVector(ref->twist.linear, nuRef);
+	labust::tools::pointToVector(ref->twist.angular, nuRef, 3);
+
+	for(int i=0; i<numcnt; ++i) 	controller[i].desired = nuRef[i];
+
+//	//Copy into controller
+//	controller[u].desired = ref->twist.linear.x;
+//	controller[v].desired = ref->twist.linear.y;
+//	controller[w].desired = ref->twist.linear.z;
+//	controller[p].desired = ref->twist.angular.x;
+//	controller[q].desired = ref->twist.angular.y;
+//	controller[r].desired = ref->twist.angular.z;
 
 	lastRef = ros::Time::now();
 	//newReference = true;
@@ -184,8 +193,21 @@ void VelocityControl::handleManual(const sensor_msgs::Joy::ConstPtr& joy)
 	tauManual[X] = config.Surge_joy_scale * joy->axes[1];
 	tauManual[Y] = -config.Sway_joy_scale * joy->axes[0];
 	tauManual[Z] = -config.Heave_joy_scale * joy->axes[3];
-	tauManual[K] = 0;
-	tauManual[M] = 0;
+
+	if (joy->buttons.size() >= 4)
+	{
+		double increment = 0.05;
+		if (joy->buttons[1]) tauManual[M] = 0;
+		else if (joy->buttons[2]) tauManual[M] += increment;
+		else if (joy->buttons[3]) tauManual[M] -= increment;
+
+		tauManual[M] = labust::math::coerce(tauManual[M],-config.Pitch_joy_scale, config.Pitch_joy_scale);
+	}
+	else
+	{
+		tauManual[K] = 0;
+		tauManual[M] = 0;
+	}
 	tauManual[N] = -config.Yaw_joy_scale * joy->axes[2];
 	lastMan = ros::Time::now();
 }
@@ -224,19 +246,42 @@ void VelocityControl::dynrec_cb(navcon_msgs::VelConConfig& config, uint32_t leve
 
 void VelocityControl::handleWindup(const auv_msgs::BodyForceReq::ConstPtr& tau)
 {
-	if (!controller[u].autoWindup) controller[u].extWindup = tau->wrench.force.x;
-	if (!controller[v].autoWindup) controller[v].extWindup = tau->wrench.force.y;
-	if (!controller[w].autoWindup) controller[w].extWindup = tau->wrench.force.z;
-	if (!controller[p].autoWindup) controller[p].extWindup = tau->wrench.torque.x;
-	if (!controller[q].autoWindup) controller[q].extWindup = tau->wrench.torque.y;
-	if (!controller[r].autoWindup) controller[r].extWindup = tau->wrench.torque.z;
+	int tauWindup[numcnt];
+	double tauAch[numcnt];
+	labust::tools::pointToVector(tau->windup, tauWindup);
+	labust::tools::rpyToVector(tau->windup, tauWindup, 3);
 
-	if (!controller[u].autoWindup) controller[u].windup = tau->disable_axis.x;
-	if (!controller[v].autoWindup) controller[v].windup = tau->disable_axis.y;
-	if (!controller[w].autoWindup) controller[w].windup = tau->disable_axis.z;
-	if (!controller[p].autoWindup) controller[p].windup = tau->disable_axis.roll;
-	if (!controller[q].autoWindup) controller[q].windup = tau->disable_axis.pitch;
-	if (!controller[r].autoWindup) controller[r].windup = tau->disable_axis.yaw;
+	labust::tools::pointToVector(tau->wrench.force, tauAch);
+	labust::tools::pointToVector(tau->wrench.torque, tauAch, 3);
+
+	for (int i=0; i<numcnt; ++i)
+	{
+		if (!controller[i].autoWindup)
+		{
+			controller[i].extWindup = tauWindup[i];
+			controller[i].track = tauAch[i];
+		}
+
+		//For tracking external tau commands (bumpless transfer)
+		if (axis_control[i] != controlAxis)
+		{
+			controller[i].output = controller[i].internalState = tauAch[i];
+		}
+	}
+
+//	if (!controller[u].autoWindup) controller[u].extWindup = tau->windup.x;
+//	if (!controller[v].autoWindup) controller[v].extWindup = tau->windup.y;
+//	if (!controller[w].autoWindup) controller[w].extWindup = tau->windup.z;
+//	if (!controller[p].autoWindup) controller[p].extWindup = tau->windup.roll;
+//	if (!controller[q].autoWindup) controller[q].extWindup = tau->windup.pitch;
+//	if (!controller[r].autoWindup) controller[r].extWindup = tau->windup.yaw;
+
+//	if (!controller[u].autoWindup) controller[u].track = tau->wrench.force.x;
+//	if (!controller[v].autoWindup) controller[v].track = tau->wrench.force.y;
+//	if (!controller[w].autoWindup) controller[w].track = tau->wrench.force.z;
+//	if (!controller[p].autoWindup) controller[p].track = tau->wrench.torque.x;
+//	if (!controller[q].autoWindup) controller[q].track = tau->wrench.torque.y;
+//	if (!controller[r].autoWindup) controller[r].track = tau->wrench.torque.z;
 };
 
 void VelocityControl::handleExt(const auv_msgs::BodyForceReq::ConstPtr& tau)
@@ -247,13 +292,25 @@ void VelocityControl::handleExt(const auv_msgs::BodyForceReq::ConstPtr& tau)
 
 void VelocityControl::handleEstimates(const auv_msgs::NavSts::ConstPtr& estimate)
 {
-	//Copy into controller
-	controller[u].state = estimate->body_velocity.x;
-	controller[v].state = estimate->body_velocity.y;
-	controller[w].state = estimate->body_velocity.z;
-	controller[p].state = estimate->orientation_rate.roll;
-	controller[q].state = estimate->orientation_rate.pitch;
-	controller[r].state = estimate->orientation_rate.yaw;
+	double nu[numcnt];
+	labust::tools::pointToVector(estimate->body_velocity, nu);
+	labust::tools::rpyToVector(estimate->orientation_rate, nu, 3);
+
+	for(int i=0; i<numcnt; ++i)
+	{
+		controller[i].state = nu[i];
+		//For tracking external commands (bumpless transfer)
+		///\todo Check if this is needed ?
+		if (axis_control[i] != controlAxis) controller[i].desired = nu[i];
+	}
+
+//	//Copy into controller
+//	controller[u].state = estimate->body_velocity.x;
+//	controller[v].state = estimate->body_velocity.y;
+//	controller[w].state = estimate->body_velocity.z;
+//	controller[p].state = estimate->orientation_rate.roll;
+//	controller[q].state = estimate->orientation_rate.pitch;
+//	controller[r].state = estimate->orientation_rate.yaw;
 
 	lastEst = ros::Time::now();
 	//ROS_INFO("Semi-travel time:%f",(lastEst - estimate->header.stamp).toSec());
@@ -310,6 +367,8 @@ void VelocityControl::step()
 
 	for (int i=u; i<=r;++i)
 	{
+		if ((axis_control[i] != controlAxis) || (suspend_axis[i])) PIFF_idle(&controller[i], Ts);
+
 		//If some of the axis are timed-out just ignore
 		if (suspend_axis[i])
 		{
@@ -333,15 +392,16 @@ void VelocityControl::step()
 		case identAxis:
 			controller[i].output = externalIdent?tauExt[i]:0;
 			break;
-		case directAxis:
-			controller[i].output = controller[i].desired;
-			if (controller[i].autoWindup)
-			{
-				if (fabs(controller[i].desired) > controller[i].outputLimit)
-					controller[i].desired = controller[i].desired/fabs(controller[i].desired)*controller[i].outputLimit;
-				tau.wrench.force.x = controller[i].desired;
-			}
-			break;
+//	  //Deprecated
+//		case directAxis:
+//			controller[i].output = controller[i].desired;
+//			if (controller[i].autoWindup)
+//			{
+//				if (fabs(controller[i].desired) > controller[i].outputLimit)
+//					controller[i].desired = controller[i].desired/fabs(controller[i].desired)*controller[i].outputLimit;
+//				tau.wrench.force.x = controller[i].desired;
+//			}
+//			break;
 		case disableAxis:
 		default:
 			controller[i].output = 0;

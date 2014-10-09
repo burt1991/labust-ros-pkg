@@ -74,6 +74,23 @@ namespace labust
   			con[y].extWindup = tauAch.windup.y;
 			};
 
+  		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
+  				const auv_msgs::BodyVelocityReq& track)
+  		{
+  			//Tracking external commands while idle (bumpless)
+  			con[x].desired = ref.position.north;
+  			con[y].desired = ref.position.east;
+  			con[x].output = con[x].internalState = track.twist.linear.x;
+  			con[y].output = con[y].internalState = track.twist.linear.y;
+  			con[x].lastState = con[x].state = state.position.north;
+  			con[y].lastState = con[y].state = state.position.east;
+  			if (!useIP)
+  			{
+  				PIFF_idle(&con[x], Ts);
+  				PIFF_idle(&con[y], Ts);
+  			}
+  		};
+
   		void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
   		{
 				Eigen::Vector2f out, in;

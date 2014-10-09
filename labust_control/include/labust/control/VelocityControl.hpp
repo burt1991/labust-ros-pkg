@@ -56,8 +56,17 @@ namespace labust
 	{
 		/**
 		 * The class contains the implementation of the velocity controller, manual control manager and model identification.
-		 * \todo Add separate joystick scaling for all DOFs
-		 * \todo Add identification
+		 * \todo Create the merge subclass for velocity controller via external TAU
+		 * \todo Implement the modes (manual, external(control), disable, tracking)
+		 * \todo Switch to vector operation rather than repeated statements
+		 * \todo Add model retuning
+		 * \todo Separate dynamic reconfigure option to optional subclass
+		 * \todo Remove other modes
+		 * \todo Remove everything related to identification and replace it via the merger
+		 * \todo Deprecate measurements subscription
+		 * \todo Reduce the internal tauAch code calculation
+		 * \todo Switch velocity controller to async mode ?
+		 * \todo Add feed forward for disturbances ?
 		 */
 		class VelocityControl
 		{
@@ -70,6 +79,7 @@ namespace labust
 				controlAxis=2,
 				identAxis=3,
 			  directAxis=4};
+			enum {numcnt = 6};
 
 		public:
 			/**

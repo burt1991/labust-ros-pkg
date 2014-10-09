@@ -1,0 +1,8 @@
+<launch>
+	<node pkg="labust_mission" type="topic_transform.py" name="topic_transform_node">
+		<param name="event" value="1" />
+		<param name="topic_name" value="stateHat" />
+		<param name="msg_type" value="auv_msgs/NavSts" />
+		<param name="msg_field" value="position/north" />
+	</node>
+</launch>

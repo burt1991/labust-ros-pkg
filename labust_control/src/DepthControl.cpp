@@ -72,6 +72,16 @@ namespace labust
   			con.extWindup = tauAch.windup.z;
 			};
 
+  		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
+  				const auv_msgs::BodyVelocityReq& track)
+  		{
+  			//Tracking external commands while idle (bumpless)
+  			con.desired = ref.position.depth;
+  			con.output = con.internalState = track.twist.linear.z;
+  			con.lastState = con.state = state.position.depth;
+  			if (!useIP) PIFF_idle(&con, Ts);
+  		};
+
   		void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
   		{
   			con.internalState = 0;

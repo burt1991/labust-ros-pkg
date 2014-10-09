@@ -129,7 +129,7 @@
     <!-- ========================================================= -->
     <!-- == Parser GUI node ====================================== -->
     <!-- ========================================================= -->
-    <node 
+    <!--<node 
  	if="$(arg parseGUI)" 
         name="parseGUI_node" 
         pkg="labust_mission" 
@@ -138,7 +138,7 @@
         
         <param name="labust_mission_path" type="string" value="$(arg labust_mission_path)" />
 
-    </node>
+    </node>-->
 
 
 

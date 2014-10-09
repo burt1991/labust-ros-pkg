@@ -54,11 +54,25 @@ void PIFF_tune(PIDBase* self, float w);
  */
 void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff);
 /**
+ * The idle step of the controller.
+ */
+void PIFF_wffIdle(PIDBase* self, float Ts, float error, float ff);
+/**
  * Calculate one step of the PIFF controller.
  */
 inline void PIFF_step(PIDBase* self, float Ts)
 {
 	PIFF_wffStep(self, Ts,
+			self->desired - self->state,
+			(self->model.beta +
+			self->model.betaa*fabs(self->desired))*self->desired);
+}
+/**
+ * The idle step of the controller.
+ */
+void PIFF_idle(PIDBase* self, float Ts)
+{
+	PIFF_wffIdle(self, Ts,
 			self->desired - self->state,
 			(self->model.beta +
 			self->model.betaa*fabs(self->desired))*self->desired);
@@ -75,12 +89,31 @@ inline void PIFF_wStep(PIDBase* self, float Ts, float error)
 			self->model.betaa*fabs(self->desired))*self->desired);
 }
 /**
+ * The idle step of the controller.
+ */
+void PIFF_wIdle(PIDBase* self, float Ts, float error)
+{
+	PIFF_wffIdle(self, Ts,
+			error,
+			(self->model.beta +
+			self->model.betaa*fabs(self->desired))*self->desired);
+}
+/**
  * Calculate one step of the PIFF controller with externally
  * supplied feedforward calculation.
  */
 inline void PIFF_ffStep(PIDBase* self, float Ts, float ff)
 {
 	PIFF_wffStep(self, Ts,
+			self->desired - self->state,
+			ff);
+}
+/**
+ * The idle step of the controller.
+ */
+void PIFF_ffIdle(PIDBase* self, float Ts, float ff)
+{
+	PIFF_wffIdle(self, Ts,
 			self->desired - self->state,
 			ff);
 }

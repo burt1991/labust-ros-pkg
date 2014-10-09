@@ -77,6 +77,39 @@ namespace labust
   			con.extWindup = tauAch.windup.y;
 			};
 
+  		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
+  				const auv_msgs::BodyVelocityReq& track)
+  		{
+  			//Tracking external commands while idle (bumpless)
+			/*	geometry_msgs::TransformStamped dH;
+				dH = buffer.lookupTransform("course_frame", "base_link", ros::Time(0));
+				double roll, pitch, gamma;
+				labust::tools::eulerZYXFromQuaternion(dH.transform.rotation,
+						roll, pitch, gamma);
+  			con.desired = ref.position.east;
+  			con.state = dH.transform.translation.y;
+
+  			if (underactuated)
+  			{
+					PSatD_tune(&con,wh,aAngle,ref.body_velocity.x);
+					double dd = -ref.body_velocity.x*sin(gamma);
+					PSatD_dIdle(&con,Ts,dd);
+					con.output = con.internalState = track.twist.angular.z;
+  			}
+  			else
+  			{
+					PIFF_idle(&con,Ts);
+					//\todo Internalize this into the idle mode?
+					PIFF_step(&con,Ts);
+					Eigen::Vector2f out, in;
+					Eigen::Matrix2f R;
+					in<<track.twist.linear.x,track.twist.linear.y;
+					R<<cos(gamma),sin(gamma),-sin(gamma),cos(gamma);
+					out = R.transpose()*in;
+					con.output = con.internalState = out(1);
+  			} */
+  		};
+
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
 					const auv_msgs::NavSts& state)
 			{

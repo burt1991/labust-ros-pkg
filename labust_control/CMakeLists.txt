@@ -99,7 +99,7 @@ set_source_files_properties(
 
 add_executable(fadp_controller2 src/FADPControl.cpp)
 add_executable(hdg_controller2 src/HDGControl.cpp)
-add_executable(hdg_controller_direct src/HDGControlDirect.cpp)
+#add_executable(hdg_controller_direct src/HDGControlDirect.cpp)
 add_executable(alt_controller2 src/ALTControl.cpp)
 add_executable(depth_controller2 src/DepthControl.cpp)
 add_executable(pitch_controller src/PitchControl.cpp)
@@ -119,7 +119,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(fadp_controller2 ${catkin_EXPORTED_TARGETS})
  add_dependencies(ualf_controller ${catkin_EXPORTED_TARGETS})
  add_dependencies(hdg_controller2 ${catkin_EXPORTED_TARGETS})
- add_dependencies(hdg_controller_direct ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(hdg_controller_direct ${catkin_EXPORTED_TARGETS})
  add_dependencies(alt_controller2 ${catkin_EXPORTED_TARGETS})
  add_dependencies(depth_controller2 ${catkin_EXPORTED_TARGETS})
  add_dependencies(pitch_controller ${catkin_EXPORTED_TARGETS})
@@ -164,10 +164,10 @@ target_link_libraries(hdg_controller2
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(hdg_controller_direct
-  pidtoolkit2
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries(hdg_controller_direct
+#  pidtoolkit2
+#  ${catkin_LIBRARIES}
+#)
 
 target_link_libraries(velocity_control
   pidtoolkit2

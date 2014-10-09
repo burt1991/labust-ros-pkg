@@ -6,6 +6,7 @@ project(labust_sim)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS 
     auv_msgs 
+    nav_msgs
     roscpp 
     rospy 
     tf2_ros 
@@ -91,6 +92,8 @@ add_executable(dvl_sim src/sim_sensors/DvlSim.cpp)
 target_link_libraries(dvl_sim ${catkin_LIBRARIES})
 add_executable(gps_sim src/sim_sensors/GPSSim.cpp)
 target_link_libraries(gps_sim ${catkin_LIBRARIES})
+add_executable(publish_from_csv src/data_sim/publish_from_csv.cpp)
+target_link_libraries(publish_from_csv ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

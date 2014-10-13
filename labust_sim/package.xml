@@ -13,6 +13,7 @@
 	<!-- <url type="website">http://ros.org/wiki/labust_sim</url> -->
 
 	<buildtool_depend>catkin</buildtool_depend>
+	<build_depend>cmake_modules</build_depend>
 	<build_depend>auv_msgs</build_depend>
 	<build_depend>roscpp</build_depend>
 	<build_depend>rospy</build_depend>

@@ -22,7 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Boost REQUIRED)
-find_package(TinyXML REQUIRED)
 
 find_path(TinyXML2_INCLUDE_DIR tinyxml2.h
 	PATH_SUFFIXES include
@@ -116,7 +115,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
-  ${TinyXML_INCLUDE_DIR}
   ${TinyXML2_INCLUDE_DIR}
 )
 
@@ -163,9 +161,9 @@ endif()
 #link_directories(/usr/include/)
 target_link_libraries(mission_exec ${catkin_LIBRARIES} ${TinyXML2_LIBRARY})
 #target_link_libraries(mission_exec_INTEGRATED ${catkin_LIBRARIES}  tinyxml2)
-target_link_libraries(neptus_parser ${catkin_LIBRARIES} ${TinyXML_LIBRARY})
-target_link_libraries(mission_parser ${catkin_LIBRARIES} ${TinyXML_LIBRARY})
-target_link_libraries(data_event_manager ${catkin_LIBRARIES} ${TinyXML_LIBRARY})
+target_link_libraries(neptus_parser ${catkin_LIBRARIES} ${TinyXML2_LIBRARY})
+target_link_libraries(mission_parser ${catkin_LIBRARIES} ${TinyXML2_LIBRARY})
+target_link_libraries(data_event_manager ${catkin_LIBRARIES} ${TinyXML2_LIBRARY})
 target_link_libraries(lod ${catkin_LIBRARIES})
 target_link_libraries(ckt ${catkin_LIBRARIES})
 target_link_libraries(mzos ${catkin_LIBRARIES})

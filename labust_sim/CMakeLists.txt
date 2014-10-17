@@ -95,6 +95,15 @@ add_executable(gps_sim src/sim_sensors/GPSSim.cpp)
 target_link_libraries(gps_sim ${catkin_LIBRARIES})
 add_executable(publish_from_csv src/data_sim/publish_from_csv.cpp)
 target_link_libraries(publish_from_csv ${catkin_LIBRARIES})
+
+if (DEFINED catkin_EXPORTED_TARGETS)
+ add_dependencies(imu_sim ${catkin_EXPORTED_TARGETS})
+ add_dependencies(dvl_sim ${catkin_EXPORTED_TARGETS})
+ add_dependencies(gps_sim ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(hdg_controller_direct ${catkin_EXPORTED_TARGETS})
+ add_dependencies(publish_from_csv  ${catkin_EXPORTED_TARGETS})
+ add_dependencies(uvsim ${catkin_EXPORTED_TARGETS})
+endif()
 #############
 ## Install ##
 #############

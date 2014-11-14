@@ -93,8 +93,8 @@ void RelativeTrackingModel::step(const input_type& input){
 	/* States --- delta_x ,delta_y, delta_z, psi_t, u_t, w_t, r_t */
 	/* Inputs ---	x_dot, y_dot, psi, X, Y, Z */
 
-	x(delta_x) += Ts*(x_dot - x(u_t)*cos(x(psi_t)));
-	x(delta_y) += Ts*(y_dot - x(u_t)*sin(x(psi_t)));
+	x(delta_x) += Ts*(input(x_dot) - x(u_t)*cos(x(psi_t)));
+	x(delta_y) += Ts*(input(y_dot) - x(u_t)*sin(x(psi_t)));
 	x(delta_z) += Ts*x(w_t);
 	x(psi_t) += Ts*x(r_t);
 	x(u_t) += Ts*(-surge.Beta(x(u_t))/surge.alpha*x(u_t) + 1/surge.alpha * input(X));

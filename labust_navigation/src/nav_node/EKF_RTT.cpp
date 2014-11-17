@@ -203,9 +203,16 @@ void Estimator3D::onUSBLfix(const underwater_msgs::USBLFix::ConstPtr& data){
 
 	measurements(KFNav::theta) = data->bearing;
 	newMeas(KFNav::theta) = 1;
+
+	measurements(KFNav::delta_xm) = data->relative_position.x;
+	newMeas(KFNav::delta_xm) = 1;
+
+	measurements(KFNav::delta_ym) = data->relative_position.y;
+	newMeas(KFNav::delta_ym) = 1;
+
+	measurements(KFNav::delta_zm) = data->relative_position.z;
+	newMeas(KFNav::delta_zm) = 1;
 }
-
-
 
 
 void Estimator3D::processMeasurements()

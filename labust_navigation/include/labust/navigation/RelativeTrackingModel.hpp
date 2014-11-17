@@ -75,7 +75,7 @@ namespace labust{
       };
 
       enum {delta_x = 0,delta_y, delta_z, psi_t, u_t, w_t, r_t, stateNum}; /* State vector - Full */
-      enum {d = 0, theta, depth, psi_tm, measSize}; /* Measurement vector */
+      enum {d = 0, theta, depth, psi_tm, delta_xm, delta_ym, delta_zm, measSize}; /* Measurement vector */
       enum {x_dot = 0, y_dot, psi, X, Z, N, inputSize}; /* Input vector */
 
       /**

@@ -139,12 +139,9 @@ const RelativeTrackingModel::output_type& RelativeTrackingModel::update(vector& 
 	std::vector<size_t> arrived;
 	std::vector<double> dataVec;
 
-	//vector<size_t> arrived;
-	//vector<double> dataVec;
-
 	for (size_t i=0; i<newMeas.size(); ++i)
 	{
-		//ROS_ERROR("Redni broj mjerenja: %d", i);
+
 		if (newMeas(i))
 		{
 			arrived.push_back(i);
@@ -153,10 +150,10 @@ const RelativeTrackingModel::output_type& RelativeTrackingModel::update(vector& 
 		}
 	}
 
-	ROS_ERROR("broj mjerenja: %d", arrived.size());
 
-	for( std::vector<size_t>::const_iterator it = arrived.begin(); it != arrived.end(); ++it)
-		ROS_ERROR("%d", *it);
+	//ROS_ERROR("broj mjerenja: %d", arrived.size());
+	//for( std::vector<size_t>::const_iterator it = arrived.begin(); it != arrived.end(); ++it)
+	//	ROS_ERROR("%d", *it);
 
 
 	//if (dvlModel != 0) derivativeH();
@@ -208,12 +205,15 @@ void RelativeTrackingModel::derivativeH(){
 	Hnl = matrix::Zero(measSize,stateNum);
 	ynl = vector::Zero(measSize);
 
-	/* Measurement vector --- d , theta, depth, psi_tm */
+	/* Measurement vector --- d, theta, depth, psi_tm, delta_xm, delat_ym, delta_zm*/
 
 	ynl(d) = sqrt(pow(x(delta_x),2)+pow(x(delta_y),2)+pow(x(delta_z),2));
 	ynl(theta) = atan2(x(delta_y),x(delta_x));
 	ynl(depth) = x(delta_z);
 	ynl(psi_tm) = x(psi_t);
+	ynl(delta_xm) = x(delta_x);
+	ynl(delta_ym) = x(delta_y);
+	ynl(delta_zm) = x(delta_z);
 
 	Hnl(d, delta_x)  = (x(delta_x))/sqrt(pow(x(delta_x),2)+pow(x(delta_y),2)+pow(x(delta_z),2));
 	Hnl(d, delta_y)  = (x(delta_y))/sqrt(pow(x(delta_x),2)+pow(x(delta_y),2)+pow(x(delta_z),2));
@@ -225,5 +225,11 @@ void RelativeTrackingModel::derivativeH(){
 	Hnl(depth, delta_z) = 1;
 
 	Hnl(psi_tm, psi_t) = 1;
+
+	Hnl(delta_xm, delta_x) = 1;
+
+	Hnl(delta_ym, delta_y) = 1;
+
+	Hnl(delta_zm, delta_z) = 1;
 }
 

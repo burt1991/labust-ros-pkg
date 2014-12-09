@@ -114,7 +114,8 @@ class Structure:
         self.sinherit = None
         self.svariables = []
         self.sgroups = []
-        self.smethods = []  
+        self.smethods = []
+        self.stypedefs = []  
         self.senums = []
         self.sassert_size = None  
         self.sserialization = 'object_serializable'
@@ -160,6 +161,10 @@ class Structure:
             code = code + ': public ' + self.sinherit
         
         code = code + '\n{\n'
+        
+        for t in self.stypedefs:
+            code = code + 'typedef ' + t[0] + ' ' + t[1] + ';\n' 
+        
         for enum in self.senums:
             code = code + enum.gen_code() + '\n'
             

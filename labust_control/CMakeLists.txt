@@ -109,6 +109,9 @@ add_executable(nu_manual src/NuManual.cpp)
 add_executable(ref_manual src/RefManual.cpp)
 add_executable(async_merger src/AsyncMerger.cpp)
 add_executable(velocity_control	src/VelocityControl.cpp)
+# ESC executables
+add_executable(esc_classic src/esctoolkit/esc_classic.cpp)
+#add_executable(esc_classic src/esctoolkit/esc_ekf_grad.cpp)
 
 ## Declare a cpp executable
 # add_executable(labust_control_node src/labust_control_node.cpp)
@@ -128,6 +131,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(ref_manual ${catkin_EXPORTED_TARGETS})
  add_dependencies(async_merger ${catkin_EXPORTED_TARGETS})
  add_dependencies(velocity_control ${catkin_EXPORTED_TARGETS})
+ add_dependencies(esc_classic ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Specify libraries to link a library or executable target against
@@ -174,6 +178,8 @@ target_link_libraries(velocity_control
   pidtoolkit2
   ${catkin_LIBRARIES}
 )
+
+target_link_libraries(esc_classic ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

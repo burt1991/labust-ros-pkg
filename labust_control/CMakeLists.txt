@@ -120,11 +120,11 @@ add_executable(nu_manual src/NuManual.cpp)
 add_executable(ref_manual src/RefManual.cpp)
 add_executable(async_merger src/AsyncMerger.cpp)
 add_executable(velocity_control	src/VelocityControl.cpp)
-# ESC executables
-#add_executable(esc_classic src/esctoolkit/esc_classic.cpp)
-add_executable(esc_ekf_grad src/esctoolkit/esc_ekf_grad.cpp)
 
+# ESC executables
 add_executable(esc_uv src/esc/ESCControlClassic_UV.cpp)
+add_executable(esc_ekf_uv src/esc/ESControlEKF_UV.cpp)
+
 
 
 ## Declare a cpp executable
@@ -145,9 +145,11 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(ref_manual ${catkin_EXPORTED_TARGETS})
  add_dependencies(async_merger ${catkin_EXPORTED_TARGETS})
  add_dependencies(velocity_control ${catkin_EXPORTED_TARGETS})
- #add_dependencies(esc_classic ${catkin_EXPORTED_TARGETS})
- add_dependencies(esc_ekf_grad ${catkin_EXPORTED_TARGETS})
+
+
  add_dependencies(esc_uv ${catkin_EXPORTED_TARGETS})
+ add_dependencies(esc_ekf_uv ${catkin_EXPORTED_TARGETS})
+ 
  
  
 endif()
@@ -197,10 +199,10 @@ target_link_libraries(velocity_control
   ${catkin_LIBRARIES}
 )
 
-#target_link_libraries(esc_classic ${catkin_LIBRARIES})
-target_link_libraries(esc_ekf_grad ${catkin_LIBRARIES})
 
 target_link_libraries(esc_uv esctoolkit ${catkin_LIBRARIES})
+target_link_libraries(esc_ekf_uv esctoolkit ${catkin_LIBRARIES})
+
 
 
 #############

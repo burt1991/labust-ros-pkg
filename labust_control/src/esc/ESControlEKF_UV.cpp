@@ -1,7 +1,7 @@
 /*********************************************************************
- * ESCControlClassicUV.cpp
+ * ESControlEKF_UV.cpp
  *
- *  Created on: Dec 19, 2014
+ *  Created on: Jan 8, 2015
  *      Author: Filip Mandic
  *
  ********************************************************************/
@@ -9,7 +9,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2014, LABUST, UNIZG-FER
+ *  Copyright (c) 2015, LABUST, UNIZG-FER
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 #include <labust/tools/conversions.hpp>
 
 /********************/
-#include <esc_classic.cpp> //// PRIVREMENO!!!!!!
+#include <esc_ekf_grad.cpp> //// PRIVREMENO!!!!!!
 
 #include <Eigen/Dense>
 #include <auv_msgs/BodyForceReq.h>
@@ -62,11 +62,11 @@ namespace labust{
 		 *** Extremum seeking controller with speed control inputs.
 		 ************************************************************/
 
-		struct ESCControlClassic_UV : DisableAxis{
+		struct ESControlEKF_UV : DisableAxis{
 
 			enum {x = 0, y};
 
-			ESCControlClassic_UV():Ts(0.1), esc_controller(2,Ts){};
+			ESControlEKF_UV():Ts(0.1), esc_controller(2,Ts){};
 
 			void init(){
 
@@ -74,29 +74,32 @@ namespace labust{
 				initialize_controller();
 			}
 
-  		void windup(const auv_msgs::BodyForceReq& tauAch){
+			void windup(const auv_msgs::BodyForceReq& tauAch){
 
-		};
+			};
 
-  		void idle(const std_msgs::Float32& ref, const auv_msgs::NavSts& state,
-  				const auv_msgs::BodyVelocityReq& track){
+			void idle(const std_msgs::Float32& ref, const auv_msgs::NavSts& state,
+					const auv_msgs::BodyVelocityReq& track){
 
-  		};
+			};
 
-  		void reset(const std_msgs::Float32& ref, const auv_msgs::NavSts& state){
+			void reset(const std_msgs::Float32& ref, const auv_msgs::NavSts& state){
 
-  		};
+			};
 
 			auv_msgs::BodyVelocityReqPtr step(const std_msgs::Float32& ref, const auv_msgs::NavSts& state){
 
 				Eigen::Vector2d out, in;
 				Eigen::Matrix2d R;
 
-				in = esc_controller.step(ref.data);
+				Eigen::VectorXd input(2);
+				input << state.position.north, state.position.east;
+
+				in = esc_controller.step(ref.data, input);
 
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
 				nu->header.stamp = ros::Time::now();
-				nu->goal.requester = "esc_controller";
+				nu->goal.requester = "esc_ekf_controller";
 				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
 
 				double yaw = state.orientation.yaw;
@@ -115,7 +118,7 @@ namespace labust{
 
 				double sin_amp = 0.25;
 				double	sin_freq = 0.1;
-				double	corr_gain =  -25;
+				double	corr_gain =  -1;
 				double	high_pass_pole = 3;
 				double	low_pass_pole = 0;
 				double	comp_zero =  0;
@@ -131,7 +134,8 @@ namespace labust{
 		private:
 
 			double Ts;
-			esc::EscClassic esc_controller;
+			esc::EscEkfGrad esc_controller;
+
 		};
 	}
 }
@@ -151,7 +155,7 @@ int main(int argc, char* argv[])
 			>
 	***/
 
-	labust::control::HLControl<labust::control::ESCControlClassic_UV,
+	labust::control::HLControl<labust::control::ESControlEKF_UV,
 	labust::control::EnableServicePolicy,
 	labust::control::NoWindup,
 	auv_msgs::BodyVelocityReq,

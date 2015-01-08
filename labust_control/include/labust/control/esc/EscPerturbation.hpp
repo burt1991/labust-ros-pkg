@@ -46,11 +46,6 @@
 #include <Eigen/Dense>
 #include <stdint.h>
 
-// TMP
-
-#include <ros/ros.h>
-
-
 namespace labust{
 	namespace control{
 		namespace esc{
@@ -68,7 +63,7 @@ namespace labust{
 				typedef Eigen::Matrix<precission, Eigen::Dynamic, Eigen::Dynamic> matrix;
 				typedef Eigen::Matrix<precission, Eigen::Dynamic, 1> vector;
 
-				EscPerturbationBase(int ctrlNum, precission Ts):Ts_(Ts),cycle_count_(0),controlNum(ctrlNum){
+				EscPerturbationBase(int ctrlNum, numericprecission Ts):Ts_(Ts),cycle_count_(0),controlNum(ctrlNum){
 
 					state_initialized_ = false;
 					initialized_ = false;
@@ -92,6 +87,11 @@ namespace labust{
 					 return estimated_gradient;
 				 }
 
+				 virtual vector controllerGain(vector postFiltered){
+					 control_ = control_+gain_.cwiseProduct(postFiltered)*Ts_;
+					 return control_;
+				 }
+
 				 virtual vector superimposePerturbation(vector control) = 0;
 
 				 virtual vector step(numericprecission cost_signal, vector additional_input = vector::Zero(2) ){
@@ -103,7 +103,7 @@ namespace labust{
 					 vector estimated_gradient = gradientEstimation(filtered_cost, additional_input);
 					 estimated_gradient_old_ = estimated_gradient;
 
-					 vector control = postFiltering(estimated_gradient);
+					 vector control = controllerGain(postFiltering(estimated_gradient));
 
 					 vector controlInput =  superimposePerturbation(control);
 
@@ -126,7 +126,7 @@ namespace labust{
 				 ****************************************************/
 
 				/*** Sampling time */
-				precission Ts_;
+				numericprecission Ts_;
 
 				/*** Cycle */
 				uint32_t cycle_count_;
@@ -137,16 +137,13 @@ namespace labust{
 				/*** Number of control inputs (states) */
 				int controlNum;
 
-				/*** */
+				/*** ES variables */
 				numericprecission pre_filter_input_old_, pre_filter_output_old_;
-				vector estimated_gradient_old_;
+				vector estimated_gradient_old_, control_, gain_;
 
 			};
 		}
 	}
 }
-
-
-
 
 #endif /* ESCPERTURBATION_HPP_ */

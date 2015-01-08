@@ -30,13 +30,15 @@ namespace labust{
 
 				 vector postFiltering(vector estimated_gradient);
 
+				 vector controllerGain(vector postFiltered);
+
 				 vector superimposePerturbation(vector control);
 
 				 /***
 				 * K - gain
 				 * A0 - perturbation amplitude
 				 */
-				vector gain_, sin_amp_, sin_freq_, corr_gain_, low_pass_pole_, comp_pole_, comp_zero_;
+				vector sin_amp_, sin_freq_, corr_gain_, low_pass_pole_, comp_pole_, comp_zero_;
 				vector control_ref_, signal_demodulated_old_, lpf_out_old_,corr_signal_, phase_shift_,comp_old_;
 				/*** Controlled state */
 				vector state_;
@@ -58,13 +60,15 @@ namespace labust{
 
 				sin_amp_.resize(controlNum);
 				sin_freq_.resize(controlNum);
-				corr_gain_.resize(controlNum);
+				gain_.resize(controlNum);
+				control_.resize(controlNum);
 				//high_pass_pole_ = high_pass_pole;
 				low_pass_pole_.resize(controlNum);
 				comp_pole_.resize(controlNum);
 				comp_zero_.resize(controlNum);
 
 				lpf_out_old_.setZero();
+				hpf_out_old_ = 0;
 				control_ref_ = state_;
 				lpf_out_old_.setZero();
 				signal_demodulated_old_.setZero();
@@ -87,7 +91,7 @@ namespace labust{
 			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts){
 				sin_amp_.setConstant(sin_amp);
 				sin_freq_.setConstant(sin_freq);
-				corr_gain_.setConstant(corr_gain);
+				gain_.setConstant(corr_gain);
 				high_pass_pole_ = high_pass_pole;
 				low_pass_pole_.setConstant(low_pass_pole);
 				comp_pole_.setConstant(comp_pole);
@@ -135,17 +139,16 @@ namespace labust{
 					else
 						comp_out[i]= ((2.0+Ts_*comp_zero_[i])*lpf_out[i]+(Ts_*comp_zero_[i]-2.0)*lpf_out_old_[i]-(Ts_*comp_pole_[i]-2.0)*comp_old_[i])/(2.0+Ts_*comp_pole_[i]);
 
-					// Dodaj opciju za integrtor kako bi bilo genericko
-					//corr_signal_[i] = corr_signal_[i]+corr_gain_[i]*comp_out[i]*Ts_;
-
-					corr_signal_[i] = corr_gain_[i]*comp_out[i];
-
 					lpf_out_old_[i] = lpf_out[i];
 					comp_old_[i] = comp_out[i];
 				}
 
-				return corr_signal_;
+				return comp_out;
+			}
 
+			Base::vector Base::controllerGain(vector postFiltered){
+				control_ = gain_.cwiseProduct(postFiltered);
+				return control_;
 			}
 
 			Base::vector Base::superimposePerturbation(Base::vector control){
@@ -163,20 +166,6 @@ namespace labust{
 	}
 }
 
-//using namespace labust::control::esc;
-//
-//int main(int argc, char** argv){
-//
-//	ros::init(argc, argv, "ESCclassic");
-//	ros::NodeHandle nh;
-//
-//	EscClassic ESC(2,0.1);
-//
-//
-//	ros::spin();
-//
-//	return 0;
-//}
 
 
 

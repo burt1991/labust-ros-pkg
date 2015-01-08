@@ -15,52 +15,59 @@ namespace labust{
 		namespace esc{
 
 
-			class EscClassic : public EscPerturbationBase<double> {
+			class EscEkfGrad : public EscPerturbationBase<double> {
 
 			public:
 
 				/*** Control inputs */
 				//enum {u = 0, v, controlNum};
 
-				EscClassic();
+				EscEkfGrad(int ctrlNum, numericprecission Ts);
 
-				~EscClassic();
+				~EscEkfGrad();
 
-				 void initController();
-
-				 numericprecission preFiltering(numericprecission cost_signal);
+				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period);
 
 				 vector gradientEstimation(numericprecission cost_signal_filtered, vector additional_input);
 
-				 vector postFiltering(vector estimated_gradient);
+				 vector controllerGain(vector postFiltered);
 
 				 vector superimposePerturbation(vector control);
 
-				 //vector step(numericprecission cost_signal);
+				 vector modelUpdate(vector state, vector input);
+
+				 vector outputUpdate(vector state, vector input);
+
 				 /***
 				 * K - gain
 				 * A0 - perturbation amplitude
 				 */
-				vector gain_, sin_amp_, sin_freq_, corr_gain_, low_pass_pole_, comp_pole_, comp_zero_;
+				vector sin_amp_, sin_freq_, corr_gain_, low_pass_pole_, comp_pole_, comp_zero_;
 				vector control_ref_, signal_demodulated_old_, lpf_out_old_,corr_signal_, phase_shift_,comp_old_;
 				/*** Controlled state */
 				vector state_;
 
 				numericprecission high_pass_pole_, hpf_out_old_, obj_val_old_;
-				numericprecission period_;
+
+				/*** EKF */
+
+				matrix A, L, H, M, Q, R;
+				matrix Pk_plu, Pk_min, Kk;
+				vector xk_plu, xk_min, hk;
+
+				vector input, input_past;
+
+				/*** Measurement vector */
+				vector yk;
+
+				Eigen::Vector3d n1, n2;
+
 			};
 
-			typedef EscClassic Base;
+			typedef EscEkfGrad Base;
 
-			EscClassic::EscClassic():state_(vector::Zero(controlNum)),period_(0){
-
-			}
-
-			EscClassic::~EscClassic(){
-
-			}
-
-			void EscClassic::initController(){
+			Base::EscEkfGrad(int ctrlNum, numericprecission Ts):EscPerturbationBase<double>(ctrlNum, Ts),
+										state_(vector::Zero(controlNum)){
 
 				lpf_out_old_.resize(controlNum);
 				signal_demodulated_old_.resize(controlNum);
@@ -68,12 +75,57 @@ namespace labust{
 				corr_signal_.resize(controlNum);
 				control_ref_.resize(controlNum);
 
+				sin_amp_.resize(controlNum);
+				sin_freq_.resize(controlNum);
+				gain_.resize(controlNum);
+				control_.resize(controlNum);
+				//high_pass_pole_ = high_pass_pole;
+				low_pass_pole_.resize(controlNum);
+				comp_pole_.resize(controlNum);
+				comp_zero_.resize(controlNum);
+
 				lpf_out_old_.setZero();
+				hpf_out_old_ = 0;
 				control_ref_ = state_;
 				lpf_out_old_.setZero();
 				signal_demodulated_old_.setZero();
 				comp_old_.setZero();
 				corr_signal_.setZero();
+
+//				matrix A, L, H, M, Q, R;
+//				matrix Pk_plu, Pk_min;
+//				vector xk_plu, xk_min, hk, Kk;
+//
+//				vector input, input_past;
+//
+//				/*** Measurement vector */
+//				vector yk;
+
+				A = matrix::Identity(3,3);
+				L = matrix::Identity(3,3);
+				H = matrix::Zero(3,3);
+				M = matrix::Identity(3,3);
+
+				Pk_plu = 1.0e-4*matrix::Identity(3,3);
+				xk_plu = vector::Zero(3);
+
+				//Qk = 1e-0*diag([0.75 0.75 0.5]); % Process noise vector OVO JE DOBRO 2
+				//Rk = 1e-0*diag([1 1 1]); % Measurement noise vector
+
+				Eigen::Vector3d tmp;
+				tmp << 0.75, 0.75, 0.5;
+				Q = tmp.asDiagonal();
+				tmp << 1, 1, 1;
+				R = tmp.asDiagonal();
+
+				n1 = vector::Zero(3);
+				n2 = vector::Zero(3);
+				yk = vector::Zero(3);
+				input = vector::Zero(6);
+				//Kk = vector::Zero(3);
+
+
+
 
 				phase_shift_.resize(controlNum);
 				phase_shift_[0] = 0;
@@ -84,68 +136,94 @@ namespace labust{
 
 			}
 
-			Base::numericprecission EscClassic::preFiltering(numericprecission cost_signal){
+			Base::~EscEkfGrad(){
 
-				return (-(period_*high_pass_pole_-2)*pre_filter_output_old_+2*cost_signal-2*pre_filter_input_old_)/(2+high_pass_pole_*period_);
 			}
 
-			Base::vector EscClassic::gradientEstimation(numericprecission cost_signal_filtered, vector additional_input){
+			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts){
+				sin_amp_.setConstant(sin_amp);
+				sin_freq_.setConstant(sin_freq);
+				gain_.setConstant(corr_gain);
+				high_pass_pole_ = high_pass_pole;
+				low_pass_pole_.setConstant(low_pass_pole);
+				comp_pole_.setConstant(comp_pole);
+				comp_zero_.setConstant(comp_zero);
+				Ts_ = Ts;
+				obj_val_old_ = 0;
+				cycle_count_ = 0;
+				hpf_out_old_ = 0;
+				//opt_dim_ = 0;
+				state_initialized_ = false;
+				old_vals_initialized_ = false;
+				initialized_ = true;
+			}
+
+
+			Base::vector Base::gradientEstimation(numericprecission cost_signal_filtered, vector additional_input){
 
 				vector signal_demodulated(controlNum);
-				//for (size_t i = 0; i<controlNum; i++){
-				//	signal_demodulated[i]= cost_signal_filtered*sin_amp_[i]*std::sin(double(cycle_count_*period_*sin_freq_[i] + phase_shift_[i]));
-				//}
+
+				input << additional_input(0), n1(0), n2(0), additional_input(1), n1(1), n2(1);
+				yk << cost_signal_filtered, n1(2), n2(2);
+
+				n2 = n1;
+				n1 << additional_input, cost_signal_filtered;
+
+				H << input(0), input(3), 1,
+					 input(1), input(4), 1,
+					 input(2), input(5), 1;
+
+				Pk_min = A*Pk_plu*A.transpose() + L*Q*L.transpose();
+				xk_min =  modelUpdate(xk_plu, input);
+
+				hk = outputUpdate(xk_min, input);
+				matrix tmp = H*Pk_min*H.transpose()+M*R*M.transpose();
+				Kk = (Pk_min*H.transpose())*tmp.inverse();
+
+				xk_plu = xk_min+Kk*(yk-hk);
+				Pk_plu = (matrix::Identity(3,3)-Kk*H)*Pk_min;
+				input_past = input;
+
+				signal_demodulated << xk_plu(0), xk_plu(1);
 				return signal_demodulated;
 			}
 
-			Base::vector EscClassic::postFiltering(vector estimated_gradient){
 
-				vector lpf_out(controlNum);
-				vector comp_out(controlNum);
-
-				for (size_t i = 0; i<controlNum; i++){
-
-					lpf_out[i] = ((2.0-low_pass_pole_[i]*period_)*lpf_out_old_[i]+low_pass_pole_[i]*period_*estimated_gradient[i]+low_pass_pole_[i]*period_*estimated_gradient_old_[i])/(2.0+low_pass_pole_[i]*period_);
-					comp_out[i]= ((2.0+period_*comp_zero_[i])*lpf_out[i]+(period_*comp_zero_[i]-2.0)*lpf_out_old_[i]-(period_*comp_pole_[i]-2.0)*comp_old_[i])/(2.0+period_*comp_pole_[i]);
-					corr_signal_[i] = corr_signal_[i]+corr_gain_[i]*comp_out[i]*period_;
-
-					lpf_out_old_[i] = lpf_out[i];
-					comp_old_[i] = comp_out[i];
-				}
-
-				return corr_signal_;
-
+			Base::vector Base::controllerGain(vector postFiltered){
+				control_ = gain_.cwiseProduct(postFiltered);
+				return control_;
 			}
 
-			Base::vector EscClassic::superimposePerturbation(Base::vector control){
+			Base::vector Base::superimposePerturbation(Base::vector control){
 
 				for (size_t i = 0; i<controlNum; i++){
 					if(!old_vals_initialized_)
-						control_ref_[i] = sin_amp_[i]*std::sin(double(cycle_count_*period_*sin_freq_[i] + phase_shift_[i]));
+						control_ref_[i] = sin_amp_[i]*std::sin(double(cycle_count_*Ts_*sin_freq_[i] + phase_shift_[i]+M_PI/2));
 					else
-						control_ref_[i] = control[i]+sin_amp_[i]*std::sin(double(cycle_count_*period_*sin_freq_[i] + phase_shift_[i]));
+						control_ref_[i] = control[i]+sin_amp_[i]*std::sin(double(cycle_count_*Ts_*sin_freq_[i] + phase_shift_[i]+M_PI/2));
 				}
 
 				return control_ref_;
+			}
+
+			Base::vector Base::modelUpdate(vector state, vector input){
+
+				return A*state;
+			}
+
+			Base::vector Base::outputUpdate(vector state, vector input){
+				// outputUpdate = [u1k*dF1+u2k*dF2+d u1k1*dF1+u2k1*dF2+d u1k2*dF1+u2k2*dF2+d].';
+
+				vector output(3);
+				output << state(0)*input(0)+state(1)*input(3)+state(2),
+						  state(0)*input(1)+state(1)*input(4)+state(2),
+						  state(0)*input(2)+state(1)*input(5)+state(2);
+				return output;
 			}
 		}
 	}
 }
 
-using namespace labust::control::esc;
-
-int main(int argc, char** argv){
-
-	ros::init(argc, argv, "ESCclassic");
-	ros::NodeHandle nh;
-
-	EscClassic ESC;
-
-
-	ros::spin();
-
-	return 0;
-}
 
 
 

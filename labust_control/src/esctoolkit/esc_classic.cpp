@@ -6,7 +6,6 @@
  */
 
 #include <labust/control/esc/EscPerturbation.hpp>
-//#include <vector>
 
 #include <ros/ros.h>
 
@@ -19,14 +18,11 @@ namespace labust{
 
 			public:
 
-				/*** Control inputs */
-				//enum {u = 0, v, controlNum};
-
-				EscClassic();
+				EscClassic(int ctrlNum, numericprecission Ts);
 
 				~EscClassic();
 
-				 void initController();
+				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period);
 
 				 numericprecission preFiltering(numericprecission cost_signal);
 
@@ -36,7 +32,6 @@ namespace labust{
 
 				 vector superimposePerturbation(vector control);
 
-				 //vector step(numericprecission cost_signal);
 				 /***
 				 * K - gain
 				 * A0 - perturbation amplitude
@@ -47,26 +42,27 @@ namespace labust{
 				vector state_;
 
 				numericprecission high_pass_pole_, hpf_out_old_, obj_val_old_;
-				numericprecission period_;
 			};
 
 			typedef EscClassic Base;
 
-			EscClassic::EscClassic():state_(vector::Zero(controlNum)),period_(0){
+			Base::EscClassic(int ctrlNum, numericprecission Ts):EscPerturbationBase<double>(ctrlNum, Ts),
+										state_(vector::Zero(controlNum)){
 
-			}
-
-			EscClassic::~EscClassic(){
-
-			}
-
-			void EscClassic::initController(){
 
 				lpf_out_old_.resize(controlNum);
 				signal_demodulated_old_.resize(controlNum);
 				comp_old_.resize(controlNum);
 				corr_signal_.resize(controlNum);
 				control_ref_.resize(controlNum);
+
+				sin_amp_.resize(controlNum);
+				sin_freq_.resize(controlNum);
+				corr_gain_.resize(controlNum);
+				//high_pass_pole_ = high_pass_pole;
+				low_pass_pole_.resize(controlNum);
+				comp_pole_.resize(controlNum);
+				comp_zero_.resize(controlNum);
 
 				lpf_out_old_.setZero();
 				control_ref_ = state_;
@@ -84,30 +80,65 @@ namespace labust{
 
 			}
 
-			Base::numericprecission EscClassic::preFiltering(numericprecission cost_signal){
+			Base::~EscClassic(){
 
-				return (-(period_*high_pass_pole_-2)*pre_filter_output_old_+2*cost_signal-2*pre_filter_input_old_)/(2+high_pass_pole_*period_);
 			}
 
-			Base::vector EscClassic::gradientEstimation(numericprecission cost_signal_filtered, vector additional_input){
+			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts){
+				sin_amp_.setConstant(sin_amp);
+				sin_freq_.setConstant(sin_freq);
+				corr_gain_.setConstant(corr_gain);
+				high_pass_pole_ = high_pass_pole;
+				low_pass_pole_.setConstant(low_pass_pole);
+				comp_pole_.setConstant(comp_pole);
+				comp_zero_.setConstant(comp_zero);
+				Ts_ = Ts;
+				obj_val_old_ = 0;
+				cycle_count_ = 0;
+				hpf_out_old_ = 0;
+				//opt_dim_ = 0;
+				state_initialized_ = false;
+				old_vals_initialized_ = false;
+				initialized_ = true;
+			}
+			Base::numericprecission Base::preFiltering(numericprecission cost_signal){
+
+				return (-(Ts_*high_pass_pole_-2)*pre_filter_output_old_+2*cost_signal-2*pre_filter_input_old_)/(2+high_pass_pole_*Ts_);
+			}
+
+			Base::vector Base::gradientEstimation(numericprecission cost_signal_filtered, vector additional_input){
 
 				vector signal_demodulated(controlNum);
+
 				for (size_t i = 0; i<controlNum; i++){
-					signal_demodulated[i]= cost_signal_filtered*sin_amp_[i]*std::sin(double(cycle_count_*period_*sin_freq_[i] + phase_shift_[i]));
+
+					signal_demodulated(i)= cost_signal_filtered*sin_amp_(i)*std::sin(double(cycle_count_*Ts_*sin_freq_(i) + phase_shift_(i)));
 				}
+
 				return signal_demodulated;
 			}
 
-			Base::vector EscClassic::postFiltering(vector estimated_gradient){
+			Base::vector Base::postFiltering(vector estimated_gradient){
 
 				vector lpf_out(controlNum);
 				vector comp_out(controlNum);
 
 				for (size_t i = 0; i<controlNum; i++){
 
-					lpf_out[i] = ((2.0-low_pass_pole_[i]*period_)*lpf_out_old_[i]+low_pass_pole_[i]*period_*estimated_gradient[i]+low_pass_pole_[i]*period_*estimated_gradient_old_[i])/(2.0+low_pass_pole_[i]*period_);
-					comp_out[i]= ((2.0+period_*comp_zero_[i])*lpf_out[i]+(period_*comp_zero_[i]-2.0)*lpf_out_old_[i]-(period_*comp_pole_[i]-2.0)*comp_old_[i])/(2.0+period_*comp_pole_[i]);
-					corr_signal_[i] = corr_signal_[i]+corr_gain_[i]*comp_out[i]*period_;
+					if(low_pass_pole_[i] == 0)
+						lpf_out[i] = estimated_gradient[i];
+					else
+						lpf_out[i] = ((2.0-low_pass_pole_[i]*Ts_)*lpf_out_old_[i]+low_pass_pole_[i]*Ts_*estimated_gradient[i]+low_pass_pole_[i]*Ts_*estimated_gradient_old_[i])/(2.0+low_pass_pole_[i]*Ts_);
+
+					if(comp_pole_[i] == 0)
+						comp_out[i] = lpf_out[i];
+					else
+						comp_out[i]= ((2.0+Ts_*comp_zero_[i])*lpf_out[i]+(Ts_*comp_zero_[i]-2.0)*lpf_out_old_[i]-(Ts_*comp_pole_[i]-2.0)*comp_old_[i])/(2.0+Ts_*comp_pole_[i]);
+
+					// Dodaj opciju za integrtor kako bi bilo genericko
+					//corr_signal_[i] = corr_signal_[i]+corr_gain_[i]*comp_out[i]*Ts_;
+
+					corr_signal_[i] = corr_gain_[i]*comp_out[i];
 
 					lpf_out_old_[i] = lpf_out[i];
 					comp_old_[i] = comp_out[i];
@@ -117,13 +148,13 @@ namespace labust{
 
 			}
 
-			Base::vector EscClassic::superimposePerturbation(Base::vector control){
+			Base::vector Base::superimposePerturbation(Base::vector control){
 
 				for (size_t i = 0; i<controlNum; i++){
 					if(!old_vals_initialized_)
-						control_ref_[i] = sin_amp_[i]*std::sin(double(cycle_count_*period_*sin_freq_[i] + phase_shift_[i]));
+						control_ref_[i] = sin_amp_[i]*std::sin(double(cycle_count_*Ts_*sin_freq_[i] + phase_shift_[i]+M_PI/2));
 					else
-						control_ref_[i] = control[i]+sin_amp_[i]*std::sin(double(cycle_count_*period_*sin_freq_[i] + phase_shift_[i]));
+						control_ref_[i] = control[i]+sin_amp_[i]*std::sin(double(cycle_count_*Ts_*sin_freq_[i] + phase_shift_[i]+M_PI/2));
 				}
 
 				return control_ref_;
@@ -132,20 +163,20 @@ namespace labust{
 	}
 }
 
-using namespace labust::control::esc;
-
-int main(int argc, char** argv){
-
-	ros::init(argc, argv, "ESCclassic");
-	ros::NodeHandle nh;
-
-	EscClassic ESC;
-
-
-	ros::spin();
-
-	return 0;
-}
+//using namespace labust::control::esc;
+//
+//int main(int argc, char** argv){
+//
+//	ros::init(argc, argv, "ESCclassic");
+//	ros::NodeHandle nh;
+//
+//	EscClassic ESC(2,0.1);
+//
+//
+//	ros::spin();
+//
+//	return 0;
+//}
 
 
 

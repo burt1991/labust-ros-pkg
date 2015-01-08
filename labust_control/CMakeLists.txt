@@ -74,7 +74,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include)
+include_directories(include src/esctoolkit)
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
@@ -90,6 +90,7 @@ add_library(pidtoolkit2
    src/pidtoolkit/PIDFFController.c
    src/pidtoolkit/IPDFFController.c
 )
+
 set_source_files_properties(
    src/pidtoolkit/PIDBase.c
    src/pidtoolkit/PIFFController.c
@@ -97,6 +98,16 @@ set_source_files_properties(
    src/pidtoolkit/IPFFController.c
    src/pidtoolkit/PIDFFController.c
    src/pidtoolkit/IPDFFController.c PROPERTIES LANGUAGE CXX)
+
+### ESC library #####################################################   
+
+add_library(esctoolkit
+   src/esctoolkit/esc_classic.cpp
+)
+
+set_source_files_properties(
+   src/esctoolkit/esc_classic.cpp PROPERTIES LANGUAGE CXX)
+#####################################################################
 
 add_executable(fadp_controller2 src/FADPControl.cpp)
 add_executable(hdg_controller2 src/HDGControl.cpp)
@@ -110,8 +121,11 @@ add_executable(ref_manual src/RefManual.cpp)
 add_executable(async_merger src/AsyncMerger.cpp)
 add_executable(velocity_control	src/VelocityControl.cpp)
 # ESC executables
-add_executable(esc_classic src/esctoolkit/esc_classic.cpp)
-#add_executable(esc_classic src/esctoolkit/esc_ekf_grad.cpp)
+#add_executable(esc_classic src/esctoolkit/esc_classic.cpp)
+add_executable(esc_ekf_grad src/esctoolkit/esc_ekf_grad.cpp)
+
+add_executable(esc_uv src/esc/ESCControlClassic_UV.cpp)
+
 
 ## Declare a cpp executable
 # add_executable(labust_control_node src/labust_control_node.cpp)
@@ -131,7 +145,11 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(ref_manual ${catkin_EXPORTED_TARGETS})
  add_dependencies(async_merger ${catkin_EXPORTED_TARGETS})
  add_dependencies(velocity_control ${catkin_EXPORTED_TARGETS})
- add_dependencies(esc_classic ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(esc_classic ${catkin_EXPORTED_TARGETS})
+ add_dependencies(esc_ekf_grad ${catkin_EXPORTED_TARGETS})
+ add_dependencies(esc_uv ${catkin_EXPORTED_TARGETS})
+ 
+ 
 endif()
 
 ## Specify libraries to link a library or executable target against
@@ -179,7 +197,12 @@ target_link_libraries(velocity_control
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(esc_classic ${catkin_LIBRARIES})
+#target_link_libraries(esc_classic ${catkin_LIBRARIES})
+target_link_libraries(esc_ekf_grad ${catkin_LIBRARIES})
+
+target_link_libraries(esc_uv esctoolkit ${catkin_LIBRARIES})
+
+
 #############
 ## Install ##
 #############

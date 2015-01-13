@@ -389,7 +389,7 @@ void Estimator3D::publishState()
 	state->body_velocity.z = estimate(KFNav::w);
 
 	Eigen::Matrix2d R;
-	double yaw = estimate(KFNav::r);
+	double yaw = labust::math::wrapRad(estimate(KFNav::psi));
 	R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
 	Eigen::Vector2d in, out;
 	in << estimate(KFNav::xc), estimate(KFNav::yc);

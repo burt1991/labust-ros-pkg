@@ -98,6 +98,8 @@ set_source_files_properties(
    src/pidtoolkit/PIDFFController.c
    src/pidtoolkit/IPDFFController.c PROPERTIES LANGUAGE CXX)
 
+add_executable(manual_control src/manual_control/manual_control.cpp)
+
 add_executable(fadp_controller2 src/FADPControl.cpp)
 add_executable(hdg_controller2 src/HDGControl.cpp)
 #add_executable(hdg_controller_direct src/HDGControlDirect.cpp)
@@ -117,6 +119,7 @@ add_executable(velocity_control	src/VelocityControl.cpp)
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(labust_control_node labust_control_generate_messages_cpp)
 if (DEFINED catkin_EXPORTED_TARGETS)
+ add_dependencies(manual_control ${catkin_EXPORTED_TARGETS})
  add_dependencies(fadp_controller2 ${catkin_EXPORTED_TARGETS})
  add_dependencies(ualf_controller ${catkin_EXPORTED_TARGETS})
  add_dependencies(hdg_controller2 ${catkin_EXPORTED_TARGETS})
@@ -131,6 +134,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
 endif()
 
 ## Specify libraries to link a library or executable target against
+target_link_libraries(manual_control ${catkin_LIBRARIES})
 target_link_libraries(nu_manual ${catkin_LIBRARIES})
 target_link_libraries(ref_manual ${catkin_LIBRARIES})
 target_link_libraries(async_merger ${catkin_LIBRARIES})

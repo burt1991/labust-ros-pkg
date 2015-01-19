@@ -74,8 +74,9 @@ include_directories(include
 )
 
 file(GLOB SRC src/labust_sim/*.cpp)
-file(GLOB HPP include/labust/simulation/*.hpp) 
+file(GLOB HPP include/labust/simulation/*.hpp include/labust/simulation/*.h) 
 add_library(labust_sim ${SRC} ${HPP})
+target_link_libraries(labust_sim ${Boost_RANDOM_LIBRARY})
 
 #file(GLOB SRC src/sim_sensors/*.cpp)
 #file(GLOB HPP include/labust/ros/*.hpp) 
@@ -95,6 +96,10 @@ add_executable(gps_sim src/sim_sensors/GPSSim.cpp)
 target_link_libraries(gps_sim ${catkin_LIBRARIES})
 add_executable(publish_from_csv src/data_sim/publish_from_csv.cpp)
 target_link_libraries(publish_from_csv ${catkin_LIBRARIES})
+add_executable(diver_sim src/diver_sim/diver_sim.cpp)
+target_link_libraries(diver_sim labust_sim ${catkin_LIBRARIES})
+add_executable(navsts2odom src/navsts2odom/navsts2odom.cpp)
+target_link_libraries(navsts2odom ${catkin_LIBRARIES})
 
 if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(imu_sim ${catkin_EXPORTED_TARGETS})
@@ -103,6 +108,8 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  #add_dependencies(hdg_controller_direct ${catkin_EXPORTED_TARGETS})
  add_dependencies(publish_from_csv  ${catkin_EXPORTED_TARGETS})
  add_dependencies(uvsim ${catkin_EXPORTED_TARGETS})
+ add_dependencies(diver_sim ${catkin_EXPORTED_TARGETS})
+ add_dependencies(navsts2odom ${catkin_EXPORTED_TARGETS})
 endif()
 #############
 ## Install ##

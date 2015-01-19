@@ -45,6 +45,7 @@ using namespace labust::simulation;
 DiverSim::DiverSim():
 		jnames(20,""),
 		jdefaults(60,0),
+		move_head(false),
 		runSim(false),
 		Ts(0.1)
 {
@@ -65,6 +66,7 @@ void DiverSim::onInit()
 	//Load joint names and defaults
 	ph.param("joint_names",jnames,jnames);
 	ph.param("joint_defaults",jdefaults,jdefaults);
+	ph.param("move_head", move_head, move_head);
 
 	if (jdefaults.size() != 3*jnames.size())
 	{
@@ -103,24 +105,45 @@ void DiverSim::start()
 
 void DiverSim::step()
 {
+	double hpan(0),htilt(0);
 	auv_msgs::NavSts::Ptr nav(new auv_msgs::NavSts());
 	{
 		boost::mutex::scoped_lock l(nu_mux);
-		model.step(nu);
 		labust::tools::vectorToPoint(nu, nav->body_velocity);
 		labust::tools::vectorToRPY(nu, nav->orientation_rate,3);
+		if (move_head)
+		{
+			enum {p = 3, q =4};
+			hpan = nu(p);
+			htilt = nu(q);
+			//Reset rates to avoid influence on body
+			nu(p) = 0;
+			nu(q) = 0;
+		}
+		//Simulate
+		model.step(nu);
+		if (move_head)
+		{
+			enum {p = 3, q =4};
+			//Recover speeds for future use
+			nu(p) = hpan;
+			nu(q) = htilt;
+		}
 	}
 
 	labust::tools::vectorToNED(model.position(), nav->position);
 	labust::tools::vectorToRPY(model.orientation(), nav->orientation);
+	//Clear the roll/pitch axes to allow for head control
+	nav->orientation.roll = 0;
+	nav->orientation.pitch = 0;
 	navsts.publish(nav);
 
-	//The interval of oscillations is proportional to speed (it's not, but anyways)
-	this->stepJoints(nav->body_velocity.x*2);
+	//Assume the interval of oscillations is proportional to speed (it's not, but anyways)
+	this->stepJoints(nav->body_velocity.x*2, hpan, htilt);
 	joints.publish(jstate);
 }
 
-void DiverSim::stepJoints(double w)
+void DiverSim::stepJoints(double w, double hpan, double htilt)
 {
 	const double FOOT_LAG(M_PI/2-M_PI/12);
 	const double THIGH_LAG(-M_PI/12);
@@ -131,7 +154,8 @@ void DiverSim::stepJoints(double w)
 	enum {LCALF=3*12+1, RCALF=3*17+1,
 		LFOOT=3*11+1, RFOOT=3*18+1,
 		LTHIGH=3*13+1, RTHIGH=3*16+1,
-		LBACKZ=3*14+2, LBACKX=3*14};
+		LBACKZ=3*14+2, LBACKX=3*14,
+		HEADZ = 3*3+2, HEADY = 3*3+1};
 	double C = w0*t;
 	w0 = (w*Ts + w0*T)/(Ts+T);
 	t = ((w0 != 0)?t = C/w0:0);
@@ -146,6 +170,10 @@ void DiverSim::stepJoints(double w)
 
 	jstate.position[LBACKZ] = labust::math::wrapRad(jdefaults[LBACKZ] - M_PI/80*sin(w0*t));
 	jstate.position[LBACKX] = jdefaults[LBACKX] - M_PI/80*sin(w0*t);
+
+	//Head state
+	jstate.position[HEADZ] = labust::math::wrapRad(jdefaults[HEADZ] + hpan);
+	jstate.position[HEADY] = labust::math::wrapRad(jdefaults[HEADY] + htilt);
 }
 
 int main(int argc, char* argv[])

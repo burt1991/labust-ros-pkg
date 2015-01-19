@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(rosdoc_lite)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -202,6 +203,18 @@ target_link_libraries(velocity_control
 target_link_libraries(esc_uv esctoolkit ${catkin_LIBRARIES})
 target_link_libraries(esc_ekf_uv esctoolkit ${catkin_LIBRARIES})
 target_link_libraries(esc_ekf_model_uv esctoolkit ${catkin_LIBRARIES})
+
+###################
+## Documentation ##
+###################
+if (BUILD_ROS_DOCS)
+    if (rosdoc_lite_FOUND)
+     set(doc_files mainpage.dox)   
+     add_custom_target(${PROJECT_NAME}_docs ALL rosdoc_lite -o 
+         ${CMAKE_BINARY_DIR}/doc/${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS ${doc_files})
+     endif()
+endif()
+
 #############
 ## Install ##
 #############

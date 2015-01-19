@@ -74,7 +74,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include)
+include_directories(include src/esctoolkit)
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
@@ -90,6 +90,7 @@ add_library(pidtoolkit2
    src/pidtoolkit/PIDFFController.c
    src/pidtoolkit/IPDFFController.c
 )
+
 set_source_files_properties(
    src/pidtoolkit/PIDBase.c
    src/pidtoolkit/PIFFController.c
@@ -99,7 +100,13 @@ set_source_files_properties(
    src/pidtoolkit/IPDFFController.c PROPERTIES LANGUAGE CXX)
 
 add_executable(manual_control src/manual_control/manual_control.cpp)
-
+### ESC library #####################################################   
+add_library(esctoolkit
+   src/esctoolkit/esc_classic.cpp
+)
+set_source_files_properties(
+   src/esctoolkit/esc_classic.cpp PROPERTIES LANGUAGE CXX)
+   
 add_executable(fadp_controller2 src/FADPControl.cpp)
 add_executable(hdg_controller2 src/HDGControl.cpp)
 #add_executable(hdg_controller_direct src/HDGControlDirect.cpp)
@@ -111,6 +118,14 @@ add_executable(nu_manual src/NuManual.cpp)
 add_executable(ref_manual src/RefManual.cpp)
 add_executable(async_merger src/AsyncMerger.cpp)
 add_executable(velocity_control	src/VelocityControl.cpp)
+
+# ESC executables
+add_executable(esc_uv src/esc/ESCControlClassic_UV.cpp)
+add_executable(esc_ekf_uv src/esc/ESControlEKF_UV.cpp)
+add_executable(esc_ekf_model_uv src/esc/ESControlEKF_MODEL_UV.cpp)
+
+
+
 
 ## Declare a cpp executable
 # add_executable(labust_control_node src/labust_control_node.cpp)
@@ -131,6 +146,10 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(ref_manual ${catkin_EXPORTED_TARGETS})
  add_dependencies(async_merger ${catkin_EXPORTED_TARGETS})
  add_dependencies(velocity_control ${catkin_EXPORTED_TARGETS})
+
+ add_dependencies(esc_uv ${catkin_EXPORTED_TARGETS})
+ add_dependencies(esc_ekf_uv ${catkin_EXPORTED_TARGETS})
+ add_dependencies(esc_ekf_model_uv ${catkin_EXPORTED_TARGETS}) 
 endif()
 
 ## Specify libraries to link a library or executable target against
@@ -178,6 +197,11 @@ target_link_libraries(velocity_control
   pidtoolkit2
   ${catkin_LIBRARIES}
 )
+
+
+target_link_libraries(esc_uv esctoolkit ${catkin_LIBRARIES})
+target_link_libraries(esc_ekf_uv esctoolkit ${catkin_LIBRARIES})
+target_link_libraries(esc_ekf_model_uv esctoolkit ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

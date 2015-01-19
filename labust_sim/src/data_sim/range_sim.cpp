@@ -1,5 +1,5 @@
 /*********************************************************************
- * range_meas_sim.cpp
+ * range_sim.cpp
  *
  *  Created on: Aug 18, 2014
  *      Author: Filip Mandić
@@ -45,31 +45,32 @@
 #include <auv_msgs/NavSts.h>
 #include <std_msgs/Float32.h>
 
-class RangeMeasSim{
+class RangeSim{
 
 public:
 
-	RangeMeasSim(){
+	RangeSim(){
 
 		ros::NodeHandle nh;
 
-		vehiclePos = nh.subscribe<auv_msgs::NavSts>("meas_ideal",1,&RangeMeasSim::onVehiclePos,this);
+		vehiclePosSub = nh.subscribe<auv_msgs::NavSts>("meas_ideal",1,&RangeSim::onVehiclePos,this);
+		targetPosSub = nh.subscribe<auv_msgs::NavSts>("target_pos",1,&RangeSim::onTargetPos,this);
 		rangeMeas = nh.advertise<std_msgs::Float32>("rangeMeas",1);
 	}
 
-	~RangeMeasSim(){}
+	~RangeSim(){}
 
 	void start(){
 
 		ros::NodeHandle ph("~");
-		double Ts(5.0);
+		double Ts(1.0);
 		ph.param("Trange",Ts,Ts);
 		ros::Rate rate(1/Ts);
 
 		while (ros::ok())
 		{
 
-			range.data = vehPos.norm();
+			range.data = (vehPos-tarPos).norm();
 			rangeMeas.publish(range);
 
 			rate.sleep();
@@ -83,24 +84,32 @@ public:
 		vehPos << data->position.north, data->position.east, data->position.depth;
 	}
 
+	void onTargetPos(const auv_msgs::NavSts::ConstPtr& data){
+
+		tarPos << data->position.north, data->position.east, data->position.depth;
+	}
+
 	/*
 	 * Class variables
 	 */
 
-	ros::Subscriber vehiclePos;
+	ros::Subscriber vehiclePosSub, targetPosSub;
 	ros::Publisher rangeMeas;
 
-	Eigen::Vector3d vehPos;
+	Eigen::Vector3d vehPos, tarPos;
 	std_msgs::Float32 range;
 };
 
 int main(int argc, char* argv[])
 {
-	ros::init(argc,argv,"range_meas_sim");
-	RangeMeasSim rms;
-	rms.start();
+	ros::init(argc,argv,"range_sim");
+	RangeSim rs;
+	rs.start();
 	return 0;
 }
+
+
+
 
 
 

@@ -8,7 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   decision_making
   decision_making_parser
   roscpp
-  random_numbers
+  #random_numbers
   sensor_msgs
   std_msgs
   geometry_msgs

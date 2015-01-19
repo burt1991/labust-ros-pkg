@@ -303,6 +303,7 @@ void Estimator3D::processMeasurements()
 				imu.orientation()[ImuHandler::pitch],
 				imu.orientation()[ImuHandler::yaw]);
 
+
 		if ((newMeas(KFNav::r) = useYawRate))
 		{
 			measurements(KFNav::r) = imu.rate()[ImuHandler::r];
@@ -386,6 +387,17 @@ void Estimator3D::publishState()
 	state->body_velocity.x = estimate(KFNav::u);
 	state->body_velocity.y = estimate(KFNav::v);
 	state->body_velocity.z = estimate(KFNav::w);
+
+	Eigen::Matrix2d R;
+	double yaw = labust::math::wrapRad(estimate(KFNav::psi));
+	R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+	Eigen::Vector2d in, out;
+	in << estimate(KFNav::xc), estimate(KFNav::yc);
+	out = R.transpose()*in;
+
+	state->gbody_velocity.x = estimate(KFNav::u) + out(0);
+	state->gbody_velocity.y = estimate(KFNav::v) + out(1);
+	state->gbody_velocity.z = estimate(KFNav::w);
 
 	state->orientation_rate.roll = estimate(KFNav::p);
 	state->orientation_rate.pitch = estimate(KFNav::q);

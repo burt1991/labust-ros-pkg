@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   navcon_msgs
   geometry_msgs
   tf2_ros
+  underwater_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -120,8 +121,7 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(ekf_sb_node ${catkin_EXPORTED_TARGETS})
  #add_dependencies(ekf_sb_kinematic_node ${catkin_EXPORTED_TARGETS})
  add_dependencies(range_meas_sim ${catkin_EXPORTED_TARGETS})
-  add_dependencies(relative_tracking_node ${catkin_EXPORTED_TARGETS})
- 
+ add_dependencies(relative_tracking_node ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Specify libraries to link a library or executable target against

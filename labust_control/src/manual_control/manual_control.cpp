@@ -68,9 +68,9 @@ void ManualControl::onInit()
 	}
 
 	//Setup publishers
-	tauref = nh.advertise<auv_msgs::BodyForceReq>("tau_manual",1);
-	nuref = nh.advertise<auv_msgs::BodyVelocityReq>("nu_manual",1);
-	etaref = nh.advertise<auv_msgs::NavSts>("eta_manual",1);
+	tauref = nh.advertise<auv_msgs::BodyForceReq>("manual_tau",1);
+	nuref = nh.advertise<auv_msgs::BodyVelocityReq>("manual_nu",1);
+	etaref = nh.advertise<auv_msgs::NavSts>("manual_eta",1);
 	//Setup subscribers
 	joyin = nh.subscribe(config.topic, 1, &ManualControl::onJoystick, this);
 	navsts = nh.subscribe("navsts", 1, &ManualControl::onNavSts, this);
@@ -85,10 +85,18 @@ bool ManualControl::setupConfig()
 	//Configure remapping
 	ph.param("axes_map", config.axes_map, config.axes_map);
 	ph.param("scale_map", config.scale_map, config.scale_map);
+	ph.param("integrated", config.integrated, config.integrated);
 	//Configure
 	ph.param("maximum_effort", config.maximum_effort, config.maximum_effort);
 	ph.param("maximum_nu", config.maximum_nu, config.maximum_nu);
 	ph.param("maximum_speed", config.maximum_speed, config.maximum_speed);
+	std::vector<int> ug(SRequest::DISABLED,0);
+	ph.param("use_generators", ug, ug);
+	for (int i=0; i<ug.size(); ++i)
+	{
+		if (i >= generators.size()) break;
+		generators[i] = ug[i];
+	}
 	//Test first for simulation time, runtime and then the private override
 	nh.param("simulation/sampling_time", config.sampling_time, config.sampling_time);
 	nh.param("runtime/sampling_time", config.sampling_time, config.sampling_time);
@@ -113,6 +121,8 @@ void ManualControl::setDefaultConfig()
 	//Set default 1on1 mapping, no scaling
 	for(int i=0; i<DOF; ++i) config.axes_map.push_back(i);
 	config.scale_map.resize(6,1);
+	//By default no axes are integrated.
+	config.integrated.resize(6,0);
 
 	config.maximum_effort.resize(6,1);
 
@@ -134,6 +144,7 @@ bool ManualControl::onConfiguration(CRequest& req, CResponse& resp)
 		this->config.axes_map = cfg.axes_map;
 	}
 	if (cfg.scale_map.size() == DOF) this->config.scale_map = cfg.scale_map;
+	if (cfg.integrated.size() == DOF) this->config.integrated = cfg.integrated;
 	if (cfg.maximum_effort.size() == DOF) this->config.maximum_effort = cfg.maximum_effort;
 	if (cfg.maximum_nu.size() == DOF) this->config.maximum_nu = cfg.maximum_nu;
 	if (cfg.maximum_speed.size() == DOF)
@@ -307,7 +318,15 @@ void ManualControl::remap(const sensor_msgs::Joy::ConstPtr& joy)
 		//Check if joystick has enough axes
 		if (joy->axes.size() <= i) continue;
 
-		mapped[i] = joy->axes[config.axes_map[i]]*config.scale_map[i];
+		if (config.integrated[i] > 0)
+		{
+			mapped[i] += joy->axes[config.axes_map[i]]*config.scale_map[i]*config.integrated[i];
+			mapped[i] = labust::math::coerce(mapped[i], -1, 1);
+		}
+		else
+		{
+			mapped[i] = joy->axes[config.axes_map[i]]*config.scale_map[i];
+		}
 	}
 };
 

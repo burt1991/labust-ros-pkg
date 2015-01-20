@@ -71,17 +71,13 @@ namespace labust
 			///Single simulation step
 			void step();
 			///Step joints
-			void stepJoints(double w);
+			void stepJoints(double w, double hpan=0, double htilt=0);
 			///Handle incoming speed request
 			void onNu(const auv_msgs::BodyVelocityReq::ConstPtr& nu)
 			{
 				boost::mutex::scoped_lock l(nu_mux);
 				labust::tools::pointToVector(nu->twist.linear, this->nu);
 				labust::tools::pointToVector(nu->twist.angular, this->nu,3);
-				enum {v=1,p=3,q=4};
-				//Limit DOFs
-				this->nu(v) = 0;
-				this->nu(p) = 0;
 			}
 
 			///Navigation state publisher
@@ -101,6 +97,11 @@ namespace labust
 			std::vector<double> jdefaults;
 			///Current joint state
 			sensor_msgs::JointState jstate;
+			/**
+			 * Flag to use roll/pitch rate for moving the head
+			 * instead of the body directly.
+			 */
+			bool move_head;
 
 			///Sim sampling time
 			double Ts;

@@ -92,6 +92,7 @@ namespace labust{
 			XMLDocument doc;
 
 			XMLNode *mission;
+			XMLNode *main;
 			XMLNode *primitive;
 			XMLNode *param;
 			XMLNode *idNode;
@@ -106,9 +107,10 @@ namespace labust{
 		}
 
 		void WriteXML::addMission(){
-
+			main = doc.NewElement("main");
 			mission = doc.NewElement("mission");
-			doc.InsertEndChild(mission);
+			doc.InsertEndChild(main);
+			main->InsertEndChild(mission);
 			id = 0;
 		}
 

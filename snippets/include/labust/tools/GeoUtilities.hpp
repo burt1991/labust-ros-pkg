@@ -123,6 +123,7 @@ namespace labust
 		/**
 		 * Converts the WGS84 geodetic coordinates into geocentric ECEF coordinates
 		 * @param geo Geodetic latitude, longitude in decimal degrees and altitude in meters.
+		 * 			  Internally, the vector must be (longitude,latitude,altitude).
 		 * @return ECEF coordinates in meters
 		 */
 		inline Eigen::Vector3d geodetic2ecef(const Eigen::Vector3d& geo)
@@ -194,6 +195,33 @@ namespace labust
 
 //			return rot;
 			return rz*ry;
+		}
+
+		///Returns the rotation matrix between ECEF and NWU frame
+		inline Eigen::Matrix3d nwurot(const Eigen::Vector3d& geo)
+		{
+			enum {lon=0, lat, alt};
+			double rlat(geo(lat)*M_PI/180);
+			double rlon(geo(lon)*M_PI/180);
+
+//			Eigen::Matrix3d rot;
+//			rot<<-sin(rlat)*cos(rlon), -sin(rlon), -cos(rlon)*cos(rlat),
+//					-sin(rlon)*sin(rlat), 	-cos(rlon), -sin(rlon)*cos(rlat),
+//					cos(rlat),0,-sin(rlat);
+
+			double roll = M_PI/2 - rlat;
+			double yaw = M_PI+rlon;
+
+			Eigen::Matrix3d rz, rx;
+			rz << cos(yaw), sin(yaw),0,
+					-sin(yaw), cos(yaw), 0,
+					0, 0, 1;
+			rx << 1, 0 ,0,
+				  0, cos(roll), sin(roll),
+				  0, -sin(roll),cos(roll);
+
+//			return rot;
+			return rz*rx;
 		}
 
 		/**

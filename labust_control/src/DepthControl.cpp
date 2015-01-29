@@ -85,7 +85,7 @@ namespace labust
   		void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
   		{
   			con.internalState = 0;
- 				con.lastState = state.position.depth;
+ 			con.lastState = state.position.depth;
   		};
 
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
@@ -93,6 +93,7 @@ namespace labust
 			{
 				con.desired = ref.position.depth;
 				con.state = state.position.depth;
+				con.track = state.body_velocity.z;
 				float wd = state.body_velocity.z;
 
 				//Zero feed-forward

@@ -73,7 +73,7 @@ namespace labust
 			{
 				//Copy into controller
 				//con.windup = tauAch.disable_axis.z;
-  			con.extWindup = -tauAch.windup.z;
+  				con.extWindup = -tauAch.windup.z;
 			};
 
   		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
@@ -97,6 +97,7 @@ namespace labust
 			{
 				con.desired = ref.altitude;
 				con.state = state.altitude;
+				con.track = -state.body_velocity.z;
 
 				//Zero feed-forward
 				//PIFF_ffStep(&con,Ts,0);

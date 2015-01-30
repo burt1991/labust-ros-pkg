@@ -67,7 +67,8 @@ namespace labust
 			{
 				//Copy into controller
 				//con.windup = tauAch.disable_axis.yaw;
-  			con.extWindup = tauAch.windup.yaw;
+  				con.extWindup = tauAch.windup.yaw;
+  				//con.track = tauAch.wrench.torque.z;
 			};
 
   		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
@@ -93,6 +94,7 @@ namespace labust
 			{
 				con.desired = ref.orientation.yaw;
 				con.state = (useIP?unwrap(state.orientation.yaw):state.orientation.yaw);
+				con.track = state.orientation_rate.yaw;
 
 				float errorWrap = labust::math::wrapRad(
 					con.desired - con.state);

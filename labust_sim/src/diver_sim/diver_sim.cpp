@@ -136,10 +136,12 @@ void DiverSim::step()
 	//Clear the roll/pitch axes to allow for head control
 	nav->orientation.roll = 0;
 	nav->orientation.pitch = 0;
+	nav->header.stamp = ros::Time::now();
 	navsts.publish(nav);
 
 	//Assume the interval of oscillations is proportional to speed (it's not, but anyways)
-	this->stepJoints(nav->body_velocity.x*2, hpan, htilt);
+	this->stepJoints(nav->body_velocity.x*4, hpan, htilt);
+	jstate.header.stamp = ros::Time::now();
 	joints.publish(jstate);
 }
 
@@ -158,7 +160,7 @@ void DiverSim::stepJoints(double w, double hpan, double htilt)
 		HEADZ = 3*3+2, HEADY = 3*3+1};
 	double C = w0*t;
 	w0 = (w*Ts + w0*T)/(Ts+T);
-	t = ((w0 != 0)?t = C/w0:0);
+	t = ((fabs(w0) > 0.01)?C/w0:0);
 	t += Ts;
 
 	jstate.position[LCALF] = jdefaults[LCALF] + M_PI/12*sin(w0*t);
@@ -168,8 +170,8 @@ void DiverSim::stepJoints(double w, double hpan, double htilt)
 	jstate.position[RFOOT] = jdefaults[RFOOT] + M_PI/12*sin(w0*t+FOOT_LAG);
 	jstate.position[RTHIGH] = jdefaults[RTHIGH] - M_PI/36*sin(w0*t+THIGH_LAG);
 
-	jstate.position[LBACKZ] = labust::math::wrapRad(jdefaults[LBACKZ] - M_PI/80*sin(w0*t));
-	jstate.position[LBACKX] = jdefaults[LBACKX] - M_PI/80*sin(w0*t);
+	//jstate.position[LBACKZ] = labust::math::wrapRad(jdefaults[LBACKZ] - M_PI/96*sin(w0*t));
+	//jstate.position[LBACKX] = jdefaults[LBACKX] - M_PI/96*sin(w0*t);
 
 	//Head state
 	jstate.position[HEADZ] = labust::math::wrapRad(jdefaults[HEADZ] + hpan);

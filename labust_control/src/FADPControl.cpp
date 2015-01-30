@@ -70,8 +70,10 @@ namespace labust
 				//Copy into controller
 				//con[x].windup = tauAch.disable_axis.x;
 				//con[y].windup = tauAch.disable_axis.y;
-  			con[x].extWindup = tauAch.windup.x;
-  			con[y].extWindup = tauAch.windup.y;
+  				con[x].extWindup = tauAch.windup.x;
+  				con[y].extWindup = tauAch.windup.y;
+  				con[x].track = tauAch.wrench.force.x;
+  				con[y].track = tauAch.wrench.force.y;
 			};
 
   		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
@@ -133,6 +135,14 @@ namespace labust
 
 				con[x].state = state.position.north;
 				con[y].state = state.position.east;
+
+				in<<state.body_velocity.x,state.body_velocity.y;
+				yaw = state.orientation.yaw;
+				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+				out = R*in;
+
+				con[x].track = out(x);
+				con[y].track = out(y);
 
 				if (useIP)
 				{

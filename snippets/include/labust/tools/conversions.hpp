@@ -193,7 +193,8 @@ namespace labust
 		}
 
 		//\todo Test and document this method
-		void eulerZYXFromQuaternion(const geometry_msgs::Quaternion& q, double& roll, double& pitch, double& yaw)
+		inline void eulerZYXFromQuaternion(const geometry_msgs::Quaternion& q,
+				double& roll, double& pitch, double& yaw)
 		{
 			using namespace Eigen;
 			//From child to parent

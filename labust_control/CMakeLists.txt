@@ -124,6 +124,7 @@ add_executable(velocity_control	src/VelocityControl.cpp)
 add_executable(esc_uv src/esc/ESCControlClassic_UV.cpp)
 add_executable(esc_ekf_uv src/esc/ESControlEKF_UV.cpp)
 add_executable(esc_ekf_model_uv src/esc/ESControlEKF_MODEL_UV.cpp)
+add_executable(esc_bounded_uv src/esc/ESControlBounded_UV.cpp)
 
 
 
@@ -151,6 +152,8 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(esc_uv ${catkin_EXPORTED_TARGETS})
  add_dependencies(esc_ekf_uv ${catkin_EXPORTED_TARGETS})
  add_dependencies(esc_ekf_model_uv ${catkin_EXPORTED_TARGETS}) 
+ add_dependencies(esc_bounded_uv ${catkin_EXPORTED_TARGETS}) 
+ 
 endif()
 
 ## Specify libraries to link a library or executable target against
@@ -203,6 +206,8 @@ target_link_libraries(velocity_control
 target_link_libraries(esc_uv esctoolkit ${catkin_LIBRARIES})
 target_link_libraries(esc_ekf_uv esctoolkit ${catkin_LIBRARIES})
 target_link_libraries(esc_ekf_model_uv esctoolkit ${catkin_LIBRARIES})
+target_link_libraries(esc_bounded_uv esctoolkit ${catkin_LIBRARIES})
+
 
 ###################
 ## Documentation ##

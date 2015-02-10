@@ -85,7 +85,7 @@ void LDTravModel::step(const input_type& input)
 {
   x(u) += Ts*(-surge.Beta(x(u))/surge.alpha*x(u) + 1/surge.alpha * input(X));
   x(v) += Ts*(-sway.Beta(x(v))/sway.alpha*x(v) + 1/sway.alpha * input(Y));
-  //x(w) += Ts*(-heave.Beta(x(w))/heave.alpha*x(w) + 1/heave.alpha * (input(Z) + x(buoyancy)));
+  x(w) += Ts*(-heave.Beta(x(w))/heave.alpha*x(w) + 1/heave.alpha * (input(Z) + x(buoyancy)));
   //x(p) += Ts*(-roll.Beta(x(p))/roll.alpha*x(p) + 1/roll.alpha * (input(Kroll) + x(roll_restore)));
   //x(q) += Ts*(-pitch.Beta(x(p))/pitch.alpha*x(q) + 1/pitch.alpha * (input(M) + x(pitch_restore)));
   x(r) += Ts*(-yaw.Beta(x(r))/yaw.alpha*x(r) + 1/yaw.alpha * input(N) + x(b));
@@ -94,8 +94,8 @@ void LDTravModel::step(const input_type& input)
   ydot = x(u)*sin(x(psi)) + x(v)*cos(x(psi)) + x(yc);
   x(xp) += Ts * xdot;
   x(yp) += Ts * ydot;
-  //x(zp) += Ts * x(w);
-  //x(altitude) += -Ts * x(w);
+  x(zp) += Ts * x(w);
+  x(altitude) += -Ts * x(w);
   //\todo This is not actually true since angles depend on each other
   //\todo Also x,y are dependent on the whole rotation matrix.
   //\todo We make a simplification here for testing with small angles ~10°
@@ -114,8 +114,8 @@ void LDTravModel::derivativeAW()
 
 	A(u,u) = 1-Ts*(surge.beta + 2*surge.betaa*fabs(x(u)))/surge.alpha;
 	A(v,v) = 1-Ts*(sway.beta + 2*sway.betaa*fabs(x(v)))/sway.alpha;
-	//A(w,w) = 1-Ts*(heave.beta + 2*heave.betaa*fabs(x(w)))/heave.alpha;
-	//A(w,buoyancy) = Ts/heave.alpha;
+	A(w,w) = 1-Ts*(heave.beta + 2*heave.betaa*fabs(x(w)))/heave.alpha;
+	A(w,buoyancy) = Ts/heave.alpha;
 	//A(p,p) = 1-Ts*(roll.beta + 2*roll.betaa*fabs(x(p)))/roll.alpha;
 	//A(p,roll_restore) = Ts/roll.alpha;
 //	A(q,q) = 1-Ts*(pitch.beta + 2*pitch.betaa*fabs(x(q)))/pitch.alpha;
@@ -133,9 +133,9 @@ void LDTravModel::derivativeAW()
 	A(yp,psi) = Ts*(x(u)*cos(x(psi)) - x(v)*sin(x(psi)));
 	A(yp,yc) = Ts;
 
-//	A(zp,w) = Ts;
+	A(zp,w) = Ts;
 //	//\todo If you don't want the altitude to contribute comment this out.
-//	A(altitude,w) = -Ts;
+	A(altitude,w) = -Ts;
 
 //	A(phi,p) = Ts;
 //	A(theta,q) = Ts;

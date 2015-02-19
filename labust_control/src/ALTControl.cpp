@@ -83,6 +83,7 @@ namespace labust
   			con.desired = ref.altitude;
   			con.output = con.internalState = track.twist.linear.z;
   			con.lastState = con.state = state.altitude;
+  			con.track = state.body_velocity.z;
   			if (!useIP) PIFF_idle(&con, Ts);
   		};
 

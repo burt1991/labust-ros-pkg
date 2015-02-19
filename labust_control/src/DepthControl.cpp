@@ -69,7 +69,7 @@ namespace labust
 			{
 				//Copy into controller
 				//con.windup = tauAch.disable_axis.z;
-  			con.extWindup = tauAch.windup.z;
+  				con.extWindup = tauAch.windup.z;
 			};
 
   		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
@@ -79,6 +79,7 @@ namespace labust
   			con.desired = ref.position.depth;
   			con.output = con.internalState = track.twist.linear.z;
   			con.lastState = con.state = state.position.depth;
+  			con.track = state.body_velocity.z;
   			if (!useIP) PIFF_idle(&con, Ts);
   		};
 

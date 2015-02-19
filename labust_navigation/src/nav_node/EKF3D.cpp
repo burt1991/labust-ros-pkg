@@ -293,10 +293,10 @@ void Estimator3D::processMeasurements()
 		//ROS_ERROR("xp: %4.2f, yp: %4.2f, MODE: %d",measurements(KFNav::xp),measurements(KFNav::yp),KFmode );
 
 	//Imu measurements
-	if ((/*newMeas(KFNav::phi) = newMeas(KFNav::theta) = */newMeas(KFNav::psi) = imu.newArrived()))
+	if ((newMeas(KFNav::phi) = newMeas(KFNav::theta) = newMeas(KFNav::psi) = imu.newArrived()))
 	{
-		//measurements(KFNav::phi) = imu.orientation()[ImuHandler::roll];
-		//measurements(KFNav::theta) = imu.orientation()[ImuHandler::pitch];
+		measurements(KFNav::phi) = imu.orientation()[ImuHandler::roll];
+		measurements(KFNav::theta) = imu.orientation()[ImuHandler::pitch];
 		measurements(KFNav::psi) = imu.orientation()[ImuHandler::yaw];
 
 		ROS_DEBUG("NEW IMU: r=%f, p=%f, y=%f", imu.orientation()[ImuHandler::roll],

@@ -182,6 +182,8 @@ namespace labust
 			 * The compass and gyro variance.
 			 */
 			double compassVariance, gyroVariance;
+			///Mutex for data protection
+			boost::mutex meas_mux;
 
 			/**
 			 * Callbacks for relative/absolute mode switching

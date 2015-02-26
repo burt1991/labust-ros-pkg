@@ -156,9 +156,8 @@ void DvlHandler::onDvl(const geometry_msgs::TwistStamped::ConstPtr& data)
 					transform.transform.translation.z);
 			if (origin.x() != 0 || origin.y() != 0)
 			{
-				double ang = atan2(origin.y(), origin.x());
-				double vm = r*sqrt(origin.x()*origin.x() + origin.y()*origin.y());
-				body_speed -= Eigen::Vector3d(vm*sin(ang),vm*cos(ang),0);
+
+				body_speed -= Eigen::Vector3d(-r*origin.y(),r*origin.x(),0);
 			}
 
 			uvw[u] = body_speed.x();

@@ -83,9 +83,6 @@ add_library(labust_navigation
    src/labust_navigation/XYModel.cpp
    src/labust_navigation/SensorHandlers.cpp
    src/labust_navigation/LDTravModelExtended.cpp
-   src/labust_navigation/SBModel.cpp
-#  src/labust_navigation/SBModelKinematic.cpp
-   src/labust_navigation/RelativeTrackingModel.cpp
    src/labust_navigation/EKF_3D_USBLModel.cpp  
 )
 
@@ -99,16 +96,9 @@ add_executable(nav_node2 src/nav_node/nav_node2.cpp)
 add_executable(llnode src/latlon_node/LLNode.cpp)
 add_executable(ltp_node src/latlon_node/ltp_node.cpp)
 add_executable(static_transform_publisher src/static_transform_publisher/static_transform_publisher.cpp)
-
-#add_executable(ekf_3d_node src/EKF3D.cpp src/LDTravModelExtended.cpp
-#	include/labust/navigation/LDTravModelExtended.hpp)
 add_executable(ekf3d_node src/nav_node/EKF3D.cpp)
-add_executable(ekf_sb_node src/nav_node/EKF_SB.cpp)
-#add_executable(ekf_sb_kinematic_node src/nav_node/EKF_SB_kinematic.cpp)
-
-
 add_executable(ekf_3d_usbl_node src/nav_node/EKF_3D_USBL.cpp)
-add_executable(relative_tracking_node src/nav_node/EKF_RTT.cpp)
+
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -122,9 +112,6 @@ if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(ltp_node ${catkin_EXPORTED_TARGETS})
  add_dependencies(static_transform_publisher ${catkin_EXPORTED_TARGETS})
  add_dependencies(ekf3d_node ${catkin_EXPORTED_TARGETS})
- add_dependencies(ekf_sb_node ${catkin_EXPORTED_TARGETS})
- #add_dependencies(ekf_sb_kinematic_node ${catkin_EXPORTED_TARGETS})
- add_dependencies(relative_tracking_node ${catkin_EXPORTED_TARGETS}) 
  add_dependencies(ekf_3d_usbl_node ${catkin_EXPORTED_TARGETS}) 
  
 endif()
@@ -143,10 +130,6 @@ target_link_libraries(llnode ${catkin_LIBRARIES})
 target_link_libraries(ltp_node ${catkin_LIBRARIES})
 target_link_libraries(static_transform_publisher ${catkin_LIBRARIES})
 target_link_libraries(ekf3d_node ${catkin_LIBRARIES} labust_navigation)
-target_link_libraries(ekf_sb_node ${catkin_LIBRARIES} labust_navigation)
-#target_link_libraries(ekf_sb_kinematic_node ${catkin_LIBRARIES} labust_navigation)
-
-target_link_libraries(relative_tracking_node ${catkin_LIBRARIES} labust_navigation)
 target_link_libraries(ekf_3d_usbl_node ${catkin_LIBRARIES} labust_navigation)
 
 

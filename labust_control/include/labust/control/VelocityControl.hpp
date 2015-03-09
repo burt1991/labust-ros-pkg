@@ -190,7 +190,7 @@ namespace labust
 			/**
 			 * Timeout management.
 			 */
-			bool suspend_axis[r+1], externalIdent;
+			bool suspend_axis[r+1], externalIdent, use_gvel;
 			/**
 			 * Dynamic reconfigure server.
 			 */

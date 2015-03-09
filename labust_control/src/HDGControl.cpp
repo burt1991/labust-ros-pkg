@@ -76,6 +76,7 @@ namespace labust
   		{
   			//Tracking external commands while idle (bumpless)
   			con.desired = ref.orientation.yaw;
+			con.desired = state.orientation.yaw;			
   			con.output = con.internalState = track.twist.angular.z;
   			con.lastState = con.state = useIP?unwrap(state.orientation.yaw):state.orientation.yaw;
   			float errorWrap = labust::math::wrapRad(

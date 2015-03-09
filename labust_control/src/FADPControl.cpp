@@ -80,8 +80,8 @@ namespace labust
 							const auv_msgs::BodyVelocityReq& track)
 			{
 				//Tracking external commands while idle (bumpless)
-				con[x].desired = ref.position.north;
-				con[y].desired = ref.position.east;
+				con[x].desired = state.position.north;
+				con[y].desired = state.position.east;
 				con[x].output = con[x].internalState = track.twist.linear.x;
 				con[y].output = con[y].internalState = track.twist.linear.y;
 				con[x].lastState = con[x].state = state.position.north;

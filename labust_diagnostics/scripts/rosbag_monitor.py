@@ -1,51 +1,45 @@
 #!/usr/bin/env python
-
 import rospy, subprocess
-from std_msgs.msg import Bool
-from diagnostic_msgs.msg import *
-
-#tmp
 import time
+from std_msgs.msg import Bool
+from std_msgs.msg import String
+from diagnostic_msgs.msg import *
 
 class RosbagMonitor():
      
     def __init__(self):
+        print 'Debug1'
         self.setup()
         pass
     
     def setup(self):
-        
-        #self.actions = ["",""]
-        self.rosbagActions = {'start': 'rosbag record -a', 'split': ''}
-        
+            
         rospy.init_node('rosbag_monitor', anonymous=True)
-        
-        #topic_name = rospy.get_param('~topic_name')
-        
+        save_directory = rospy.get_param('~save_directory')  
+        self.rosbagActions = {'start': 'rosbag record -a -o '+str(save_directory)+'rosbag', 'split': ''}
+        self.loggerActive = False;
+        ''' Publishers and subscribers ''' 
         #self.pubRosbagStatus = rospy.Publisher("externalEvent", ExternalEvent, queue_size=20)
-        
-        #self.subRosbagSplit = rospy.Subscriber("rosbag_split", msgType, self.callback)
-        
-        #proc = subprocess.Popen(['rosbag', 'record', '-a'])
-        
-        proc = subprocess.Popen(self.rosbagActions['start'].split(" "))
-        
-        #time.sleep(1.0)
-        time.sleep(10)
-        print("test")
-        
-        proc.terminate()
-        
-    
+        self.subRosbagAction = rospy.Subscriber("rosbagAction", String, self.onRosbagActionCallback)  
         rospy.spin()
         pass
     
-    def rosbagSplit(self, data):
-        
-        if data:
-            pass
-        pass
-
+    def onRosbagActionCallback(self, msg):
+        if msg.data=='stop':
+            if self.loggerActive == True:
+                rospy.logerr("Stopping Rosbag logger...")
+                self.proc.terminate()
+                self.proc.wait()
+                self.loggerActive = False
+            else:
+                rospy.logerr("No Active log...")
+        elif msg.data=='start':
+            if self.loggerActive == True:
+                self.proc.terminate()
+                self.proc.wait()
+            rospy.logerr("Starting Rosbag logger...")
+            self.proc = subprocess.Popen(self.rosbagActions['start'].split(" "))
+            self.loggerActive = True
 
 if __name__ == '__main__':
     try:

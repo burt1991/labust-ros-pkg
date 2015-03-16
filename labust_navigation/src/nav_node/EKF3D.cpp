@@ -205,12 +205,15 @@ void Estimator3D::onTau(const auv_msgs::BodyForceReq::ConstPtr& tau)
 
 void Estimator3D::onDepth(const std_msgs::Float32::ConstPtr& data)
 {
+	boost::mutex::scoped_lock l(meas_mux);
 	measurements(KFNav::zp) = data->data;
 	newMeas(KFNav::zp) = 1;
+	ROS_INFO("Depth measurement received: %f", newMeas(KFNav::zp));
 };
 
 void Estimator3D::onAltitude(const std_msgs::Float32::ConstPtr& data)
 {
+	boost::mutex::scoped_lock l(meas_mux);
 	measurements(KFNav::altitude) = data->data;
 	//Dismiss false altitude
 	if (fabs(data->data-nav.getState()(KFNav::altitude)) < 10*nav.calculateAltInovationVariance(nav.getStateCovariance())) 
@@ -272,6 +275,7 @@ void Estimator3D::KFmodeCallback(const std_msgs::Bool::ConstPtr& msg){
 
 void Estimator3D::processMeasurements()
 {
+	boost::mutex::scoped_lock l(meas_mux);
 	if(KFmode == true && absoluteEKF == false)
 		{
 			if ((newMeas(KFNav::xp) = newMeas(KFNav::yp) = quadMeasAvailable)){
@@ -307,6 +311,8 @@ void Estimator3D::processMeasurements()
 		if ((newMeas(KFNav::r) = useYawRate))
 		{
 			measurements(KFNav::r) = imu.rate()[ImuHandler::r];
+			//Combine measurement with DVL
+			dvl.current_r(measurements(KFNav::r));
 		}
 	}
 	//DVL measurements
@@ -353,6 +359,7 @@ void Estimator3D::processMeasurements()
 
 		//measurements(KFNav::w) = dvl.body_speeds()[DvlHandler::w];
 	}
+	l.unlock();
 
 	//Publish measurements
 	auv_msgs::NavSts::Ptr meas(new auv_msgs::NavSts());
@@ -458,20 +465,34 @@ void Estimator3D::start()
 		nav.predict(tauIn);
 		processMeasurements();
 		bool newArrived(false);
+		boost::mutex::scoped_lock l(meas_mux);
 		for(size_t i=0; i<newMeas.size(); ++i)	if ((newArrived = newMeas(i))) break;
-		if (newArrived)	nav.correct(nav.update(measurements, newMeas));
-		//if (newArrived)	nav.correct(measurements, newMeas);
 
+		//Update sensor flag
+		bool updateDVL = !newMeas(KFNav::r);
+
+		std::ostringstream out;
+		out<<newMeas;
+		ROS_INFO("Measurements %d:%s",KFNav::psi, out.str().c_str());
+
+		if (newArrived)	nav.correct(nav.update(measurements, newMeas));
+		l.unlock();
 		publishState();
 
 		//Send the base-link transform
 		geometry_msgs::TransformStamped transform;
-		transform.transform.translation.x = nav.getState()(KFNav::xp);
-		transform.transform.translation.y = nav.getState()(KFNav::yp);
-		transform.transform.translation.z = nav.getState()(KFNav::zp);
-		labust::tools::quaternionFromEulerZYX(nav.getState()(KFNav::phi),
-				nav.getState()(KFNav::theta),
-				nav.getState()(KFNav::psi),
+		KFNav::vectorref cstate = nav.getState();
+		//Update DVL sensor
+		if (updateDVL) dvl.current_r(cstate(KFNav::r));
+
+		transform.transform.translation.x = cstate(KFNav::xp);
+		transform.transform.translation.y = cstate(KFNav::yp);
+		transform.transform.translation.z = cstate(KFNav::zp);
+
+
+		labust::tools::quaternionFromEulerZYX(cstate(KFNav::phi),
+				cstate(KFNav::theta),
+				cstate(KFNav::psi),
 				transform.transform.rotation);
 		if(absoluteEKF){
 			transform.child_frame_id = "base_link_abs";

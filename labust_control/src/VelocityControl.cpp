@@ -66,6 +66,7 @@ VelocityControl::VelocityControl():
 			joy_scale(1),
 			Ts(0.1),
 			externalIdent(false),
+			use_gvel(false),
 			server(serverMux),
 			doSafetyTest(true)
 {this->onInit();}
@@ -99,6 +100,7 @@ void VelocityControl::onInit()
 	nh.param("velocity_controller/joy_scale",joy_scale,joy_scale);
 	nh.param("velocity_controller/timeout",timeout,timeout);
 	nh.param("velocity_controller/external_ident",externalIdent, externalIdent);
+	nh.param("velocity_controller/use_ground_vel",use_gvel, use_gvel);
 
 	//Added to avoid safety tests in simulation time.
 	bool sim(false);
@@ -293,7 +295,14 @@ void VelocityControl::handleExt(const auv_msgs::BodyForceReq::ConstPtr& tau)
 void VelocityControl::handleEstimates(const auv_msgs::NavSts::ConstPtr& estimate)
 {
 	double nu[numcnt];
-	labust::tools::pointToVector(estimate->body_velocity, nu);
+        if (use_gvel)
+	{
+		labust::tools::pointToVector(estimate->gbody_velocity, nu);
+	}
+	else
+	{
+		labust::tools::pointToVector(estimate->body_velocity, nu);
+	}
 	labust::tools::rpyToVector(estimate->orientation_rate, nu, 3);
 
 	for(int i=0; i<numcnt; ++i)
@@ -508,7 +517,7 @@ void VelocityControl::initialize_controller()
 		controller[i].model.beta = model.Dlin(i,i);
 		controller[i].model.betaa = model.Dquad(i,i);
 		PIFF_modelTune(&controller[i], &controller[i].model, controller[i].w);
-		controller[i].autoWindup = autoWindup(i);
+		controller[i].autoWindup = autoWindup(i);		
 
 		if (!manAxis(i)) axis_control[i] = controlAxis;
 		if (manAxis(i)) axis_control[i] = manualAxis;

@@ -65,58 +65,58 @@ namespace labust
 				initialize_controller();
 			}
 
-  		void windup(const auv_msgs::BodyForceReq& tauAch)
+			void windup(const auv_msgs::BodyForceReq& tauAch)
 			{
 				//Copy into controller
 				//con[x].windup = tauAch.disable_axis.x;
 				//con[y].windup = tauAch.disable_axis.y;
-  				con[x].extWindup = tauAch.windup.x;
-  				con[y].extWindup = tauAch.windup.y;
-  				con[x].track = tauAch.wrench.force.x;
-  				con[y].track = tauAch.wrench.force.y;
+				//TODO Windup through rotation matrix ?
+				bool joint_windup = tauAch.windup.x || tauAch.windup.y;
+				con[x].extWindup = joint_windup;
+				con[y].extWindup = joint_windup;
 			};
 
-  		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
-  				const auv_msgs::BodyVelocityReq& track)
-  		{
-  			//Tracking external commands while idle (bumpless)
-  			con[x].desired = ref.position.north;
-  			con[y].desired = ref.position.east;
-  			con[x].output = con[x].internalState = track.twist.linear.x;
-  			con[y].output = con[y].internalState = track.twist.linear.y;
-  			con[x].lastState = con[x].state = state.position.north;
-  			con[y].lastState = con[y].state = state.position.east;
-  			if (!useIP)
-  			{
-  				PIFF_idle(&con[x], Ts);
-  				PIFF_idle(&con[y], Ts);
-  			}
-  		};
+			void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
+							const auv_msgs::BodyVelocityReq& track)
+			{
+				//Tracking external commands while idle (bumpless)
+				con[x].desired = state.position.north;
+				con[y].desired = state.position.east;
+				con[x].output = con[x].internalState = track.twist.linear.x;
+				con[y].output = con[y].internalState = track.twist.linear.y;
+				con[x].lastState = con[x].state = state.position.north;
+				con[y].lastState = con[y].state = state.position.east;
+				if (!useIP)
+				{
+					PIFF_idle(&con[x], Ts);
+					PIFF_idle(&con[y], Ts);
+				}
+			};
 
-  		void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
-  		{
+			void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
+			{
 				Eigen::Vector2f out, in;
 				Eigen::Matrix2f R;
-//				in<<0.5,0;
-//				double yaw(state.orientation.yaw);
-//				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
-//				out = R*in;
-//  			con[x].internalState = out(0);
-//  			con[y].internalState = out(1);
+				//				in<<0.5,0;
+				//				double yaw(state.orientation.yaw);
+				//				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+				//				out = R*in;
+				//  			con[x].internalState = out(0);
+				//  			con[y].internalState = out(1);
 				con[x].internalState = 0;
 				con[y].internalState = 0;
-  			con[x].lastState = state.position.north;
-  			con[y].lastState = state.position.east;
-  			con[x].lastRef = ref.position.north;
-  			con[y].lastRef = ref.position.east;
-  			con[x].lastError = ref.position.north - state.position.north;
-  			con[y].lastError = ref.position.east - state.position.east;
-  			ROS_INFO("Reset: %f %f %f %f", con[x].internalState, con[y].internalState,
-  					state.position.north, state.position.east);
-  		};
+				con[x].lastState = state.position.north;
+				con[y].lastState = state.position.east;
+				con[x].lastRef = ref.position.north;
+				con[y].lastRef = ref.position.east;
+				con[x].lastError = ref.position.north - state.position.north;
+				con[y].lastError = ref.position.east - state.position.east;
+				ROS_INFO("Reset: %f %f %f %f", con[x].internalState, con[y].internalState,
+								state.position.north, state.position.east);
+			};
 
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
-					const auv_msgs::NavSts& state)
+							const auv_msgs::NavSts& state)
 			{
 				con[x].desired = ref.position.north;
 				con[y].desired = ref.position.east;
@@ -140,7 +140,6 @@ namespace labust
 				yaw = state.orientation.yaw;
 				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
 				out = R*in;
-
 				con[x].track = out(x);
 				con[y].track = out(y);
 

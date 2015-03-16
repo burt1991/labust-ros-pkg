@@ -70,12 +70,13 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	//Perform windup test if automatic mode is enabled.
 	if (self->autoWindup == 1)
 	{
-		self->windup = (self->internalState > self->output) && (error>0);
-		self->windup = (self->windup) ||
-				((self->internalState < self->output) && (error<0));
+		//self->windup = (self->internalState > self->output) && (error>0);
+		//self->windup = (self->windup) ||
+		//		((self->internalState < self->output) && (error<0));
 		//Set the wind-up sign for cascade controllers.
 		///\todo Deprecate windup sign ?
-		if ((self->windup) && (self->internalState < self->output))	self->windup = -1;
+		self->track = self->output;
+		self->windup = (self->internalState != self->track) && (error*self->track > 0);
 	}
 	else
 	{
@@ -100,11 +101,10 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	self->internalState += self->Kp*(error-self->lastError);
 	//Integral term
 	//Disabled if windup is in progress.
-  if (!self->windup) self->internalState += (self->lastI = self->Ki*Ts*error);
-  else self->lastI = 0;
+	if (!self->windup) self->internalState += (self->lastI = self->Ki*Ts*error);
+	else self->lastI = 0;
 	//Feed forward term
 	self->internalState += ff - self->lastFF;
-
 	//Set final output
 	self->output = self->internalState;
 
@@ -116,5 +116,6 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	self->lastError = error;
 	self->lastRef = self->desired;
 	self->lastFF = ff;
+	self->lastState = self->state;
 }
 

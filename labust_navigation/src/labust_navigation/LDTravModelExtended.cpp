@@ -39,6 +39,7 @@
 using namespace labust::navigation;
 
 #include <vector>
+#include <ros/ros.h>
 
 LDTravModel::LDTravModel():
 		dvlModel(0),
@@ -87,8 +88,8 @@ void LDTravModel::step(const input_type& input)
   x(v) += Ts*(-sway.Beta(x(v))/sway.alpha*x(v) + 1/sway.alpha * input(Y));
   x(w) += Ts*(-heave.Beta(x(w))/heave.alpha*x(w) + 1/heave.alpha * (input(Z) + x(buoyancy)));
   //x(p) += Ts*(-roll.Beta(x(p))/roll.alpha*x(p) + 1/roll.alpha * (input(Kroll) + x(roll_restore)));
-  //x(q) += Ts*(-pitch.Beta(x(p))/pitch.alpha*x(q) + 1/pitch.alpha * (input(M) + x(pitch_restore)));
-  x(r) += Ts*(-yaw.Beta(x(r))/yaw.alpha*x(r) + 1/yaw.alpha * input(N) + x(b));
+  x(q) += Ts*(-pitch.Beta(x(p))/pitch.alpha*x(q) + 1/pitch.alpha * (input(M) + x(pitch_restore)));
+  x(r) += Ts*(-yaw.Beta(x(r))/yaw.alpha*x(r) + 1/yaw.alpha * input(N) + 0*x(b));
 
   xdot = x(u)*cos(x(psi)) - x(v)*sin(x(psi)) + x(xc);
   ydot = x(u)*sin(x(psi)) + x(v)*cos(x(psi)) + x(yc);
@@ -100,7 +101,7 @@ void LDTravModel::step(const input_type& input)
   //\todo Also x,y are dependent on the whole rotation matrix.
   //\todo We make a simplification here for testing with small angles ~10°
   //x(phi) += Ts * x(p);
-  //x(theta) += Ts * x(q);
+  x(theta) += Ts * x(q);
   x(psi) += Ts * x(r);
 
   xk_1 = x;
@@ -118,10 +119,10 @@ void LDTravModel::derivativeAW()
 	A(w,buoyancy) = Ts/heave.alpha;
 	//A(p,p) = 1-Ts*(roll.beta + 2*roll.betaa*fabs(x(p)))/roll.alpha;
 	//A(p,roll_restore) = Ts/roll.alpha;
-//	A(q,q) = 1-Ts*(pitch.beta + 2*pitch.betaa*fabs(x(q)))/pitch.alpha;
-//	A(q,pitch_restore) = Ts/pitch.alpha;
+	A(q,q) = 1-Ts*(pitch.beta + 2*pitch.betaa*fabs(x(q)))/pitch.alpha;
+	A(q,pitch_restore) = Ts/pitch.alpha;
 	A(r,r) = 1-Ts*(yaw.beta + 2*yaw.betaa*fabs(x(r)))/yaw.alpha;
-	A(r,b) = Ts;
+	//A(r,b) = Ts;
 
 	A(xp,u) = Ts*cos(x(psi));
 	A(xp,v) = -Ts*sin(x(psi));
@@ -138,7 +139,7 @@ void LDTravModel::derivativeAW()
 	A(altitude,w) = -Ts;
 
 //	A(phi,p) = Ts;
-//	A(theta,q) = Ts;
+	A(theta,q) = Ts;
 	A(psi,r) = Ts;
 }
 
@@ -147,10 +148,23 @@ const LDTravModel::output_type& LDTravModel::update(vector& measurements, vector
 	std::vector<size_t> arrived;
 	std::vector<double> dataVec;
 
+	static double r0u=R0(u,u);
+	static double r0xc=R0(xc,xc);
+
 	for (size_t i=0; i<newMeas.size(); ++i)
 	{
 		if (newMeas(i))
 		{
+			//ROS_INFO("New meas: %d", i);
+			if (i == u)
+			{
+				double trustf=30;
+				ROS_INFO("Trust factor:%f",cosh(trustf*x(r)));
+				R0(u,u) = cosh(trustf*x(r))*r0u;
+				R0(v,v) = cosh(trustf*x(r))*r0u;
+				R0(xc,xc) = cosh(trustf*x(r))*r0xc;
+				R0(yc,yc) = cosh(trustf*x(r))*r0xc;
+			}
 			arrived.push_back(i);
 			dataVec.push_back(measurements(i));
 			newMeas(i) = 0;
@@ -187,10 +201,6 @@ const LDTravModel::output_type& LDTravModel::update(vector& measurements, vector
 		}
 	}
 
-	//std::cout<<"Setup H:"<<H<<std::endl;
-	//std::cout<<"Setup R:"<<R<<std::endl;
-	//std::cout<<"Setup V:"<<V<<std::endl;
-
 	return measurement;
 }
 
@@ -224,10 +234,10 @@ void LDTravModel::derivativeH()
 		break;
 	case 2:
 		//Correct the nonlinear part
-	  y(u) = x(u)*cos(x(psi)) - x(v)*sin(x(psi)) + x(xc);
-	  y(v) = x(u)*sin(x(psi)) + x(v)*cos(x(psi)) + x(yc);
+		y(u) = x(u)*cos(x(psi)) - x(v)*sin(x(psi)) + x(xc);
+		y(v) = x(u)*sin(x(psi)) + x(v)*cos(x(psi)) + x(yc);
 
-	  //Correct for the nonlinear parts
+		//Correct for the nonlinear parts
 		Hnl(u,xc) = 1;
 		Hnl(u,u) = cos(x(psi));
 		Hnl(u,v) = -sin(x(psi));

@@ -89,6 +89,7 @@ add_library(labust_navigation
 ## Declare a cpp executable
 # add_executable(labust_navigation_node src/labust_navigation_node.cpp)
 add_executable(eigen_test src/test/eigen_test.cpp)
+add_executable(decomposition_test src/test/decomposition_test.cpp)
 add_executable(geo_test src/test/geo_test.cpp)
 add_executable(euler_quat src/test/euler_quat.cpp)
 add_executable(quat_to_euler src/test/quat_to_euler.cpp)
@@ -104,6 +105,7 @@ add_executable(ekf_3d_usbl_node src/nav_node/EKF_3D_USBL.cpp)
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(labust_navigation_node labust_navigation_generate_messages_cpp)
 if (DEFINED catkin_EXPORTED_TARGETS)
+ add_dependencies(decomposition_test ${catkin_EXPORTED_TARGETS})
  add_dependencies(eigen_test ${catkin_EXPORTED_TARGETS})
  add_dependencies(euler_quat ${catkin_EXPORTED_TARGETS})
  add_dependencies(quat_to_euler ${catkin_EXPORTED_TARGETS})

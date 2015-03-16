@@ -56,6 +56,8 @@ namespace labust
 				stateReady(false),
 				stateAcquired(false),
 				useFF(false),
+				lastFF(Eigen::Vector6d::Zero()),
+				ffstate(Eigen::Vector6d::Zero()),
 				enable(false){this->init();};
 
 			void init()
@@ -130,7 +132,7 @@ namespace labust
 
 				Eigen::Vector2f out, in;
 				Eigen::Matrix2f R;
-				in<<mapped[u]*nu_max[u]*Ts,mapped[v]*nu_max[v]*Ts;
+				in<<mapped[u]*Ts,mapped[v]*Ts;
 				double yaw(baseRef.orientation.yaw);
 				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
 				out = R*in;
@@ -139,22 +141,25 @@ namespace labust
 				baseRef.header.frame_id = "local";
 
 				baseRef.position.north += out(u);
-				baseRef.position.east += out(v);
-				baseRef.position.depth += mapped[w]*Ts*nu_max(w);
-				baseRef.orientation.roll += mapped[p]*Ts*nu_max(p);
-				baseRef.orientation.pitch += mapped[q]*Ts*nu_max(q);
-				baseRef.orientation.yaw += mapped[r]*Ts*nu_max(r);
+				//baseRef.position.east += out(v);
+				baseRef.position.east = guide_test(baseRef.position.east, lastState.position.east, out(v), nu_max(v));
+				baseRef.position.depth += mapped[w]*Ts;
+				baseRef.orientation.roll += mapped[p]*Ts;
+				baseRef.orientation.pitch += mapped[q]*Ts;
+				baseRef.orientation.yaw += mapped[r]*Ts;
 				
-				baseRef.altitude -= mapped[w]*Ts*nu_max(w);
+				baseRef.altitude -= mapped[w]*Ts;
 				
 				if (useFF)
 				{
-				  baseRef.body_velocity.x = mapped[u]*nu_max[u];
-				  baseRef.body_velocity.y = mapped[v]*nu_max[v];
-				  baseRef.body_velocity.z = mapped[w]*nu_max[w];
-				  baseRef.orientation_rate.roll = mapped[p]*nu_max(p);
-				  baseRef.orientation_rate.pitch = mapped[q]*nu_max(q);
-				  baseRef.orientation_rate.yaw = mapped[r]*nu_max(r);
+				  double T=0.1;
+			          ffstate = (mapped*Ts + ffstate*T)/(Ts+T);
+				  baseRef.body_velocity.x = mapped[u];
+				  baseRef.body_velocity.y = mapped(v); // + (mapped(v) - ffstate(v))/T;
+				  baseRef.body_velocity.z = mapped[w];
+				  baseRef.orientation_rate.roll = mapped[p];
+				  baseRef.orientation_rate.pitch = mapped[q];
+				  baseRef.orientation_rate.yaw = mapped[r];
 				}
 				
 				auv_msgs::NavSts::Ptr refOut(new auv_msgs::NavSts());
@@ -164,6 +169,21 @@ namespace labust
 				refOut->orientation.yaw =  labust::math::wrapRad(refOut->orientation.yaw);
 
 				stateRef.publish(refOut);
+			}
+
+			double guide_test(double baseRef, double state, double speed, double max)
+			{
+				//V1
+				//return baseRef + speed;
+				//V2
+				if (fabs(speed) < max/100)
+				{
+				   return baseRef + speed;
+				}
+				else
+				{
+				   return state + speed;
+				}			
 			}
 
 			void initialize_manual()
@@ -191,6 +211,8 @@ namespace labust
 			bool stateAcquired;
 			bool useFF;
 			bool enable;
+			Eigen::Vector6d lastFF;
+			Eigen::Vector6d ffstate;
 			ros::ServiceServer enableControl;
 		};
 	}}

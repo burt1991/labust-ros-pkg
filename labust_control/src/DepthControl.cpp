@@ -76,7 +76,7 @@ namespace labust
   				const auv_msgs::BodyVelocityReq& track)
   		{
   			//Tracking external commands while idle (bumpless)
-  			con.desired = ref.position.depth;
+  			con.desired = state.position.depth;
   			con.output = con.internalState = track.twist.linear.z;
   			con.lastState = con.state = state.position.depth;
   			con.track = state.body_velocity.z;

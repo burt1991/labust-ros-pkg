@@ -8,7 +8,6 @@ from diagnostic_msgs.msg import *
 class RosbagMonitor():
      
     def __init__(self):
-        print 'Debug1'
         self.setup()
         pass
     

@@ -15,7 +15,7 @@ class ClockServer:
     def __init__(self):
         # Get the clock topics which should be tracked
         # Populate the subscribers
-        topics = rospy.get_param("track_clocks", "")
+        topics = rospy.get_param("~track_clocks", "")
         self.create_subs(topics)
                         
         # Start the clock publisher
@@ -24,18 +24,18 @@ class ClockServer:
     def create_subs(self, topics):
         self.diff_pubs = {}
         for topic in topics:
-            self.diff_pub[topic] = rospy.Publisher("clock_diff/" + topic, Float64, queue_size=1)
-            rospy.Subscriber(topic, partial(self.on_time, topic))
+            self.diff_pubs[topic] = rospy.Publisher("clock_diff" + topic, Float64, queue_size=1)
+            rospy.Subscriber(topic, Float64, partial(self.on_time, topic))
     
     def on_time(self, name, data):
-        dt = Float64
+        dt = Float64()
         dt.data = data.data - rospy.Time.now().to_sec()
         self.diff_pubs[name].publish(dt)
         
     def start(self):
-        msg = Float64()
         rate = rospy.Rate(1.0)
-        while not rospy.is_shutdown():
+        msg = Float64()
+        while not rospy.is_shutdown():    
             msg.data = rospy.Time.now().to_sec()
             self.ctime.publish(msg)
             rate.sleep()

@@ -67,7 +67,7 @@ typedef struct PIDBase
 	 * The proportional, integral, derivative,
 	 * filter and tracking gain.
 	 */
-	float Kp, Ki, Kd, Tf, Kt;
+	float Kp, Ki, Kd, Tf, Kt, b;
 	/**
 	 * Automatic tracking flag.
 	 */

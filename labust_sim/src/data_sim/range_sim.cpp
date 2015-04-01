@@ -2,7 +2,7 @@
  * range_sim.cpp
  *
  *  Created on: Aug 18, 2014
- *      Author: Filip Mandić
+ *      Author: Filip Mandic
  *
  ********************************************************************/
 

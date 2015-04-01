@@ -121,9 +121,9 @@ namespace labust{
 
 				ROS_INFO("Initializing extremum seeking controller...");
 
-				double sin_amp = 0.25;
-				double	sin_freq = 0.1;
-				double	corr_gain =  -0.01;
+				double sin_amp = 0.1;
+				double	sin_freq = 0.09;
+				double	corr_gain =  -0.015;
 				double	high_pass_pole = 3;
 				double	low_pass_pole = 0;
 				double	comp_zero =  0;

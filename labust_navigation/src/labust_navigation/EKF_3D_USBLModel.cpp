@@ -209,7 +209,7 @@ void EKF_3D_USBLModel::estimate_y(output_type& y){
 
 void EKF_3D_USBLModel::derivativeH(){
 
-	Hnl = matrix::Identity(measSize,stateNum);
+	Hnl = matrix::Zero(measSize,stateNum); // Prije je bilo identity
 	Hnl.topLeftCorner(stateNum,stateNum) = matrix::Identity(stateNum,stateNum);
 
 	ynl = vector::Zero(measSize);
@@ -256,7 +256,7 @@ void EKF_3D_USBLModel::derivativeH(){
 	if(rng == 0) rng = 0.1;
 
 	ynl(range) = rng;
-	ynl(bearing) = atan2((x(yp)-x(yb)),(x(xp)-x(xb)))-x(psi) ;
+	ynl(bearing) = atan2((x(yp)-x(yb)),(x(xp)-x(xb)))-0*x(psi);
 	ynl(elevation) = asin((x(zp)-x(zb))/rng);
 
 	Hnl(range, xp)  = (x(xp)-x(xb))/rng;
@@ -271,8 +271,10 @@ void EKF_3D_USBLModel::derivativeH(){
 	Hnl(bearing, yp) = -1/((x(xb) - x(xp))*(pow((x(yb) - x(yp))/(x(xb) - x(xp)),2) + 1));
 	Hnl(bearing, xb) = -(x(yb) - x(yp))/(pow(x(xb) - x(xp),2)*(pow((x(yb) - x(yp))/(x(xb) - x(xp)),2) + 1));
 	Hnl(bearing, yb) = 1/((x(xb) - x(xp))*(pow((x(yb) - x(yp))/(x(xb) - x(xp)),2) + 1));
-	Hnl(bearing, psi) = -1;
+	//Hnl(bearing, psi) = -1;
 
+
+	// Nadi gresku u elevationu
 	double part1 = (x(zb) - x(zp))/(sqrt(1 - pow((x(zb) - x(zp)),2)/pow(rng,2))*(pow((rng),3)));
 	double part2 = (x(xb)*x(xb) - 2*x(xb)*x(xp) + x(xp)*x(xp) + x(yb)*x(yb) - 2*x(yb)*x(yp) + x(yp)*x(yp))/(sqrt(1 - pow((x(zb) - x(zp)),2)/pow(rng,2))*(pow((rng),3)));
 

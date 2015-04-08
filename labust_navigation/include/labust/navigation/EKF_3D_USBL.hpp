@@ -55,8 +55,12 @@
 #include <auv_msgs/BodyForceReq.h>
 #include <underwater_msgs/USBLFix.h>
 
-#include <auv_msgs/NED.h> // Dodano
+#include <auv_msgs/NED.h>
 #include <std_msgs/Bool.h>
+
+#include <stack>
+#include <deque>
+
 
 namespace labust
 {
@@ -85,6 +89,25 @@ namespace labust
 			 * Start the estimation loop.
 			 */
 			void start();
+
+			struct FilterState{
+
+				FilterState(){
+
+				}
+
+				~FilterState(){
+
+				}
+
+				KFNav::vector input;
+				KFNav::vector meas;
+				KFNav::vector newMeas;
+				KFNav::vector state;
+				KFNav::matrix Pcov;
+				KFNav::matrix Rcov;
+
+			};
 
 		private:
 			/**
@@ -127,7 +150,10 @@ namespace labust
 			 * Handle the gyro/compass switch.
 			 */
 			void onUseGyro(const std_msgs::Bool::ConstPtr& use_gyro);
-
+			/**
+			 * Calculate measurement delay in time steps
+			 */
+			int calculateDelaySteps(double measTime, double arrivalTime);
 			/**
 			 * The navigation filter.
 			 */
@@ -139,7 +165,7 @@ namespace labust
 			/**
 			 * The measurements vector and arrived flag vector.
 			 */
-			KFNav::vector measurements, newMeas;
+			KFNav::vector measurements, newMeas, measDelay;
 			/**
 			 * Heading unwrapper.
 			 */
@@ -190,6 +216,15 @@ namespace labust
 			double compassVariance, gyroVariance;
 
 			/**
+			 *  Current time in seconds
+			 */
+			double currentTime;
+			/**
+			 *  Current time in seconds
+			 */
+			bool enableDelay, enableRange, enableBearing, enableElevation;
+
+			/**
 			 * Callbacks for relative/absolute mode switching
 			 */
 			void deltaPosCallback(const auv_msgs::NED::ConstPtr& msg);
@@ -204,6 +239,8 @@ namespace labust
 			float deltaXpos, deltaYpos;
 
 			KFNav::matrix Pstart, Rstart;
+
+			std::deque<FilterState> pastStates;
 
 		};
 	}

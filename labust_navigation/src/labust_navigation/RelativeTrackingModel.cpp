@@ -202,8 +202,11 @@ void RelativeTrackingModel::estimate_y(output_type& y){
 
 void RelativeTrackingModel::derivativeH(){
 
-	Hnl = matrix::Zero(measSize,stateNum);
-	ynl = vector::Zero(measSize);
+	//Hnl = matrix::Zero(measSize,stateNum);
+	//ynl = vector::Zero(measSize);
+
+	Hnl=matrix::Identity(stateNum,stateNum);
+	ynl = Hnl*x;
 
 	/* Measurement vector --- d, theta, depth, psi_tm, delta_xm, delat_ym, delta_zm*/
 

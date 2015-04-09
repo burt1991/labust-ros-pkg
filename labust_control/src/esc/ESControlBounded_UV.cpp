@@ -117,9 +117,13 @@ namespace labust{
 //				double	alpha = 1;
 //				double	omega =  0.5;
 
-				double K = 2;
-				double	alpha = 1;
-				double	omega =  0.75;
+//				double K = 1.5;
+//				double	alpha = 1;
+//				double	omega =  0.75;
+
+				double K = 1.1;
+				double	alpha = 0.7;
+				double	omega =  0.3;
 
 				esc_controller.initController(K, omega, alpha, Ts);
 

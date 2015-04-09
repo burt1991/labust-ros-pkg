@@ -18,7 +18,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2010, LABUST, UNIZG-FER
+ *  Copyright (c) 2015, LABUST, UNIZG-FER
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -69,16 +69,24 @@
 #include <ros/ros.h>
 
 #include <boost/bind.hpp>
+#include <math.h>
 
 using namespace labust::navigation;
+
+
 
 Estimator3D::Estimator3D():
 
 		tauIn(KFNav::vector::Zero(KFNav::inputSize)),
 		measurements(KFNav::vector::Zero(KFNav::measSize)),
 		newMeas(KFNav::vector::Zero(KFNav::measSize)),
+		measDelay(KFNav::vector::Zero(KFNav::measSize)),
 		alt(0),
 		useYawRate(false),
+		enableDelay(false),
+		enableRange(true),
+		enableBearing(true),
+		enableElevation(false),
 		dvl_model(0),
 		compassVariance(0.3),
 		gyroVariance(0.003),
@@ -111,23 +119,29 @@ void Estimator3D::onInit()
 	sub = nh.subscribe<auv_msgs::NED>("quad_delta_pos", 1, &Estimator3D::deltaPosCallback,this);
 	subKFmode = nh.subscribe<std_msgs::Bool>("KFmode", 1, &Estimator3D::KFmodeCallback, this);
 
-	//Get DVL model
+	/*** Get DVL model ***/
 	ph.param("dvl_model",dvl_model, dvl_model);
 	nav.useDvlModel(dvl_model);
 	ph.param("imu_with_yaw_rate",useYawRate,useYawRate);
 	ph.param("compass_variance",compassVariance,compassVariance);
 	ph.param("gyro_variance",gyroVariance,gyroVariance);
 
-	ph.param("absoluteEKF", absoluteEKF,absoluteEKF);
+	ph.param("absoluteEKF", absoluteEKF, absoluteEKF);
 
-	//Configure handlers.
+	/*** Enable USBL measurements ***/
+	ph.param("delay", enableDelay, enableDelay);
+	ph.param("range", enableRange, enableRange);
+	ph.param("bearing", enableBearing, enableBearing);
+	ph.param("elevation", enableElevation, enableElevation);
+
+	/*** Configure handlers. ***/
 	gps.configure(nh);
 	dvl.configure(nh);
 	imu.configure(nh);
 
    Pstart = nav.getStateCovariance();
-//Rstart = nav.R;
- // ROS_ERROR("NAVIGATION");
+   //Rstart = nav.R;
+   // ROS_ERROR("NAVIGATION");
 
 }
 
@@ -249,18 +263,40 @@ void Estimator3D::onAltitude(const std_msgs::Float32::ConstPtr& data)
 
 void Estimator3D::onUSBLfix(const underwater_msgs::USBLFix::ConstPtr& data){
 
-	/////////////////
-	/// Potrebno uvesti provjeru podataka
-	/// ukljuciti orjentaciju platforme u bearing....
+	/*** Calculate measurement delay ***/
+	double delay = calculateDelaySteps(data->header.stamp.toSec(), currentTime);
 
+	/*** Get USBL measurements ***/
 	measurements(KFNav::range) = data->range;
-	newMeas(KFNav::range) = 1;
+	newMeas(KFNav::range) = enableRange;
+	measDelay(KFNav::range) = delay;
 
 	measurements(KFNav::bearing) = data->bearing;
-	newMeas(KFNav::bearing) = 1;
+	newMeas(KFNav::bearing) = enableBearing;
+	measDelay(KFNav::bearing) = delay;
 
 	measurements(KFNav::elevation) = data->elevation;
-	newMeas(KFNav::elevation) = 1;
+	newMeas(KFNav::elevation) = enableElevation;
+	measDelay(KFNav::elevation) = delay;
+
+	/*** Get beacon position ***/
+	measurements(KFNav::xb) = 0;
+	newMeas(KFNav::xb) = 1;
+	measDelay(KFNav::xb) = delay;
+
+	measurements(KFNav::yb) = 0;
+	newMeas(KFNav::yb) = 1;
+	measDelay(KFNav::yb) = delay;
+
+	measurements(KFNav::zb) = 0;
+	newMeas(KFNav::zb) = 1;
+	measDelay(KFNav::zb) = delay;
+
+	// Debug print
+	ROS_ERROR("Delay: %f", delay);
+	ROS_ERROR("Range: %f, bearing: %f, elevation: %f", measurements(KFNav::range), measurements(KFNav::bearing), measurements(KFNav::elevation));
+	ROS_ERROR("ENABLED Range: %d, bearing: %d, elevation: %d", enableRange, enableBearing, enableElevation);
+
 
 	// Relativna mjerenja ukljuciti u model mjerenja...
 
@@ -308,9 +344,7 @@ void Estimator3D::KFmodeCallback(const std_msgs::Bool::ConstPtr& msg){
 			nav.setStateCovariance(P);
 
 			//nav.setStateCovariance(Pstart);
-
 			//nav.R0 = Rstart;
-
 			//Rstart(KFNav::xp,KFNav::xp)
 		}
 	}
@@ -491,6 +525,14 @@ void Estimator3D::publishState()
 	buoyancyHat.publish(buoyancy);
 }
 
+//void Estimator3D::recalculation(){
+//
+//}
+
+int Estimator3D::calculateDelaySteps(double measTime, double arrivalTime){
+				return floor((arrivalTime-measTime)/nav.Ts);
+			}
+
 void Estimator3D::start()
 {
 	ros::NodeHandle ph("~");
@@ -499,14 +541,104 @@ void Estimator3D::start()
 	ros::Rate rate(1/Ts);
 	nav.setTs(Ts);
 
-	while (ros::ok())
-	{
-		nav.predict(tauIn);
+	/*** Initialize time (for delay calculation) ***/
+	currentTime = ros::Time::now().toSec();
+
+	while (ros::ok()){
+
+		/*** Process measurements ***/
 		processMeasurements();
-		bool newArrived(false);
-		for(size_t i=0; i<newMeas.size(); ++i)	if ((newArrived = newMeas(i))) break;
-		if (newArrived)	nav.correct(nav.update(measurements, newMeas));
+
+		/*** Store filter data ***/
+		FilterState state;
+		state.input = tauIn;
+		state.meas = measurements;
+		state.newMeas = newMeas;
+
+		/*** Check if there are delayed measurements, and disable them in current step ***/
+		bool newDelayed(false);
+		for(size_t i=0; i<measDelay.size(); ++i){
+			if(measDelay(i)){
+				state.newMeas(i) = 0;
+				newDelayed = true;
+			}
+		}
+
+		/*** Store x, P, R data ***/
+		state.state = nav.getState();
+		state.Pcov = nav.getStateCovariance();
+		//state.Rcov = ; // In case of time-varying measurement covariance
+
+		/*** Limit queue size ***/
+		if(pastStates.size()>1000){
+			pastStates.pop_front();
+			ROS_ERROR("Pop front");
+		}
+		pastStates.push_back(state);
+
+		if(newDelayed && enableDelay){
+
+			/*** Check for maximum delay ***/
+			int delaySteps = measDelay.maxCoeff();
+
+			/*** If delay is bigger then buffer size assume that it is may delay ***/
+			if(delaySteps >= pastStates.size())
+				delaySteps = pastStates.size()-1;
+
+			/*** Position delayed measurements in past states container
+			     and store past states data in temporary stack ***/
+			std::stack<FilterState> tmp_stack;
+			for(size_t i=0; i<=delaySteps; i++){
+
+				KFNav::vector tmp_cmp;
+				tmp_cmp.setConstant(KFNav::measSize, i);
+				if((measDelay.array() == tmp_cmp.array()).any() && i != 0){
+					FilterState tmp_state = pastStates.back();
+					for(size_t j=0; j<measDelay.size(); ++j){
+						if(measDelay(j) == i){
+							tmp_state.newMeas(j) = 1;
+							tmp_state.meas(j) = measurements(j);
+
+							ROS_ERROR("Dodano mjerenje. Delay:%d",i);
+						}
+					}
+					tmp_stack.push(tmp_state);
+				} else {
+					tmp_stack.push(pastStates.back());
+				}
+				pastStates.pop_back();
+			}
+
+			/*** Load past state and covariance for max delay time instant ***/
+			FilterState state_p = tmp_stack.top();
+			nav.setStateCovariance(state_p.Pcov);
+			nav.setState(state_p.state);
+
+			/*** Pass through stack data and recalculate filter states ***/
+			while(!tmp_stack.empty()){
+				state_p = tmp_stack.top();
+				tmp_stack.pop();
+				pastStates.push_back(state_p);
+
+				/*** Estimation ***/
+				nav.predict(state_p.input);
+				bool newArrived(false);
+				for(size_t i=0; i<state_p.newMeas.size(); ++i)	if ((newArrived = state_p.newMeas(i))) break;
+				if (newArrived)	nav.correct(nav.update(state_p.meas, state_p.newMeas));
+			}
+		}else{
+			/*** Estimation ***/
+			nav.predict(tauIn);
+			bool newArrived(false);
+			for(size_t i=0; i<newMeas.size(); ++i)	if ((newArrived = newMeas(i))) break;
+			if (newArrived)	nav.correct(nav.update(measurements, newMeas));
+		}
+
+		newMeas.setZero(); // razmisli kako ovo srediti
+		measDelay.setZero();
 		publishState();
+
+		//ROS_ERROR_STREAM(nav.getStateCovariance());
 
 		/*** Send the base-link transform ***/
 		geometry_msgs::TransformStamped transform;
@@ -527,6 +659,8 @@ void Estimator3D::start()
 		broadcaster.sendTransform(transform);
 
 		rate.sleep();
+		/*** Get current time (for delay calculation) ***/
+		currentTime = ros::Time::now().toSec();
 		ros::spinOnce();
 	}
 }

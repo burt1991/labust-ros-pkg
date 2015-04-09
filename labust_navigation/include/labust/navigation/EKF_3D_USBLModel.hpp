@@ -1,7 +1,18 @@
 /*********************************************************************
+ * EKF_3D_USBLModel.cpp
+ *
+ *  Created on: Feb 25, 2013
+ *      Author: Dula Nad
+ *
+ *  Modified on: Apr 1, 2015
+ *  	Author: Filip Mandic
+ *
+ ********************************************************************/
+
+/*********************************************************************
 * Software License Agreement (BSD License)
 *
-*  Copyright (c) 2010, LABUST, UNIZG-FER
+*  Copyright (c) 2015, LABUST, UNIZG-FER
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -30,9 +41,6 @@
 *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
-*
-*  Created on: Feb 25, 2013
-*  Author: Dula Nad
 *********************************************************************/
 #ifndef EKF_3DMODEL_HPP_
 #define EKF_3DMODEL_HPP_
@@ -44,9 +52,6 @@ namespace labust
   {
     /**
      * This class implements a EKF filter for the LDTravOcean ROV.
-     *
-     * \todo Extract the update method into a separate file for future use.
-     * \todo Extract the ModelParams to a snippet
      */
     class EKF_3D_USBLModel : public SSModel<double>
     {
@@ -78,6 +83,9 @@ namespace labust
       enum {u=0,v,w,p,q,r,xp,yp,zp,phi,theta,psi,xc,yc,b,buoyancy,roll_restore,pitch_restore,altitude,xb,yb,zb,stateNum};
       enum {X=0,Y,Z,Kroll,M,N,inputSize};
       enum {range=stateNum,bearing,elevation,measSize};
+
+      //const char *VarNames[]  = {"u","v","w","p","q","r","xp","yp","zp","phi","theta","psi","xc","yc","b","buoyancy","roll_restore","pitch_restore","altitude","xb","yb","zb","range","bearing","elevation"};
+
 
       /**
        * The default constructor.

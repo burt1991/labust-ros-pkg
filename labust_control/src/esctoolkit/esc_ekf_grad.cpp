@@ -1,12 +1,11 @@
 /*
- * esc_classic.cpp
+ * esc_ekf_grad.cpp
  *
  *  Created on: Dec 22, 2014
  *      Author: Filip Mandic
  */
 
 #include <labust/control/esc/EscPerturbation.hpp>
-//#include <vector>
 
 #include <ros/ros.h>
 
@@ -18,9 +17,6 @@ namespace labust{
 			class EscEkfGrad : public EscPerturbationBase<double> {
 
 			public:
-
-				/*** Control inputs */
-				//enum {u = 0, v, controlNum};
 
 				EscEkfGrad(int ctrlNum, numericprecission Ts);
 
@@ -42,12 +38,10 @@ namespace labust{
 				 * K - gain
 				 * A0 - perturbation amplitude
 				 */
-				vector sin_amp_, sin_freq_, corr_gain_, low_pass_pole_, comp_pole_, comp_zero_;
-				vector control_ref_, signal_demodulated_old_, lpf_out_old_,corr_signal_, phase_shift_,comp_old_;
+				vector sin_amp_, sin_freq_, corr_gain_;
+				vector control_ref_, signal_demodulated_old_, phase_shift_;
 				/*** Controlled state */
 				vector state_;
-
-				numericprecission high_pass_pole_, hpf_out_old_, obj_val_old_;
 
 				/*** EKF */
 
@@ -69,71 +63,45 @@ namespace labust{
 			Base::EscEkfGrad(int ctrlNum, numericprecission Ts):EscPerturbationBase<double>(ctrlNum, Ts),
 										state_(vector::Zero(controlNum)){
 
-				lpf_out_old_.resize(controlNum);
 				signal_demodulated_old_.resize(controlNum);
-				comp_old_.resize(controlNum);
-				corr_signal_.resize(controlNum);
 				control_ref_.resize(controlNum);
-
 				sin_amp_.resize(controlNum);
 				sin_freq_.resize(controlNum);
 				gain_.resize(controlNum);
 				control_.resize(controlNum);
-				//high_pass_pole_ = high_pass_pole;
-				low_pass_pole_.resize(controlNum);
-				comp_pole_.resize(controlNum);
-				comp_zero_.resize(controlNum);
 
-				lpf_out_old_.setZero();
-				hpf_out_old_ = 0;
 				control_ref_ = state_;
-				lpf_out_old_.setZero();
 				signal_demodulated_old_.setZero();
-				comp_old_.setZero();
-				corr_signal_.setZero();
-
-//				matrix A, L, H, M, Q, R;
-//				matrix Pk_plu, Pk_min;
-//				vector xk_plu, xk_min, hk, Kk;
-//
-//				vector input, input_past;
-//
-//				/*** Measurement vector */
-//				vector yk;
 
 				A = matrix::Identity(3,3);
 				L = matrix::Identity(3,3);
 				H = matrix::Zero(3,3);
 				M = matrix::Identity(3,3);
 
-				Pk_plu = 1.0e-4*matrix::Identity(3,3);
+				Pk_plu = 1.0e-3*matrix::Identity(3,3);
 				xk_plu = vector::Zero(3);
 
 				//Qk = 1e-0*diag([0.75 0.75 0.5]); % Process noise vector OVO JE DOBRO 2
 				//Rk = 1e-0*diag([1 1 1]); % Measurement noise vector
 
 				Eigen::Vector3d tmp;
-				tmp << 0.75, 0.75, 0.5;
+				tmp << 10, 10, 4;
 				Q = tmp.asDiagonal();
-				tmp << 1, 1, 1;
+				tmp << 0.01, 0.01, 0.01;
 				R = tmp.asDiagonal();
 
 				n1 = vector::Zero(3);
 				n2 = vector::Zero(3);
 				yk = vector::Zero(3);
 				input = vector::Zero(6);
-				//Kk = vector::Zero(3);
-
-
-
 
 				phase_shift_.resize(controlNum);
 				phase_shift_[0] = 0;
+
 				for (size_t i = 1; i<controlNum; i++){
 					phase_shift_[i] = i*M_PI/((double)controlNum);
 				}
 				state_initialized_ = true;
-
 			}
 
 			Base::~EscEkfGrad(){
@@ -141,18 +109,12 @@ namespace labust{
 			}
 
 			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts){
+
 				sin_amp_.setConstant(sin_amp);
 				sin_freq_.setConstant(sin_freq);
 				gain_.setConstant(corr_gain);
-				high_pass_pole_ = high_pass_pole;
-				low_pass_pole_.setConstant(low_pass_pole);
-				comp_pole_.setConstant(comp_pole);
-				comp_zero_.setConstant(comp_zero);
 				Ts_ = Ts;
-				obj_val_old_ = 0;
 				cycle_count_ = 0;
-				hpf_out_old_ = 0;
-				//opt_dim_ = 0;
 				state_initialized_ = false;
 				old_vals_initialized_ = false;
 				initialized_ = true;

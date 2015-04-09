@@ -160,6 +160,12 @@ namespace labust
 			/* Altitude controller */
 			void ALTcontroller(bool enable);
 
+			/* ES tracking controller */
+			void EScontroller(bool enable);
+
+			/* ES EKF tracking controller */
+			void ES_EKFcontroller(bool enable);
+
 			/*********************************************************
 			 *** Low Level Controllers
 			 ********************************************************/
@@ -634,6 +640,48 @@ using namespace labust::controller;
 	 * Altitude controller
 	 */
 	void ControllerManager::ALTcontroller(bool enable){
+
+	}
+
+	void ControllerManager::EScontroller(bool enable){
+
+		if(enable){
+
+				LLcfg.LL_VELconfigure(true,2,2,0,0,0,0);
+
+				/* Enable controller */
+				DPenable = true;
+				enableController("FADP_enable",true);
+
+			} else {
+
+				LLcfg.LL_VELconfigure(false,1,1,0,0,0,0);
+
+				/* Disable controller */
+				DPenable = false;
+				enableController("FADP_enable",false);
+			}
+
+	}
+
+	void ControllerManager::ES_EKFcontroller(bool enable){
+
+		if(enable){
+
+				LLcfg.LL_VELconfigure(true,2,2,0,0,0,0);
+
+				/* Enable controller */
+				DPenable = true;
+				enableController("ESC_enable",true);
+
+			} else {
+
+				LLcfg.LL_VELconfigure(false,1,1,0,0,0,0);
+
+				/* Disable controller */
+				DPenable = false;
+				enableController("ESC_EKF_enable",false);
+			}
 
 	}
 

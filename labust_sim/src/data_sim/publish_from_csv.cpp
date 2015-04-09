@@ -24,15 +24,17 @@ namespace labust{
 
 		public:
 
-			enum {u = 12, v = 13, w = 14, vx = 15, vy = 16, r = 21, lat = 3, lon = 4, depth = 22, x = 6, y = 7, psi = 11 };
+			//enum {stamp = 0, u = 12, v = 13, w = 14, vx = 15, vy = 16, r = 21, lat = 3, lon = 4, depth = 22, x = 6, y = 7, psi = 11 };
+			enum {stamp = 0, u = 1, v = 2, w = 3, vx = -1, vy = -1, r = 4, depth = 6, psi = 5, range = 7, x = 8, y = 9, z = 10 };
+
 
 			publishData():fileName(""),publishRate(0.1), counter(0){
 
 				ros::NodeHandle nh, ph("~");
 				ph.param("filename", fileName, fileName);
 				ph.param("rate", publishRate, publishRate);
-				ph.param("lat", origin.latitude, 0.759399454);
-				ph.param("lon",origin.longitude, 0.2860734);
+				//ph.param("lat", origin.latitude, 0.759399454);
+				//ph.param("lon",origin.longitude, 0.2860734);
 
 				pubVelocityRef = nh.advertise<auv_msgs::BodyVelocityReq>("velocityRef",1);
 				pubRange = nh.advertise<std_msgs::Float32>("rangeMeas",1);
@@ -72,13 +74,17 @@ namespace labust{
 						auv_msgs::NED position;
 					    //position.north =  posxy.first;
 					    //position.east = posxy.second;
-					    position.depth = std::atof(parsedData[depth].c_str());;
+					    //position.depth = std::atof(parsedData[depth].c_str());;
 
-					    position.north =  std::atof(parsedData[x].c_str());
-					    position.east = std::atof(parsedData[y].c_str());
+					    //position.north =  std::atof(parsedData[x].c_str());
+					    //position.east = std::atof(parsedData[y].c_str());
+
+					    //std_msgs::Float32 rangeData;
+					    //rangeData.data = sqrt(pow(position.north,2)+pow(position.east,2)+pow(position.depth,2));
 
 					    std_msgs::Float32 rangeData;
-					    rangeData.data = sqrt(pow(position.north,2)+pow(position.east,2)+pow(position.depth,2));
+					    rangeData.data = std::atof(parsedData[range].c_str());
+
 
 					    std_msgs::Float32 depthData;
 					    depthData.data = std::atof(parsedData[depth].c_str());
@@ -91,12 +97,9 @@ namespace labust{
 						pubDepth.publish(depthData);
 						pubPosition.publish(position);
 						pubHeading.publish(headingData);
-						if(++counter%40){
+						if(rangeData.data > 0){
 							pubRange.publish(rangeData);
 						}
-
-
-
 
 					}
 

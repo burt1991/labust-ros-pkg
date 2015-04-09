@@ -84,9 +84,9 @@ namespace labust{
 				//Rk = 1e-0*diag([1 1 1]); % Measurement noise vector
 
 				Eigen::Vector3d tmp;
-				tmp << 2, 2, 5;
+				tmp << 1, 1, 5;
 				Q = tmp.asDiagonal();
-				tmp << 0.01, 0.01, 0.01;
+				tmp << 0.1, 0.1, 0.1;
 				R = tmp.asDiagonal();
 
 				n1 = vector::Zero(3);

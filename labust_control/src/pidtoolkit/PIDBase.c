@@ -43,6 +43,7 @@ void PIDBase_init(PIDBase* self)
 	self->Kp = self->Ki = 0;
 	self->Kd = self->Tf = 0;
 	self->Kt = 0;
+	self->b = 1.0;
 
 	self->internalState = self->output = 0;
 	self->desired = self->state =0;

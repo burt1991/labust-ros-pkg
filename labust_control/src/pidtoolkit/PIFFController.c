@@ -98,7 +98,9 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	}
 
 	//Proportional term
-	self->internalState += self->Kp*(error-self->lastError);
+	//self->internalState += self->Kp*(error-self->lastError);
+	self->internalState += self->Kp*(self->b*(self->desired - self->lastRef)
+					- (self->state - self->lastState));
 	//Integral term
 	//Disabled if windup is in progress.
 	if (!self->windup) self->internalState += (self->lastI = self->Ki*Ts*error);

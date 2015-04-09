@@ -74,7 +74,7 @@ public:
 		while (ros::ok()){
 
 
-
+			if(i++==0) continue;
 			range = (vehPos-tarPos).norm();
 			bearing = labust::math::wrapRad(std::atan2(double(vehPos(1)-tarPos(1)),double(vehPos(0)-tarPos(0)))-0*vehYaw);
 			elevation = std::asin((double(vehPos(2)-tarPos(2)))/range);

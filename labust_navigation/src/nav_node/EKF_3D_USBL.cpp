@@ -546,7 +546,8 @@ void Estimator3D::start()
 
 	while (ros::ok()){
 
-		currentTime = ros::Time::now().toSec();
+		/*** Process measurements ***/
+		processMeasurements();
 
 		/*** Store filter data ***/
 		FilterState state;
@@ -566,37 +567,39 @@ void Estimator3D::start()
 		/*** Store x, P, R data ***/
 		state.state = nav.getState();
 		state.Pcov = nav.getStateCovariance();
-		//state.Rcov = ;
+		//state.Rcov = ; // In case of time-varying measurement covariance
 
 		/*** Limit queue size ***/
 		if(pastStates.size()>1000){
 			pastStates.pop_front();
+			ROS_ERROR("Pop front");
 		}
 		pastStates.push_back(state);
 
 		if(newDelayed && enableDelay){
 
-			ROS_ERROR("delayed");
-
-			int delaySteps = measDelay.maxCoeff(); /// Tmp solution (delayed measurements only at one moment)
-
-			// dodaj novo mjerenje u vektor proslih na odgovarajuce mjesto.
+			/*** Check for maximum delay ***/
+			int delaySteps = measDelay.maxCoeff();
 
 			/*** If delay is bigger then buffer size assume that it is may delay ***/
 			if(delaySteps >= pastStates.size())
 				delaySteps = pastStates.size()-1;
 
+			/*** Position delayed measurements in past states container
+			     and store past states data in temporary stack ***/
 			std::stack<FilterState> tmp_stack;
 			for(size_t i=0; i<=delaySteps; i++){
 
 				KFNav::vector tmp_cmp;
 				tmp_cmp.setConstant(KFNav::measSize, i);
-				if((measDelay.array() == tmp_cmp.array()).any()){
+				if((measDelay.array() == tmp_cmp.array()).any() && i != 0){
 					FilterState tmp_state = pastStates.back();
 					for(size_t j=0; j<measDelay.size(); ++j){
-						if(measDelay(j)){
+						if(measDelay(j) == i){
 							tmp_state.newMeas(j) = 1;
 							tmp_state.meas(j) = measurements(j);
+
+							ROS_ERROR("Dodano mjerenje. Delay:%d",i);
 						}
 					}
 					tmp_stack.push(tmp_state);
@@ -606,40 +609,36 @@ void Estimator3D::start()
 				pastStates.pop_back();
 			}
 
+			/*** Load past state and covariance for max delay time instant ***/
 			FilterState state_p = tmp_stack.top();
-			tmp_stack.pop();
 			nav.setStateCovariance(state_p.Pcov);
 			nav.setState(state_p.state);
 
+			/*** Pass through stack data and recalculate filter states ***/
 			while(!tmp_stack.empty()){
 				state_p = tmp_stack.top();
 				tmp_stack.pop();
+				pastStates.push_back(state_p);
+
 				/*** Estimation ***/
 				nav.predict(state_p.input);
-				//processMeasurements();
 				bool newArrived(false);
 				for(size_t i=0; i<state_p.newMeas.size(); ++i)	if ((newArrived = state_p.newMeas(i))) break;
 				if (newArrived)	nav.correct(nav.update(state_p.meas, state_p.newMeas));
 			}
-
-			measDelay.setZero();
-			publishState();
-
 		}else{
-
-			//ROS_ERROR("normal");
 			/*** Estimation ***/
 			nav.predict(tauIn);
-			processMeasurements();
 			bool newArrived(false);
 			for(size_t i=0; i<newMeas.size(); ++i)	if ((newArrived = newMeas(i))) break;
 			if (newArrived)	nav.correct(nav.update(measurements, newMeas));
-			publishState();
 		}
 
-		//newMeas.setZero(); // razmisli kako ovo srediti
-		//measDelay.setZero();
-		//publishState();
+		newMeas.setZero(); // razmisli kako ovo srediti
+		measDelay.setZero();
+		publishState();
+
+		//ROS_ERROR_STREAM(nav.getStateCovariance());
 
 		/*** Send the base-link transform ***/
 		geometry_msgs::TransformStamped transform;
@@ -661,7 +660,7 @@ void Estimator3D::start()
 
 		rate.sleep();
 		/*** Get current time (for delay calculation) ***/
-		//currentTime = ros::Time::now().toSec();
+		currentTime = ros::Time::now().toSec();
 		ros::spinOnce();
 	}
 }

@@ -92,7 +92,7 @@ namespace labust{
 				Eigen::Vector2d out, in;
 				Eigen::Matrix2d R;
 
-				in = esc_controller.step(ref.data);
+				in = esc_controller.step(ref.data*ref.data);
 
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
 				nu->header.stamp = ros::Time::now();
@@ -113,9 +113,9 @@ namespace labust{
 
 				ROS_INFO("Initializing extremum seeking controller...");
 
-				double sin_amp = 0.25;
-				double	sin_freq = 0.1;
-				double	corr_gain =  -25;
+				double sin_amp = 0.2;
+				double	sin_freq = 0.09;
+				double	corr_gain =  -5;
 				double	high_pass_pole = 3;
 				double	low_pass_pole = 0;
 				double	comp_zero =  0;

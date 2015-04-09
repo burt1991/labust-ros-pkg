@@ -84,8 +84,6 @@ void Estimator3D::onInit()
 	subTargetTau = nh.subscribe<auv_msgs::BodyForceReq>("bla", 1, &Estimator3D::onTargetTau, this);
 	subTargetDepth = nh.subscribe<std_msgs::Float32>("depth", 1,	&Estimator3D::onTargetDepth, this);
 	subTargetHeading = nh.subscribe<std_msgs::Float32>("heading", 1, &Estimator3D::onTargetHeading, this);
-	//subRange = nh.subscribe<std_msgs::Float32>("rangeMeas", 1, &Estimator3D::onRange, this);
-	//subBearing = nh.subscribe<std_msgs::Float32>("rangeMeas", 1, &Estimator3D::onRange, this);
 	subUSBLfix = nh.subscribe<underwater_msgs::USBLFix>("usbl_fix", 1, &Estimator3D::onUSBLfix, this);
 	modelUpdate = nh.subscribe<navcon_msgs::ModelParamsUpdate>("model_update", 1, &Estimator3D::onModelUpdate,this);
 }
@@ -183,20 +181,9 @@ void Estimator3D::onTargetHeading(const std_msgs::Float32::ConstPtr& data){
 	newMeas(KFNav::psi_t) = 1;
 }
 
-/*
-void Estimator3D::onRange(const std_msgs::Float32::ConstPtr& data){
-
-	measurements(KFNav::d) = data->data;
-	newMeas(KFNav::d) = 1;
-}
-
-void Estimator3D::onBearing(const std_msgs::Float32::ConstPtr& data){
-
-	measurements(KFNav::theta) = data->data;
-	newMeas(KFNav::theta) = 1;
-}*/
-
 void Estimator3D::onUSBLfix(const underwater_msgs::USBLFix::ConstPtr& data){
+
+
 
 	measurements(KFNav::d) = data->range;
 	newMeas(KFNav::d) = 1;
@@ -301,7 +288,7 @@ void Estimator3D::start(){
 
 		labust::tools::quaternionFromEulerZYX(0.0,
 						0.0,
-						0.0,
+						nav.getState()(KFNav::psi),
 						transform.transform.rotation);
 
 		transform.child_frame_id = "base_link_relative";

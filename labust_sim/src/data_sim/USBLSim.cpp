@@ -69,18 +69,25 @@ public:
 		ph.param("Trange",Ts,Ts);
 		ros::Rate rate(1/Ts);
 
+		int i = 0;
+
 		while (ros::ok()){
 
+
+			if(i++==0) continue;
 			range = (vehPos-tarPos).norm();
-			bearing = labust::math::wrapRad(std::atan2(double(vehPos(1)-tarPos(1)),double(vehPos(0)-tarPos(0)))-vehYaw);
+			bearing = labust::math::wrapRad(std::atan2(double(vehPos(1)-tarPos(1)),double(vehPos(0)-tarPos(0)))-0*vehYaw);
 			elevation = std::asin((double(vehPos(2)-tarPos(2)))/range);
 
 
-
+			usbl.header.stamp = ros::Time::now();
 			usbl.range = range;
 			usbl.bearing = bearing;
 			usbl.elevation = elevation;
-			pubUSBLFix.publish(usbl);
+
+			pubUSBLFix.publish(usbl_past);
+			usbl_past = usbl;
+
 
 			rate.sleep();
 			ros::spinOnce();
@@ -110,7 +117,9 @@ public:
 	//std_msgs::Float32 range, bearing, elevation;
 	double range, bearing, elevation;
 
-	underwater_msgs::USBLFix usbl;
+
+
+	underwater_msgs::USBLFix usbl, usbl_past;
 };
 
 int main(int argc, char* argv[])

@@ -40,15 +40,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <labust/control/esc/EscClassic.hpp>
 #include <labust/control/HLControl.hpp>
 #include <labust/control/EnablePolicy.hpp>
 #include <labust/control/WindupPolicy.hpp>
 #include <labust/math/NumberManipulation.hpp>
 #include <labust/tools/MatrixLoader.hpp>
 #include <labust/tools/conversions.hpp>
-
-/********************/
-#include <esc_classic.cpp> //// PRIVREMENO!!!!!!
 
 #include <Eigen/Dense>
 #include <auv_msgs/BodyForceReq.h>
@@ -92,7 +90,9 @@ namespace labust{
 				Eigen::Vector2d out, in;
 				Eigen::Matrix2d R;
 
-				in = esc_controller.step(ref.data*ref.data);
+				//in = esc_controller.step(ref.data*ref.data);
+				in = esc_controller.step(ref.data);
+
 
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
 				nu->header.stamp = ros::Time::now();
@@ -113,6 +113,8 @@ namespace labust{
 
 				ROS_INFO("Initializing extremum seeking controller...");
 
+				ros::NodeHandle nh;
+
 				double sin_amp = 0.2;
 				double	sin_freq = 0.09;
 				double	corr_gain =  -5;
@@ -120,6 +122,15 @@ namespace labust{
 				double	low_pass_pole = 0;
 				double	comp_zero =  0;
 				double	comp_pole = 0;
+
+				nh.param("esc/sin_amp", sin_amp, sin_amp);
+				nh.param("esc/sin_freq", sin_freq, sin_freq);
+				nh.param("esc/corr_gain", corr_gain, corr_gain);
+				nh.param("esc/high_pass_pole", high_pass_pole, high_pass_pole);
+				nh.param("esc/low_pass_pole", low_pass_pole, low_pass_pole);
+				nh.param("esc/comp_zero", comp_zero, comp_zero);
+				nh.param("esc/comp_pole", comp_pole, comp_pole);
+
 				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, Ts);
 
 				disable_axis[x] = 0;

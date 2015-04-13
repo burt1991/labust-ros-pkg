@@ -40,15 +40,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <labust/control/esc/EscBounded.hpp>
 #include <labust/control/HLControl.hpp>
 #include <labust/control/EnablePolicy.hpp>
 #include <labust/control/WindupPolicy.hpp>
 #include <labust/math/NumberManipulation.hpp>
 #include <labust/tools/MatrixLoader.hpp>
 #include <labust/tools/conversions.hpp>
-
-/********************/
-#include <esc_bounded.cpp> //// PRIVREMENO!!!!!!
 
 #include <Eigen/Dense>
 #include <auv_msgs/BodyForceReq.h>

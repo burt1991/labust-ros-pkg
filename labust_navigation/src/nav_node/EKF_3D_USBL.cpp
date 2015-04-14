@@ -113,11 +113,10 @@ void Estimator3D::onInit()
 	resetTopic = nh.subscribe<std_msgs::Bool>("reset_nav_covariance", 1, &Estimator3D::onReset,this);
 	useGyro = nh.subscribe<std_msgs::Bool>("use_gyro", 1, &Estimator3D::onUseGyro,this);
 	subUSBL = nh.subscribe<underwater_msgs::USBLFix>("usbl_fix", 1, &Estimator3D::onUSBLfix,this);
-
-
-	KFmode = quadMeasAvailable = false;
 	sub = nh.subscribe<auv_msgs::NED>("quad_delta_pos", 1, &Estimator3D::deltaPosCallback,this);
 	subKFmode = nh.subscribe<std_msgs::Bool>("KFmode", 1, &Estimator3D::KFmodeCallback, this);
+
+	KFmode = quadMeasAvailable = false;
 
 	/*** Get DVL model ***/
 	ph.param("dvl_model",dvl_model, dvl_model);
@@ -237,6 +236,10 @@ void Estimator3D::onTau(const auv_msgs::BodyForceReq::ConstPtr& tau)
 	tauIn(KFNav::N) = tau->wrench.torque.z;
 };
 
+/*********************************************************************
+ *** Measurement callback
+ ********************************************************************/
+
 void Estimator3D::onDepth(const std_msgs::Float32::ConstPtr& data)
 {
 	measurements(KFNav::zp) = data->data;
@@ -293,9 +296,9 @@ void Estimator3D::onUSBLfix(const underwater_msgs::USBLFix::ConstPtr& data){
 	measDelay(KFNav::zb) = delay;
 
 	// Debug print
-	ROS_ERROR("Delay: %f", delay);
-	ROS_ERROR("Range: %f, bearing: %f, elevation: %f", measurements(KFNav::range), measurements(KFNav::bearing), measurements(KFNav::elevation));
-	ROS_ERROR("ENABLED Range: %d, bearing: %d, elevation: %d", enableRange, enableBearing, enableElevation);
+	//ROS_ERROR("Delay: %f", delay);
+	//ROS_ERROR("Range: %f, bearing: %f, elevation: %f", measurements(KFNav::range), measurements(KFNav::bearing), measurements(KFNav::elevation));
+	//ROS_ERROR("ENABLED Range: %d, bearing: %d, elevation: %d", enableRange, enableBearing, enableElevation);
 
 
 	// Relativna mjerenja ukljuciti u model mjerenja...
@@ -349,6 +352,10 @@ void Estimator3D::KFmodeCallback(const std_msgs::Bool::ConstPtr& msg){
 		}
 	}
 }
+
+/*********************************************************************
+ *** Helper functions
+ ********************************************************************/
 
 void Estimator3D::processMeasurements()
 {
@@ -525,14 +532,14 @@ void Estimator3D::publishState()
 	buoyancyHat.publish(buoyancy);
 }
 
-//void Estimator3D::recalculation(){
-//
-//}
 
 int Estimator3D::calculateDelaySteps(double measTime, double arrivalTime){
 				return floor((arrivalTime-measTime)/nav.Ts);
 			}
 
+/*********************************************************************
+ *** Main loop
+ ********************************************************************/
 void Estimator3D::start()
 {
 	ros::NodeHandle ph("~");
@@ -572,7 +579,7 @@ void Estimator3D::start()
 		/*** Limit queue size ***/
 		if(pastStates.size()>1000){
 			pastStates.pop_front();
-			ROS_ERROR("Pop front");
+			//ROS_ERROR("Pop front");
 		}
 		pastStates.push_back(state);
 
@@ -599,7 +606,7 @@ void Estimator3D::start()
 							tmp_state.newMeas(j) = 1;
 							tmp_state.meas(j) = measurements(j);
 
-							ROS_ERROR("Dodano mjerenje. Delay:%d",i);
+							//ROS_ERROR("Dodano mjerenje. Delay:%d",i);
 						}
 					}
 					tmp_stack.push(tmp_state);

@@ -64,7 +64,7 @@ namespace labust{
 
 			}
 
-			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts, std::vector<double> Q0, std::vector<double> R0){
+			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts, vector Q0, vector R0){
 
 				sin_amp_.setConstant(sin_amp);
 				sin_freq_.setConstant(sin_freq);
@@ -72,11 +72,8 @@ namespace labust{
 				Ts_ = Ts;
 				cycle_count_ = 0;
 
-				Eigen::Vector3d tmp;
-				tmp << Q0[0], Q0[1], Q0[2];
-				Q = tmp.asDiagonal();
-				tmp << R0[0], R0[1], R0[2];
-				R = tmp.asDiagonal();
+				Q = Q0.asDiagonal();
+				R = R0.asDiagonal();
 
 				state_initialized_ = false;
 				old_vals_initialized_ = false;
@@ -116,6 +113,10 @@ namespace labust{
 
 			Base::vector Base::controllerGain(vector postFiltered){
 				control_ = gain_.cwiseProduct(postFiltered);
+				ROS_ERROR("GAIN");
+				ROS_ERROR_STREAM(gain_);
+				ROS_ERROR("CONTROL");
+				ROS_ERROR_STREAM(control_);
 				return control_;
 			}
 

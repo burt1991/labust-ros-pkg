@@ -64,7 +64,7 @@ namespace labust{
 
 			enum {x = 0, y};
 
-			ESControlEKF_UV():Ts(0.1), esc_controller(2,Ts){};
+			ESControlEKF_UV():Ts(0.1), esc_controller(2,Ts),count(0){};
 
 			void init(){
 
@@ -87,27 +87,35 @@ namespace labust{
 
 			auv_msgs::BodyVelocityReqPtr step(const std_msgs::Float32& ref, const auv_msgs::NavSts& state){
 
-				Eigen::Vector2d out, in;
-				Eigen::Matrix2d R;
+				if((count++)%20 == 0){
 
-				Eigen::VectorXd input(2);
-				input << state.position.north, state.position.east;
+					Eigen::Vector2d out, in;
+					Eigen::Matrix2d R;
 
-				in = esc_controller.step(ref.data, input);
+					Eigen::VectorXd input(2);
+					input << state.position.north, state.position.east;
 
-				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
-				nu->header.stamp = ros::Time::now();
-				nu->goal.requester = "esc_ekf_controller";
-				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
+					in = esc_controller.step(ref.data, input);
 
-				double yaw = state.orientation.yaw;
-				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
-				out = R.transpose()*in;
+					auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
+					nu->header.stamp = ros::Time::now();
+					nu->goal.requester = "esc_ekf_controller";
+					labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
 
-				nu->twist.linear.x = out[x];
-				nu->twist.linear.y = out[y];
+					double yaw = state.orientation.yaw;
+					R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+					out = R.transpose()*in;
 
-				return nu;
+					nu->twist.linear.x = out[x];
+					nu->twist.linear.y = out[y];
+
+					nu_past = nu;
+					return nu;
+				}else{
+
+					ROS_ERROR("PAST");
+					return nu_past;
+				}
 			}
 
 			void initialize_controller(){
@@ -140,7 +148,12 @@ namespace labust{
 				nh.param("esc_ekf/Q", Q, Q);
 				nh.param("esc_ekf/R", R, R);
 
-				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, sampling_time, Q, R);
+				esc::EscEkfGrad::vector Q0(3);
+				Q0 << Q[0],Q[1],Q[2];
+				esc::EscEkfGrad::vector R0(3);
+				R0 << R[0],R[1],R[2];
+
+				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, sampling_time, Q0, R0);
 
 				disable_axis[x] = 0;
 				disable_axis[y] = 0;
@@ -152,6 +165,8 @@ namespace labust{
 
 			double Ts;
 			esc::EscEkfGrad esc_controller;
+			auv_msgs::BodyVelocityReqPtr nu_past;
+			int count;
 
 		};
 	}

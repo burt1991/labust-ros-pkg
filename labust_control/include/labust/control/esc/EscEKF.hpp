@@ -8,7 +8,6 @@
 #ifndef ESCEKF_HPP_
 #define ESCEKF_HPP_
 
-#include <vector>
 #include <labust/control/esc/EscPerturbationBase.hpp>
 
 namespace labust{
@@ -24,7 +23,7 @@ namespace labust{
 
 				~EscEkfGrad();
 
-				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period, std::vector<double> Q, std::vector<double> R);
+				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period, vector Q, vector R);
 
 				 vector gradientEstimation(numericprecission cost_signal_filtered, vector additional_input);
 

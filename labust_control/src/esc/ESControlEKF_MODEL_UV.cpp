@@ -99,7 +99,7 @@ namespace labust{
 				Eigen::VectorXd input(4);
 				input << state.position.north, state.position.east, vel;
 
-				in = esc_controller.step(ref.data*ref.data, input);
+				in = esc_controller.step(ref.data, input);
 
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
 				nu->header.stamp = ros::Time::now();
@@ -145,7 +145,12 @@ namespace labust{
 				nh.param("esc_ekf_model/Q", Q, Q);
 				nh.param("esc_ekf_model/R", R, R);
 
-				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, sampling_time, Q, R);
+				esc::EscEkfGradModel::vector Q0(3);
+				Q0 << Q[0],Q[1],Q[2];
+				esc::EscEkfGradModel::vector R0(3);
+				R0 << R[0],R[1],R[2];
+
+				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, sampling_time, Q0, R0);
 
 				disable_axis[x] = 0;
 				disable_axis[y] = 0;

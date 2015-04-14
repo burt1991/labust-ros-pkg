@@ -98,18 +98,17 @@ namespace labust{
 
 				 virtual vector step(numericprecission cost_signal, vector additional_input = vector::Zero(2) ){
 
-					 ROS_ERROR_STREAM(cost_signal);
-
 					 numericprecission filtered_cost =  preFiltering(cost_signal);
-					 pre_filter_input_old_ = cost_signal;
-					 pre_filter_output_old_ = filtered_cost;
 
 					 vector estimated_gradient = gradientEstimation(filtered_cost, additional_input);
-					 estimated_gradient_old_ = estimated_gradient;
 
 					 vector control = controllerGain(postFiltering(estimated_gradient));
 
 					 vector controlInput =  superimposePerturbation(control);
+
+					 pre_filter_input_old_ = cost_signal;
+					 pre_filter_output_old_ = filtered_cost;
+					 estimated_gradient_old_ = estimated_gradient;
 
 					 old_vals_initialized_ = true;
 					 cycle_count_++;

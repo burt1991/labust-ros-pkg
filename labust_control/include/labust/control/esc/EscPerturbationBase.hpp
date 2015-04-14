@@ -46,6 +46,8 @@
 #include <Eigen/Dense>
 #include <stdint.h>
 
+#include <ros/ros.h>
+
 namespace labust{
 	namespace control{
 		namespace esc{
@@ -95,6 +97,8 @@ namespace labust{
 				 virtual vector superimposePerturbation(vector control) = 0;
 
 				 virtual vector step(numericprecission cost_signal, vector additional_input = vector::Zero(2) ){
+
+					 ROS_ERROR_STREAM(cost_signal);
 
 					 numericprecission filtered_cost =  preFiltering(cost_signal);
 					 pre_filter_input_old_ = cost_signal;

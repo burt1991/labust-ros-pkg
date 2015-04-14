@@ -114,6 +114,8 @@ namespace labust{
 
 				ROS_INFO("Initializing extremum seeking controller...");
 
+				ros::NodeHandle nh;
+
 				double sin_amp = 0.25;
 				double	sin_freq = 0.09;
 				double	corr_gain =  -0.075;
@@ -121,7 +123,24 @@ namespace labust{
 				double	low_pass_pole = 0;
 				double	comp_zero =  0;
 				double	comp_pole = 0;
-				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, Ts);
+				double sampling_time = 0.1;
+
+				std::vector<double> Q, R;
+				Q.assign(3,1);
+				R.assign(3,1);
+
+				nh.param("esc_ekf/sin_amp", sin_amp, sin_amp);
+				nh.param("esc_ekf/sin_freq", sin_freq, sin_freq);
+				nh.param("esc_ekf/corr_gain", corr_gain, corr_gain);
+				nh.param("esc_ekf/high_pass_pole", high_pass_pole, high_pass_pole);
+				nh.param("esc_ekf/low_pass_pole", low_pass_pole, low_pass_pole);
+				nh.param("esc_ekf/comp_zero", comp_zero, comp_zero);
+				nh.param("esc_ekf/comp_pole", comp_pole, comp_pole);
+				nh.param("esc_ekf/sampling_time", sampling_time, sampling_time);
+				nh.param("esc_ekf/Q", Q, Q);
+				nh.param("esc_ekf/R", R, R);
+
+				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, sampling_time, Q, R);
 
 				disable_axis[x] = 0;
 				disable_axis[y] = 0;

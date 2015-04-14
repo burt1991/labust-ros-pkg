@@ -63,13 +63,20 @@ namespace labust{
 
 			}
 
-			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts){
+			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts, std::vector<double> Q0, std::vector<double> R0){
 
 				sin_amp_.setConstant(sin_amp);
 				sin_freq_.setConstant(sin_freq);
 				gain_.setConstant(corr_gain);
 				Ts_ = Ts;
 				cycle_count_ = 0;
+
+				Eigen::Vector3d tmp;
+				tmp << Q0[0], Q0[1], Q0[2];
+				Q = tmp.asDiagonal();
+				tmp << R0[0], R0[1], R0[2];
+				R = tmp.asDiagonal();
+
 				state_initialized_ = false;
 				old_vals_initialized_ = false;
 				initialized_ = true;

@@ -2,12 +2,13 @@
  * EscEKFModel.hpp
  *
  *  Created on: Apr 13, 2015
- *      Author: filip
+ *      Author: Filip Mandic
  */
 
 #ifndef ESCEKFMODEL_HPP_
 #define ESCEKFMODEL_HPP_
 
+#include <vector>
 #include <labust/control/esc/EscPerturbationBase.hpp>
 
 namespace labust{
@@ -23,7 +24,7 @@ namespace labust{
 
 				~EscEkfGradModel();
 
-				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period);
+				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period, std::vector<double> Q, std::vector<double> R);
 
 				 vector gradientEstimation(numericprecission cost_signal_filtered, vector additional_input);
 

@@ -13,23 +13,6 @@ namespace labust{
 	namespace control{
 		namespace esc{
 
-
-			class EscBounded : public EscBoundedBase<double> {
-
-			public:
-
-				EscBounded(int ctrlNum, numericprecission Ts);
-
-				~EscBounded();
-
-				 void initController(double K, double omega, double alpha, double Ts);
-
-				 vector generateControl(numericprecission argument);
-
-				/*** Controlled state */
-				vector state_;
-			};
-
 			typedef EscBounded Base;
 
 			Base::EscBounded(int ctrlNum, numericprecission Ts):EscBoundedBase<double>(ctrlNum, Ts),

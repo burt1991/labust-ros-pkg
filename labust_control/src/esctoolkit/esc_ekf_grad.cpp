@@ -4,59 +4,13 @@
  *  Created on: Dec 22, 2014
  *      Author: Filip Mandic
  */
-
-#include <labust/control/esc/EscPerturbation.hpp>
+#include <labust/control/esc/EscEKF.hpp>
 
 #include <ros/ros.h>
 
 namespace labust{
 	namespace control{
 		namespace esc{
-
-
-			class EscEkfGrad : public EscPerturbationBase<double> {
-
-			public:
-
-				EscEkfGrad(int ctrlNum, numericprecission Ts);
-
-				~EscEkfGrad();
-
-				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period);
-
-				 vector gradientEstimation(numericprecission cost_signal_filtered, vector additional_input);
-
-				 vector controllerGain(vector postFiltered);
-
-				 vector superimposePerturbation(vector control);
-
-				 vector modelUpdate(vector state, vector input);
-
-				 vector outputUpdate(vector state, vector input);
-
-				 /***
-				 * K - gain
-				 * A0 - perturbation amplitude
-				 */
-				vector sin_amp_, sin_freq_, corr_gain_;
-				vector control_ref_, signal_demodulated_old_, phase_shift_;
-				/*** Controlled state */
-				vector state_;
-
-				/*** EKF */
-
-				matrix A, L, H, M, Q, R;
-				matrix Pk_plu, Pk_min, Kk;
-				vector xk_plu, xk_min, hk;
-
-				vector input, input_past;
-
-				/*** Measurement vector */
-				vector yk;
-
-				Eigen::Vector3d n1, n2;
-
-			};
 
 			typedef EscEkfGrad Base;
 
@@ -85,9 +39,11 @@ namespace labust{
 				//Rk = 1e-0*diag([1 1 1]); % Measurement noise vector
 
 				Eigen::Vector3d tmp;
-				tmp << 10, 10, 4;
+				//tmp << 10, 10, 4;
+				tmp << 0.75, 0.75, 0.5;
 				Q = tmp.asDiagonal();
-				tmp << 0.01, 0.01, 0.01;
+				//tmp << 0.01, 0.01, 0.01;
+				tmp << 1, 1, 1;
 				R = tmp.asDiagonal();
 
 				n1 = vector::Zero(3);
@@ -108,13 +64,17 @@ namespace labust{
 
 			}
 
-			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts){
+			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts, vector Q0, vector R0){
 
 				sin_amp_.setConstant(sin_amp);
 				sin_freq_.setConstant(sin_freq);
 				gain_.setConstant(corr_gain);
 				Ts_ = Ts;
 				cycle_count_ = 0;
+
+				Q = Q0.asDiagonal();
+				R = R0.asDiagonal();
+
 				state_initialized_ = false;
 				old_vals_initialized_ = false;
 				initialized_ = true;
@@ -153,6 +113,10 @@ namespace labust{
 
 			Base::vector Base::controllerGain(vector postFiltered){
 				control_ = gain_.cwiseProduct(postFiltered);
+				ROS_ERROR("GAIN");
+				ROS_ERROR_STREAM(gain_);
+				ROS_ERROR("CONTROL");
+				ROS_ERROR_STREAM(control_);
 				return control_;
 			}
 

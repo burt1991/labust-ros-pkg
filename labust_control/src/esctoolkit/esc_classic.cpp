@@ -5,46 +5,13 @@
  *      Author: Filip Mandic
  */
 
-#include <labust/control/esc/EscPerturbation.hpp>
+#include <labust/control/esc/EscClassic.hpp>
 
 #include <ros/ros.h>
 
 namespace labust{
 	namespace control{
 		namespace esc{
-
-
-			class EscClassic : public EscPerturbationBase<double> {
-
-			public:
-
-				EscClassic(int ctrlNum, numericprecission Ts);
-
-				~EscClassic();
-
-				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period);
-
-				 numericprecission preFiltering(numericprecission cost_signal);
-
-				 vector gradientEstimation(numericprecission cost_signal_filtered, vector additional_input);
-
-				 vector postFiltering(vector estimated_gradient);
-
-				 vector controllerGain(vector postFiltered);
-
-				 vector superimposePerturbation(vector control);
-
-				 /***
-				 * K - gain
-				 * A0 - perturbation amplitude
-				 */
-				vector sin_amp_, sin_freq_, corr_gain_, low_pass_pole_, comp_pole_, comp_zero_;
-				vector control_ref_, signal_demodulated_old_, lpf_out_old_,corr_signal_, phase_shift_,comp_old_;
-				/*** Controlled state */
-				vector state_;
-
-				numericprecission high_pass_pole_, hpf_out_old_, obj_val_old_;
-			};
 
 			typedef EscClassic Base;
 
@@ -62,7 +29,6 @@ namespace labust{
 				sin_freq_.resize(controlNum);
 				gain_.resize(controlNum);
 				control_.resize(controlNum);
-				//high_pass_pole_ = high_pass_pole;
 				low_pass_pole_.resize(controlNum);
 				comp_pole_.resize(controlNum);
 				comp_zero_.resize(controlNum);
@@ -107,7 +73,15 @@ namespace labust{
 			}
 			Base::numericprecission Base::preFiltering(numericprecission cost_signal){
 
-				return (-(Ts_*high_pass_pole_-2)*pre_filter_output_old_+2*cost_signal-2*pre_filter_input_old_)/(2+high_pass_pole_*Ts_);
+				 // Check this limit
+				numericprecission filtered_cost = (-(Ts_*high_pass_pole_-2)*pre_filter_output_old_+2*cost_signal-2*pre_filter_input_old_)/(2+high_pass_pole_*Ts_);
+				ROS_ERROR("filtered_cost: %f", filtered_cost);
+
+				filtered_cost = (abs(filtered_cost)> 0.5)?filtered_cost/abs(filtered_cost)*0.5:filtered_cost;
+
+				ROS_ERROR("filtered_cost after limit: %f", filtered_cost);
+
+				return filtered_cost;
 			}
 
 			Base::vector Base::gradientEstimation(numericprecission cost_signal_filtered, vector additional_input){
@@ -147,6 +121,10 @@ namespace labust{
 			}
 
 			Base::vector Base::controllerGain(vector postFiltered){
+
+				ROS_ERROR("GAIN:");
+				ROS_ERROR_STREAM(gain_);
+
 				control_ = gain_.cwiseProduct(postFiltered);
 				return control_;
 			}

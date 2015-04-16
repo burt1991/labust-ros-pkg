@@ -40,15 +40,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <labust/control/esc/EscEKFModel.hpp>
 #include <labust/control/HLControl.hpp>
 #include <labust/control/EnablePolicy.hpp>
 #include <labust/control/WindupPolicy.hpp>
 #include <labust/math/NumberManipulation.hpp>
 #include <labust/tools/MatrixLoader.hpp>
 #include <labust/tools/conversions.hpp>
-
-/********************/
-#include <esc_ekf_grad_model.cpp> //// PRIVREMENO!!!!!!
 
 #include <Eigen/Dense>
 #include <auv_msgs/BodyForceReq.h>
@@ -101,7 +99,7 @@ namespace labust{
 				Eigen::VectorXd input(4);
 				input << state.position.north, state.position.east, vel;
 
-				in = esc_controller.step(ref.data*ref.data, input);
+				in = esc_controller.step(ref.data, input);
 
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
 				nu->header.stamp = ros::Time::now();
@@ -121,6 +119,8 @@ namespace labust{
 
 				ROS_INFO("Initializing extremum seeking controller...");
 
+				ros::NodeHandle nh;
+
 				double sin_amp = 0.1;
 				double	sin_freq = 0.09;
 				double	corr_gain =  -0.015;
@@ -128,7 +128,29 @@ namespace labust{
 				double	low_pass_pole = 0;
 				double	comp_zero =  0;
 				double	comp_pole = 0;
-				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, Ts);
+				double sampling_time = 0.1;
+
+				std::vector<double> Q, R;
+				Q.assign(3,1);
+				R.assign(3,1);
+
+				nh.param("esc_ekf_model/sin_amp", sin_amp, sin_amp);
+				nh.param("esc_ekf_model/sin_freq", sin_freq, sin_freq);
+				nh.param("esc_ekf_model/corr_gain", corr_gain, corr_gain);
+				nh.param("esc_ekf_model/high_pass_pole", high_pass_pole, high_pass_pole);
+				nh.param("esc_ekf_model/low_pass_pole", low_pass_pole, low_pass_pole);
+				nh.param("esc_ekf_model/comp_zero", comp_zero, comp_zero);
+				nh.param("esc_ekf_model/comp_pole", comp_pole, comp_pole);
+				nh.param("esc_ekf_model/sampling_time", sampling_time, sampling_time);
+				nh.param("esc_ekf_model/Q", Q, Q);
+				nh.param("esc_ekf_model/R", R, R);
+
+				esc::EscEkfGradModel::vector Q0(3);
+				Q0 << Q[0],Q[1],Q[2];
+				esc::EscEkfGradModel::vector R0(3);
+				R0 << R[0],R[1],R[2];
+
+				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, sampling_time, Q0, R0);
 
 				disable_axis[x] = 0;
 				disable_axis[y] = 0;

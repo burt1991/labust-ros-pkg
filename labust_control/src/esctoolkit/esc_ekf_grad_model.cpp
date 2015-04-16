@@ -5,7 +5,7 @@
  *      Author: Filip Mandic
  */
 
-#include <labust/control/esc/EscPerturbation.hpp>
+#include <labust/control/esc/EscEKFModel.hpp>
 
 #include <ros/ros.h>
 
@@ -13,54 +13,11 @@ namespace labust{
 	namespace control{
 		namespace esc{
 
-
-			class EscEkfGradModel : public EscPerturbationBase<double> {
-
-			public:
-
-				EscEkfGradModel(int ctrlNum, numericprecission Ts);
-
-				~EscEkfGradModel();
-
-				 void initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double period);
-
-				 vector gradientEstimation(numericprecission cost_signal_filtered, vector additional_input);
-
-				 vector controllerGain(vector postFiltered);
-
-				 vector superimposePerturbation(vector control);
-
-				 vector modelUpdate(vector state, vector input);
-
-				 vector outputUpdate(vector state, vector input);
-
-				 /***
-				 * K - gain
-				 * A0 - perturbation amplitude
-				 */
-				vector sin_amp_, sin_freq_, corr_gain_;
-				vector control_ref_, signal_demodulated_old_, phase_shift_;
-				/*** Controlled state */
-				vector state_;
-
-				/*** EKF */
-
-				matrix A, L, H, M, Q, R;
-				matrix Pk_plu, Pk_min, Kk;
-				vector xk_plu, xk_min, hk;
-
-				vector input, input_past;
-
-				/*** Measurement vector */
-				vector yk;
-
-				Eigen::Vector3d n1, n2;
-			};
-
 			typedef EscEkfGradModel Base;
 
 			Base::EscEkfGradModel(int ctrlNum, numericprecission Ts):EscPerturbationBase<double>(ctrlNum, Ts),
-										state_(vector::Zero(controlNum)){
+										state_(vector::Zero(controlNum)),
+										newCost(false){
 
 				signal_demodulated_old_.resize(controlNum);
 				control_ref_.resize(controlNum);
@@ -107,13 +64,17 @@ namespace labust{
 
 			}
 
-			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts){
+			void Base::initController(double sin_amp, double sin_freq, double corr_gain, double high_pass_pole, double low_pass_pole, double comp_zero, double comp_pole, double Ts, vector Q0, vector R0){
 
 				sin_amp_.setConstant(sin_amp);
 				sin_freq_.setConstant(sin_freq);
 				gain_.setConstant(corr_gain);
 				Ts_ = Ts;
 				cycle_count_ = 0;
+
+				Q = Q0.asDiagonal();
+				R = R0.asDiagonal();
+
 				state_initialized_ = false;
 				old_vals_initialized_ = false;
 				initialized_ = true;
@@ -124,15 +85,31 @@ namespace labust{
 
 				vector signal_demodulated(controlNum);
 
+				/*** Check if there is a new cost function value available ***/
+				newCost = (cost_signal_filtered == pre_filter_output_old_)?false:true;
+
 				input << additional_input(0), n1(0), n2(0), additional_input(1), n1(1), n2(1), additional_input(2), additional_input(3);
-				yk << cost_signal_filtered, n1(2), n2(2);
 
-				n2 = n1;
-				n1 << additional_input.head(2), cost_signal_filtered;
+				if(newCost){
 
-				H << input(0), input(3), 1,
-					 input(1), input(4), 1,
-					 input(2), input(5), 1;
+					yk << cost_signal_filtered, n1(2), n2(2);
+
+					n2 = n1;
+					n1 << additional_input.head(2), cost_signal_filtered;
+
+					H << input(0), input(3), 1,
+						 input(1), input(4), 1,
+						 input(2), input(5), 1;
+
+					ROS_ERROR("MJERENJE");
+				}else{
+
+					ROS_ERROR("NEMA MJERENJA");
+
+					H << 0, 0, 0,
+						 0, 0, 0,
+						 0, 0, 0;
+				}
 
 				Pk_min = A*Pk_plu*A.transpose() + L*Q*L.transpose();
 				xk_min =  modelUpdate(xk_plu, input);
@@ -153,7 +130,12 @@ namespace labust{
 
 			Base::vector Base::controllerGain(vector postFiltered){
 				control_ = gain_.cwiseProduct(postFiltered);
+				ROS_ERROR("GAIN");
+				ROS_ERROR_STREAM(gain_);
+				ROS_ERROR("CONTROL");
+				ROS_ERROR_STREAM(control_);
 				return control_;
+
 			}
 
 			Base::vector Base::superimposePerturbation(Base::vector control){
@@ -178,12 +160,13 @@ namespace labust{
 			}
 
 			Base::vector Base::outputUpdate(vector state, vector input){
-				// outputUpdate = [u1k*dF1+u2k*dF2+d u1k1*dF1+u2k1*dF2+d u1k2*dF1+u2k2*dF2+d].';
 
 				vector output(3);
+				/*** outputUpdate = [u1k*dF1+u2k*dF2+d u1k1*dF1+u2k1*dF2+d u1k2*dF1+u2k2*dF2+d].'; ***/
 				output << state(0)*input(0)+state(1)*input(3)+state(2),
 						  state(0)*input(1)+state(1)*input(4)+state(2),
 						  state(0)*input(2)+state(1)*input(5)+state(2);
+
 				return output;
 			}
 		}

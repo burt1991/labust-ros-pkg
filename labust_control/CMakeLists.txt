@@ -101,13 +101,7 @@ set_source_files_properties(
    src/pidtoolkit/IPDFFController.c PROPERTIES LANGUAGE CXX)
 
 add_executable(manual_control src/manual_control/manual_control.cpp)
-### ESC library #####################################################   
-add_library(esctoolkit
-   src/esctoolkit/esc_classic.cpp
-)
-set_source_files_properties(
-   src/esctoolkit/esc_classic.cpp PROPERTIES LANGUAGE CXX)
-   
+ 
 add_executable(fadp_controller2 src/FADPControl.cpp)
 add_executable(hdg_controller2 src/HDGControl.cpp)
 #add_executable(hdg_controller_direct src/HDGControlDirect.cpp)
@@ -121,12 +115,10 @@ add_executable(async_merger src/AsyncMerger.cpp)
 add_executable(velocity_control	src/VelocityControl.cpp)
 
 # ESC executables
-add_executable(esc_uv src/esc/ESCControlClassic_UV.cpp)
-add_executable(esc_ekf_uv src/esc/ESControlEKF_UV.cpp)
-add_executable(esc_ekf_model_uv src/esc/ESControlEKF_MODEL_UV.cpp)
-add_executable(esc_bounded_uv src/esc/ESControlBounded_UV.cpp)
-
-
+add_executable(esc_uv src/esc/ESCControlClassic_UV.cpp src/esctoolkit/esc_classic.cpp)
+add_executable(esc_ekf_uv src/esc/ESControlEKF_UV.cpp src/esctoolkit/esc_ekf_grad.cpp)
+add_executable(esc_ekf_model_uv src/esc/ESControlEKF_MODEL_UV.cpp src/esctoolkit/esc_ekf_grad_model.cpp)
+add_executable(esc_bounded_uv src/esc/ESControlBounded_UV.cpp src/esctoolkit/esc_bounded.cpp)
 
 
 ## Declare a cpp executable
@@ -203,10 +195,10 @@ target_link_libraries(velocity_control
 )
 
 
-target_link_libraries(esc_uv esctoolkit ${catkin_LIBRARIES})
-target_link_libraries(esc_ekf_uv esctoolkit ${catkin_LIBRARIES})
-target_link_libraries(esc_ekf_model_uv esctoolkit ${catkin_LIBRARIES})
-target_link_libraries(esc_bounded_uv esctoolkit ${catkin_LIBRARIES})
+target_link_libraries(esc_uv  ${catkin_LIBRARIES})
+target_link_libraries(esc_ekf_uv  ${catkin_LIBRARIES})
+target_link_libraries(esc_ekf_model_uv  ${catkin_LIBRARIES})
+target_link_libraries(esc_bounded_uv  ${catkin_LIBRARIES})
 
 
 ###################

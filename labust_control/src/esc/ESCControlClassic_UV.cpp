@@ -40,15 +40,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <labust/control/esc/EscClassic.hpp>
 #include <labust/control/HLControl.hpp>
 #include <labust/control/EnablePolicy.hpp>
 #include <labust/control/WindupPolicy.hpp>
 #include <labust/math/NumberManipulation.hpp>
 #include <labust/tools/MatrixLoader.hpp>
 #include <labust/tools/conversions.hpp>
-
-/********************/
-#include <esc_classic.cpp> //// PRIVREMENO!!!!!!
 
 #include <Eigen/Dense>
 #include <auv_msgs/BodyForceReq.h>
@@ -66,7 +64,7 @@ namespace labust{
 
 			enum {x = 0, y};
 
-			ESCControlClassic_UV():Ts(0.1), esc_controller(2,Ts){};
+			ESCControlClassic_UV():Ts(0.1), esc_controller(2,Ts),count(0){};
 
 			void init(){
 
@@ -89,29 +87,46 @@ namespace labust{
 
 			auv_msgs::BodyVelocityReqPtr step(const std_msgs::Float32& ref, const auv_msgs::NavSts& state){
 
-				Eigen::Vector2d out, in;
-				Eigen::Matrix2d R;
+				if((count++)%20 == 0){
 
-				in = esc_controller.step(ref.data*ref.data);
+					Eigen::Vector2d out, in;
+					Eigen::Matrix2d R;
 
-				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
-				nu->header.stamp = ros::Time::now();
-				nu->goal.requester = "esc_controller";
-				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
+					//in = esc_controller.step(ref.data*ref.data);
+					in = esc_controller.step(ref.data);
 
-				double yaw = state.orientation.yaw;
-				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
-				out = R.transpose()*in;
+					ROS_ERROR("cost:");
+					ROS_ERROR_STREAM(ref.data);
+					ROS_ERROR("control:");
+					ROS_ERROR_STREAM(in);
 
-				nu->twist.linear.x = out[x];
-				nu->twist.linear.y = out[y];
 
-				return nu;
+					auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
+					nu->header.stamp = ros::Time::now();
+					nu->goal.requester = "esc_controller";
+					labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
+
+					double yaw = state.orientation.yaw;
+					R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+					out = R.transpose()*in;
+
+					nu->twist.linear.x = out[x];
+					nu->twist.linear.y = out[y];
+
+					nu_past = nu;
+					return nu;
+				}else{
+
+					ROS_ERROR("PAST");
+					return nu_past;
+				}
 			}
 
 			void initialize_controller(){
 
 				ROS_INFO("Initializing extremum seeking controller...");
+
+				ros::NodeHandle nh;
 
 				double sin_amp = 0.2;
 				double	sin_freq = 0.09;
@@ -120,7 +135,18 @@ namespace labust{
 				double	low_pass_pole = 0;
 				double	comp_zero =  0;
 				double	comp_pole = 0;
-				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, Ts);
+				double sampling_time = 0.1;
+
+				nh.param("esc/sin_amp", sin_amp, sin_amp);
+				nh.param("esc/sin_freq", sin_freq, sin_freq);
+				nh.param("esc/corr_gain", corr_gain, corr_gain);
+				nh.param("esc/high_pass_pole", high_pass_pole, high_pass_pole);
+				nh.param("esc/low_pass_pole", low_pass_pole, low_pass_pole);
+				nh.param("esc/comp_zero", comp_zero, comp_zero);
+				nh.param("esc/comp_pole", comp_pole, comp_pole);
+				nh.param("esc/sampling_time", sampling_time, sampling_time);
+
+				esc_controller.initController(sin_amp, sin_freq, corr_gain, high_pass_pole, low_pass_pole, comp_zero, comp_pole, sampling_time);
 
 				disable_axis[x] = 0;
 				disable_axis[y] = 0;
@@ -132,6 +158,9 @@ namespace labust{
 
 			double Ts;
 			esc::EscClassic esc_controller;
+			auv_msgs::BodyVelocityReqPtr nu_past;
+			int count;
+
 		};
 	}
 }

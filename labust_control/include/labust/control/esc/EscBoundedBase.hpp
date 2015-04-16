@@ -1,7 +1,7 @@
 /*********************************************************************
- * EscPerturbation.hpp
+ * EscBounded.hpp
  *
- *  Created on: Dec 15, 2014
+ *  Created on: Jan 30, 2015
  *      Author: Filip Mandic
  *
  ********************************************************************/
@@ -40,8 +40,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef ESCPERTURBATION_HPP_
-#define ESCPERTURBATION_HPP_
+#ifndef ESCBOUNDEDBASE_HPP_
+#define ESCBOUNDEDBASE_HPP_
 
 #include <Eigen/Dense>
 #include <stdint.h>
@@ -54,7 +54,7 @@ namespace labust{
 		 *** Abstract class definition
 		 ************************************************************/
 			template <typename precission = double>
-			class EscPerturbationBase {
+			class EscBoundedBase {
 
 			public:
 
@@ -63,49 +63,32 @@ namespace labust{
 				typedef Eigen::Matrix<precission, Eigen::Dynamic, Eigen::Dynamic> matrix;
 				typedef Eigen::Matrix<precission, Eigen::Dynamic, 1> vector;
 
-				EscPerturbationBase(int ctrlNum, numericprecission Ts):Ts_(Ts),cycle_count_(0),controlNum(ctrlNum){
+				EscBoundedBase(int ctrlNum, numericprecission Ts):Ts_(Ts),cycle_count_(0),controlNum(ctrlNum){
 
 					state_initialized_ = false;
 					initialized_ = false;
 					old_vals_initialized_ = false;
 				}
 
-			    virtual ~EscPerturbationBase(){}
+			    virtual ~EscBoundedBase(){}
 
 				/*****************************************************
 				 *** Class functions
 				 ****************************************************/
 
-				 virtual numericprecission preFiltering(numericprecission cost_signal){
-
-					 return cost_signal;
+				 virtual vector generateControl(numericprecission argument){
+					 //control_ = control_+gain_.cwiseProduct(postFiltered)*Ts_;
+					 return vector::Zero(controlNum);
 				 }
 
-				 virtual vector gradientEstimation(numericprecission cost_signal_filtered, vector additional_input) = 0;
-
-				 virtual vector postFiltering(vector estimated_gradient){
-					 return estimated_gradient;
+				 virtual numericprecission calculateArgument(numericprecission cost){
+					 return K_*cost+omega_*Ts_*cycle_count_;
 				 }
-
-				 virtual vector controllerGain(vector postFiltered){
-					 control_ = control_+gain_.cwiseProduct(postFiltered)*Ts_;
-					 return control_;
-				 }
-
-				 virtual vector superimposePerturbation(vector control) = 0;
 
 				 virtual vector step(numericprecission cost_signal, vector additional_input = vector::Zero(2) ){
 
-					 numericprecission filtered_cost =  preFiltering(cost_signal);
-					 pre_filter_input_old_ = cost_signal;
-					 pre_filter_output_old_ = filtered_cost;
-
-					 vector estimated_gradient = gradientEstimation(filtered_cost, additional_input);
-					 estimated_gradient_old_ = estimated_gradient;
-
-					 vector control = controllerGain(postFiltering(estimated_gradient));
-
-					 vector controlInput =  superimposePerturbation(control);
+					 numericprecission argument =  calculateArgument(cost_signal);
+					 vector controlInput =  generateControl(argument);
 
 					 old_vals_initialized_ = true;
 					 cycle_count_++;
@@ -138,12 +121,13 @@ namespace labust{
 				int controlNum;
 
 				/*** ES variables */
-				numericprecission pre_filter_input_old_, pre_filter_output_old_;
-				vector estimated_gradient_old_, control_, gain_;
+				numericprecission K_, omega_, alpha_;
+
 
 			};
 		}
 	}
 }
 
-#endif /* ESCPERTURBATION_HPP_ */
+
+#endif /* ESCBOUNDED_HPP_ */

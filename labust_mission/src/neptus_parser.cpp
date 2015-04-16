@@ -435,9 +435,8 @@ void startParseCallback(ros::Publisher &pubStartDispatcher, const misc_msgs::Sta
 		NP.offset.north = NP.offset.east = 0;
 	}
 
-	int status = NP.parseNeptus(msg->fileName);
-
-	if(status == 1){
+	/*** If Neptus file is successfully parsed  ***/
+	if(NP.parseNeptus(msg->fileName) == 1){
 		std_msgs::String tmp;
 		tmp.data = "/START_DISPATCHER";
 		pubStartDispatcher.publish(tmp);
@@ -450,12 +449,11 @@ int main(int argc, char** argv){
 	ros::init(argc, argv, "neptusParser");
 	ros::NodeHandle nh;
 
-	/* Publishers */
+	/*** Publishers ***/
 	ros::Publisher pubStartDispatcher = nh.advertise<std_msgs::String>("eventString",1);
 
-	/* Subscribers */
+	/*** Subscribers ***/
 	ros::Subscriber subStartParse = nh.subscribe<misc_msgs::StartNeptusParser>("startNeptusParse",1, boost::bind(&startParseCallback, boost::ref(pubStartDispatcher), _1));
-	//subStateHatAbs= nh.subscribe<auv_msgs::NavSts>("stateHatAbs",1, &onStateHat, this);
 
 	ros::spin();
 	return 0;

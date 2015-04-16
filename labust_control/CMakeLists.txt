@@ -103,6 +103,7 @@ set_source_files_properties(
 add_executable(manual_control src/manual_control/manual_control.cpp)
  
 add_executable(fadp_controller2 src/FADPControl.cpp)
+add_executable(fadp_3d_controller src/FADP_3DControl.cpp)
 add_executable(hdg_controller2 src/HDGControl.cpp)
 #add_executable(hdg_controller_direct src/HDGControlDirect.cpp)
 add_executable(alt_controller2 src/ALTControl.cpp)
@@ -130,6 +131,7 @@ add_executable(esc_bounded_uv src/esc/ESControlBounded_UV.cpp src/esctoolkit/esc
 if (DEFINED catkin_EXPORTED_TARGETS)
  add_dependencies(manual_control ${catkin_EXPORTED_TARGETS})
  add_dependencies(fadp_controller2 ${catkin_EXPORTED_TARGETS})
+ add_dependencies(fadp_3d_controller ${catkin_EXPORTED_TARGETS})
  add_dependencies(ualf_controller ${catkin_EXPORTED_TARGETS})
  add_dependencies(hdg_controller2 ${catkin_EXPORTED_TARGETS})
  #add_dependencies(hdg_controller_direct ${catkin_EXPORTED_TARGETS})
@@ -160,6 +162,11 @@ target_link_libraries(ualf_controller
 )
 
 target_link_libraries(fadp_controller2
+  pidtoolkit2
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(fadp_3d_controller
   pidtoolkit2
   ${catkin_LIBRARIES}
 )

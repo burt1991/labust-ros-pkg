@@ -92,82 +92,75 @@ const char *pl_go2point_FA[] = {"north","east","heading","speed","victory_radius
 const char *pl_go2point_UA[] = {"north","east","speed","victory_radius","\0"};
 const char *pl_dynamic_positioning[] = {"north","east","heading","timeout","\0"};
 const char *pl_course_keeping_FA[] = {"course","speed","heading","timeout","\0"};
-const char *pl_course_keeping_UA[] = {"course","speed","timeout","\0"};
 const char *pl_iso[] = {"dof","command","hysteresis","reference","sampling_rate","\0"};
-const char *pl_path_following[] = {"dof","command","hysteresis","reference","sampling_rate","\0"};
-const char *pl_pointer[] = {"dof","command","hysteresis","reference","sampling_rate","\0"};
-
+const char *pl_path_following[] = {"point","\0"};
+const char *pl_pointer[] = {"radius_topic","center_topic","target_topic","\0"};
+const char *pl_course_keeping_UA[] = {"course","speed","timeout","\0"};
 
 struct PrimitiveParams{
 	PrimitiveParams(){
 
-		std::vector<std::string> tmp;
+    	std::vector<std::string> tmp;
 		std::string tmp_str;
-		 for(int i = 0; pl_go2point_FA[i] != '\0'; i++){
+		int i = 0;
+		 for(i = 0; strcmp(pl_go2point_FA[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_go2point_FA[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[go2point_FA] = tmp;
+		primitive_params.insert(std::pair<int,std::vector<std::string> >(go2point_FA,tmp));
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_go2point_UA[i] != '\0'; i++){
+		 for(i = 0; strcmp(pl_go2point_UA[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_go2point_UA[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[go2point_UA] = tmp;
+		primitive_params.insert(std::pair<int,std::vector<std::string> >(go2point_UA,tmp));
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_dynamic_positioning[i] != '\0'; i++){
+		 for(i = 0; strcmp(pl_dynamic_positioning[i],"\0") == !0; i++){
 			 tmp_str.assign(pl_dynamic_positioning[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[dynamic_positioning] = tmp;
+		primitive_params.insert(std::pair<int,std::vector<std::string> >(dynamic_positioning,tmp));
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_course_keeping_FA[i] != '\0'; i++){
+		 for(i = 0; strcmp(pl_course_keeping_FA[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_course_keeping_FA[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[course_keeping_FA] = tmp;
+		primitive_params.insert(std::pair<int,std::vector<std::string> >(course_keeping_FA,tmp));
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_course_keeping_UA[i] != '\0'; i++){
+		 for(i = 0; strcmp(pl_course_keeping_UA[i],"\0") != 0; ++i){
 			 tmp_str.assign(pl_course_keeping_UA[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[course_keeping_UA] = tmp;
+
+		 primitive_params.insert(std::pair<int,std::vector<std::string> >(course_keeping_UA,tmp));
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_iso[i] != '\0'; i++){
+		 for(i = 0; strcmp(pl_iso[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_iso[i]);
 			 tmp.push_back(tmp_str);
 		 }
 		primitive_params[iso] = tmp;
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_path_following[i] != '\0'; i++){
+		 for(i = 0; strcmp(pl_path_following[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_path_following[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[path_following] = tmp;
+		primitive_params.insert(std::pair<int,std::vector<std::string> >(path_following,tmp));
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_iso[i] != '\0'; i++){
+		 for(i = 0; strcmp(pl_iso[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_pointer[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[pointer] = tmp;
+		primitive_params.insert(std::pair<int,std::vector<std::string> >(pointer,tmp));
 
 		tmp.clear();
-		tmp_str.clear();
-		 for(int i = 0; pl_placeholder[i] != '\0'; i++){
+		 for(int i = 0; strcmp(pl_placeholder[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_placeholder[i]);
 			 tmp.push_back(tmp_str);
 		 }
@@ -175,12 +168,10 @@ struct PrimitiveParams{
 
 	}
 
-	~PrimitiveParams(){};
+	~PrimitiveParams(){}
 
 	std::map<int,  std::vector<std::string> > primitive_params;
 };
-
-PrimitiveParams PP;
 
 using namespace std;
 

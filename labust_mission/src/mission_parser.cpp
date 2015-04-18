@@ -73,18 +73,6 @@ namespace labust {
 
 			void sendPrimitve();
 
-			void go2pointFA(double north, double east, double heading, double speed, double victoryRadius);
-
-			void go2pointUA(double north, double east, double speed, double victoryRadius);
-
-			void dynamicPositioning(double north, double east, double heading);
-
-			void courseKeepingFA(double course, double heading, double speed);
-
-			void courseKeepingUA(double course, double speed);
-
-			void ISOprimitive(int dof, double command, double hysteresis, double reference, double sampling_rate);
-
 			int parseMission(int id, string xmlFile);
 
 			int parseEvents(string xmlFile);
@@ -126,6 +114,10 @@ namespace labust {
 
 			/** Send primitive to mission execution as string with general data */
 			stringstream primitiveString;
+
+			PrimitiveParams PP;
+
+
 		};
 
 
@@ -133,7 +125,7 @@ namespace labust {
 		 ***  Class functions
 		 ****************************************************************/
 
-		MissionParser::MissionParser(ros::NodeHandle& nh):ID(0), lastID(0),newTimeout(0), eventID(0), breakpoint(1),
+		MissionParser::MissionParser(ros::NodeHandle& nh):ID(0), lastID(0),newTimeout(0), newRefreshRate(0), eventID(0), breakpoint(1),
 				missionEvents(""){
 
 			/** Subscribers */
@@ -166,7 +158,7 @@ namespace labust {
 
 				misc_msgs::SendPrimitive sendContainer;
 				sendContainer.primitiveID = id;
-				//sendContainer.primitiveData = serializedData;
+				//sendContainer.primitiveData = serializedData; /* Remove from msg */
 				sendContainer.event.timeout = newTimeout;
 				sendContainer.event.onEventNextActive = onEventNextActive;
 				sendContainer.event.onEventNext = onEventNext;
@@ -208,10 +200,7 @@ namespace labust {
 			   if(mission){
 
 				   /* Loop through primitive nodes */
-				   //primitive = mission->FirstChildElement("primitive");
 				   for (primitive = mission->FirstChildElement("primitive"); primitive != NULL; primitive = primitive->NextSiblingElement()){
-
-				   //do{
 
 					   XMLElement *elem = primitive->ToElement();
 					   string primitiveName = elem->Attribute("name");
@@ -246,9 +235,8 @@ namespace labust {
 									   XMLElement *elem2 = primitiveParam->ToElement();
 									   string primitiveParamName = elem2->Attribute("name");
 
-									   //for(int i = 0; params_list[i] != '\0'; i++){
 									   for(std::vector<std::string>::iterator it = PP.primitive_params[i].begin(); it != PP.primitive_params[i].end(); ++it){
-										   //ROS_ERROR("params_list: %s", params_list[i]);
+
 										   if(primitiveParamName.compare((*it).c_str()) == 0){
 											   primitiveString << (*it).c_str() <<":"<< elem2->GetText() << ":";
 											   break;
@@ -265,8 +253,7 @@ namespace labust {
 								}
 							}
 					   }
-				   } //while(primitive = primitive->NextSiblingElement("primitive"));
-
+				   }
 				   return none;
 
 			   } else {

@@ -379,6 +379,11 @@ namespace labust {
 				ID = 0;
 				missionParams.clear();
 				missionEvents.clear();
+
+				/** Reset file path */
+				ros::NodeHandle ph("~");
+				xmlFile = "mission.xml";
+				ph.param("xml_save_path", xmlFile, xmlFile);
 			}
 		}
 

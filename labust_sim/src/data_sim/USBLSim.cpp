@@ -58,6 +58,8 @@ public:
 		subVehiclePos = nh.subscribe<auv_msgs::NavSts>("pos_first",1,&USBLSim::onVehiclePos,this);
 		subTargetPos = nh.subscribe<auv_msgs::NavSts>("pos_second",1,&USBLSim::onTargetPos,this);
 		pubUSBLFix = nh.advertise<underwater_msgs::USBLFix>("usbl_fix",1);
+		pubRange = nh.advertise<std_msgs::Float32>("range",1);
+
 	}
 
 	~USBLSim(){}
@@ -85,7 +87,12 @@ public:
 			usbl.bearing = bearing;
 			usbl.elevation = elevation;
 
+			std_msgs::Float32 range;
+			range.data = usbl_past.range;
+			pubRange.publish(range);
+
 			pubUSBLFix.publish(usbl_past);
+
 			usbl_past = usbl;
 
 
@@ -110,7 +117,7 @@ public:
 	 */
 
 	ros::Subscriber subVehiclePos, subTargetPos;
-	ros::Publisher pubUSBLFix;
+	ros::Publisher pubUSBLFix, pubRange;
 
 	Eigen::Vector3d vehPos, tarPos;
 	double vehYaw;

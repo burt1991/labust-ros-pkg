@@ -159,7 +159,7 @@ namespace labust {
 			/** Map for storing last primitive floating point data */
 			map<string, double> primitiveMap;
 
-			/** Map for storing last primitive floating string data */
+			/** Map for storing last primitive string data */
 			map<string, string> primitiveStringMap;
 
 			/** Execution flags */
@@ -195,6 +195,7 @@ namespace labust {
 			srvExprEval = nh.serviceClient<misc_msgs::EvaluateExpression>("evaluate_expression");
 
 			/** Define primitive parameters  */
+			///TODO Automate primitive map creation.
 			primitiveMap.insert(std::pair<string, double>("north", 0.0));
 			primitiveMap.insert(std::pair<string, double>("east", 0.0));
 			primitiveMap.insert(std::pair<string, double>("depth", 0.0));
@@ -222,6 +223,14 @@ namespace labust {
 			primitiveStrContainer = labust::utilities::split(primitiveString, ':');
 
 			for(vector<string>::iterator it = primitiveStrContainer.begin(); it != primitiveStrContainer.end(); it = it + 2){
+
+				size_t found = (*(it+1)).find_first_of('#');
+				if(found != string::npos){
+					primitiveStringMap[*it] =  (*(it+1)).erase(found,1);
+					/// Debug
+					ROS_ERROR("Evaluation %s: %s", (*it).c_str(),primitiveStringMap[*it].c_str());
+					continue;
+				}
 
 				evalExpr.request.expression = (*(it+1)).c_str();
 				primitiveMap[*it] =  (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
@@ -312,12 +321,26 @@ namespace labust {
 			CM.ISOprimitive(true, primitiveMap["dof"], primitiveMap["command"], primitiveMap["hysteresis"], primitiveMap["reference"], primitiveMap["sampling_rate"]);
 	    }
 
+	    void MissionExecution::path_following_state(){
+
+//	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+//	    		setTimeout(receivedPrimitive.event.timeout);
+//
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+//			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
+//			oldPosition.north = primitiveMap["north"];
+//			oldPosition.east = primitiveMap["east"];
+//
+//			if(!refreshActive && refreshRate > 0)
+//				setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_FA_state, this));
+	    }
+
 	    void MissionExecution::pointer_state(){
 
 //	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
 //	    		setTimeout(receivedPrimitive.event.timeout);
 //
-//			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
 //			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
 //			oldPosition.north = primitiveMap["north"];
 //			oldPosition.east = primitiveMap["east"];
@@ -373,56 +396,14 @@ namespace labust {
 			/** Call primitive */
 			if(data->primitiveID != none){
 
-				string id_string = static_cast<ostringstream*>( &(ostringstream() <<"/"<<PRIMITIVES[data->primitiveID]) )->str();
-				/****************mainEventQueue->riseEvent(boost::to_upper_copy(id_string).c_str()); */
+				string id_string(PRIMITIVES[data->primitiveID]);
+				id_string = "/" + boost::to_upper_copy(id_string);
+				mainEventQueue->riseEvent(id_string.c_str());
 			}else{
 				ROS_ERROR("Mission ended.");
 				mainEventQueue->riseEvent("/STOP");
 			}
-//			switch(data->primitiveID){
-//
-//				case go2point_FA:
-//
-//					mainEventQueue->riseEvent("/GO2POINT_FA");
-//					break;
-//
-//				case go2point_UA:
-//
-//					mainEventQueue->riseEvent("/GO2POINT_UA");
-//					break;
-//
-//				case dynamic_positioning:
-//
-//					mainEventQueue->riseEvent("/DYNAMIC_POSITIONING");
-//					break;
-//
-//				case course_keeping_FA:
-//
-//					mainEventQueue->riseEvent("/COURSE_KEEPING_FA");
-//					break;
-//
-//				case course_keeping_UA:
-//
-//					mainEventQueue->riseEvent("/COURSE_KEEPING_UA");
-//					break;
-//
-//				case iso:
-//
-//					mainEventQueue->riseEvent("/ISO");
-//					break;
-//
-//				case placeholder:
-//
-//					mainEventQueue->riseEvent("/PLACEHOLDER");
-//					break;
-//
-//				case none:
-//
-//					ROS_ERROR("Mission ended.");
-//					mainEventQueue->riseEvent("/STOP");
-//			}
 		}
-
 
 		/*********************************************************************
 		 *** Helper functions

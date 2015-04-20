@@ -84,7 +84,9 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 			dynamic_positioning_state,
 			course_keeping_FA_state,
 			course_keeping_UA_state,
-			iso_state
+			iso_state,
+			path_following_state,
+			pointer_state
 		}
 		FSM_START(Wait_state);
 		FSM_BGN
@@ -125,6 +127,8 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 					FSM_ON_EVENT("/COURSE_KEEPING_FA", FSM_NEXT(course_keeping_FA_state));
 					FSM_ON_EVENT("/COURSE_KEEPING_UA", FSM_NEXT(course_keeping_UA_state));
 					FSM_ON_EVENT("/ISO", FSM_NEXT(iso_state));
+					FSM_ON_EVENT("/PATH_FOLLOWING", FSM_NEXT(path_following_state));
+					FSM_ON_EVENT("/POINTER", FSM_NEXT(pointer_state));
 					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
 				}
 			}
@@ -255,6 +259,52 @@ MainEventQueue(){ mainEventQueue = new RosEventQueue(); }
 
 					ME->oldPosition.north = ME->CM.Xpos;
 					ME->oldPosition.east = ME->CM.Ypos;
+
+				}FSM_ON_STATE_EXIT_END
+
+				FSM_TRANSITIONS
+				{
+					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
+					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
+				}
+			}
+			FSM_STATE(path_following_state)
+			{
+				ROS_ERROR("path_following primitive active");
+
+				ME->path_following_state();
+
+
+				FSM_ON_STATE_EXIT_BGN{
+
+					//ME->CM.ISOprimitive(false,0,0,0,0,0);
+
+					//ME->oldPosition.north = ME->CM.Xpos;
+					//ME->oldPosition.east = ME->CM.Ypos;
+
+				}FSM_ON_STATE_EXIT_END
+
+				FSM_TRANSITIONS
+				{
+					FSM_ON_EVENT("/STOP", FSM_NEXT(Wait_state));
+					FSM_ON_EVENT("/PRIMITIVE_FINISHED", FSM_NEXT(Dispatcher_state));
+					FSM_ON_EVENT("/TIMEOUT", FSM_NEXT(Dispatcher_state));
+				}
+			}
+			FSM_STATE(pointer_state)
+			{
+				ROS_ERROR("pointer primitive active");
+
+				ME->pointer_state();
+
+
+				FSM_ON_STATE_EXIT_BGN{
+
+					//ME->CM.ISOprimitive(false,0,0,0,0,0);
+
+					//ME->oldPosition.north = ME->CM.Xpos;
+					//ME->oldPosition.east = ME->CM.Ypos;
 
 				}FSM_ON_STATE_EXIT_END
 

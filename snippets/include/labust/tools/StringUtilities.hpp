@@ -102,7 +102,7 @@ namespace labust
 
     	for(Iterator it=start; it != end; ++it)
     	{
-    		int v = *it & 0xFF;
+    		int v = (*it) & 0xFF;
     		data->push_back(hex_array[v >> 4]);
     		data->push_back(hex_array[v & 0x0F]);
     	}
@@ -123,7 +123,7 @@ namespace labust
 
     	for(Iterator it=start; it != end; ++it)
     	{
-    		int v = *it & 0xFF;
+    		int v = (*it) & 0xFF;
     		data<<hex_array[v >> 4]<<hex_array[v & 0x0F];
     	}
     }

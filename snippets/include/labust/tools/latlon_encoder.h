@@ -191,24 +191,24 @@ namespace labust
 			longitude = (((fabs(rem) > 5)? floor(initLon*6+sgn):floor(initLon*6)) + lon/100000.0)/6;
 
 			initLat = (floor(longitude*6000)) / 6000.0;
-		    initLon = (floor(latitude*6000)) / 6000.0;
+		  initLon = (floor(latitude*6000)) / 6000.0;
 		}
 		template <>
 		inline void Bits2LatLon::bitsToLatlon<14>(double lat, double lon)
 		{
-			/*if ((lat/10000.0 - fmod(initLat*60,1)) < -0.5)
+			if ((lat/10000.0 - fmod(initLat*60,1)) < -0.5)
 				latitude = (floor(initLat*60 + 1) + lat/10000.0)/60;
 			else if ((lat/10000.0 - fmod(initLat*60,1)) > 0.5)
 				latitude = (floor(initLat*60 - 1) + lat/10000.0)/60;
-			else*/
-				latitude = (floor(initLat*60) + lat/10000.0)/60;
+			else
+			  latitude = (floor(initLat*60) + lat/10000.0)/60;
 
-			/*if ((lon/10000.0 - fmod(initLon*60,1)) < -0.5)
+			if ((lon/10000.0 - fmod(initLon*60,1)) < -0.5)
 				longitude = (floor(initLon*60 + 1) + lon/10000.0)/60;
 			else if ((lon/10000.0 - fmod(initLon*60,1)) > 0.5)
 				longitude = (floor(initLon*60 - 1) + lon/10000.0)/60;
-			else*/
-				longitude = (floor(initLon*60) + lon/10000.0)/60;
+			else
+			  longitude = (floor(initLon*60) + lon/10000.0)/60;
 
 			initLat = (floor(latitude*6000)) / 6000.0;
 			initLon = (floor(longitude*6000)) / 6000.0;

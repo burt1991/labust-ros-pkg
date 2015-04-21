@@ -54,6 +54,7 @@
 #include <decision_making/DecisionMaking.h>
 
 #include <boost/function.hpp>
+#include <boost/algorithm/string.hpp>
 
 extern decision_making::EventQueue* mainEventQueue;
 
@@ -93,6 +94,10 @@ namespace labust {
 		    void course_keeping_UA_state();
 
 		    void iso_state();
+
+		    void path_following_state();
+
+		    void pointer_state();
 
 			/*****************************************************************
 			 ***  ROS Subscriptions Callback
@@ -151,8 +156,11 @@ namespace labust {
 			/** Vectors */
 			vector<string> eventsActive, primitiveStrContainer;
 
-			/** Map for storing last primitive data */
+			/** Map for storing last primitive floating point data */
 			map<string, double> primitiveMap;
+
+			/** Map for storing last primitive string data */
+			map<string, string> primitiveStringMap;
 
 			/** Execution flags */
 			bool checkEventFlag, refreshActive, timeoutActive;
@@ -187,12 +195,26 @@ namespace labust {
 			srvExprEval = nh.serviceClient<misc_msgs::EvaluateExpression>("evaluate_expression");
 
 			/** Define primitive parameters  */
+			///TODO Automate primitive map creation.
 			primitiveMap.insert(std::pair<string, double>("north", 0.0));
 			primitiveMap.insert(std::pair<string, double>("east", 0.0));
+			primitiveMap.insert(std::pair<string, double>("depth", 0.0));
 			primitiveMap.insert(std::pair<string, double>("heading", 0.0));
 			primitiveMap.insert(std::pair<string, double>("course", 0.0));
 			primitiveMap.insert(std::pair<string, double>("speed", 0.0));
 			primitiveMap.insert(std::pair<string, double>("victory_radius", 0.0));
+			primitiveMap.insert(std::pair<string, double>("dof", 0.0));
+			primitiveMap.insert(std::pair<string, double>("command", 0.0));
+			primitiveMap.insert(std::pair<string, double>("hysteresis", 0.0));
+			primitiveMap.insert(std::pair<string, double>("reference", 0.0));
+			primitiveMap.insert(std::pair<string, double>("sampling_rate", 0.0));
+			primitiveMap.insert(std::pair<string, double>("victory_radius", 0.0));
+
+			primitiveStringMap.insert(std::pair<string, string>("radius_topic", ""));
+			primitiveStringMap.insert(std::pair<string, string>("center_topic", ""));
+			primitiveStringMap.insert(std::pair<string, string>("target_topic", ""));
+			primitiveStringMap.insert(std::pair<string, string>("point", ""));
+
 		}
 
 	    void MissionExecution::evaluatePrimitive(string primitiveString){
@@ -201,6 +223,14 @@ namespace labust {
 			primitiveStrContainer = labust::utilities::split(primitiveString, ':');
 
 			for(vector<string>::iterator it = primitiveStrContainer.begin(); it != primitiveStrContainer.end(); it = it + 2){
+
+				size_t found = (*(it+1)).find_first_of('#');
+				if(found != string::npos){
+					primitiveStringMap[*it] =  (*(it+1)).erase(found,1);
+					/// Debug
+					ROS_ERROR("Evaluation %s: %s", (*it).c_str(),primitiveStringMap[*it].c_str());
+					continue;
+				}
 
 				evalExpr.request.expression = (*(it+1)).c_str();
 				primitiveMap[*it] =  (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
@@ -288,8 +318,35 @@ namespace labust {
 	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
 	    		setTimeout(receivedPrimitive.event.timeout);
 
-			misc_msgs::ISO data = labust::utilities::deserializeMsg<misc_msgs::ISO>(receivedPrimitive.primitiveData);
-			CM.ISOprimitive(true, data.dof, data.command, data.hysteresis, data.reference, data.sampling_rate);
+			CM.ISOprimitive(true, primitiveMap["dof"], primitiveMap["command"], primitiveMap["hysteresis"], primitiveMap["reference"], primitiveMap["sampling_rate"]);
+	    }
+
+	    void MissionExecution::path_following_state(){
+
+//	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+//	    		setTimeout(receivedPrimitive.event.timeout);
+//
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+//			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
+//			oldPosition.north = primitiveMap["north"];
+//			oldPosition.east = primitiveMap["east"];
+//
+//			if(!refreshActive && refreshRate > 0)
+//				setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_FA_state, this));
+	    }
+
+	    void MissionExecution::pointer_state(){
+
+//	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
+//	    		setTimeout(receivedPrimitive.event.timeout);
+//
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+//			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
+//			oldPosition.north = primitiveMap["north"];
+//			oldPosition.east = primitiveMap["east"];
+//
+//			if(!refreshActive && refreshRate > 0)
+//				setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_FA_state, this));
 	    }
 
 		/*****************************************************************
@@ -337,50 +394,16 @@ namespace labust {
 			}
 
 			/** Call primitive */
-			switch(data->primitiveID){
+			if(data->primitiveID != none){
 
-				case go2point_FA:
-
-					mainEventQueue->riseEvent("/GO2POINT_FA");
-					break;
-
-				case go2point_UA:
-
-					mainEventQueue->riseEvent("/GO2POINT_UA");
-					break;
-
-				case dynamic_positioning:
-
-					mainEventQueue->riseEvent("/DYNAMIC_POSITIONING");
-					break;
-
-				case course_keeping_FA:
-
-					mainEventQueue->riseEvent("/COURSE_KEEPING_FA");
-					break;
-
-				case course_keeping_UA:
-
-					mainEventQueue->riseEvent("/COURSE_KEEPING_UA");
-					break;
-
-				case iso:
-
-					mainEventQueue->riseEvent("/ISO");
-					break;
-
-				case placeholder:
-
-					mainEventQueue->riseEvent("/PLACEHOLDER");
-					break;
-
-				case none:
-
-					ROS_ERROR("Mission ended.");
-					mainEventQueue->riseEvent("/STOP");
+				string id_string(PRIMITIVES[data->primitiveID]);
+				id_string = "/" + boost::to_upper_copy(id_string);
+				mainEventQueue->riseEvent(id_string.c_str());
+			}else{
+				ROS_ERROR("Mission ended.");
+				mainEventQueue->riseEvent("/STOP");
 			}
 		}
-
 
 		/*********************************************************************
 		 *** Helper functions

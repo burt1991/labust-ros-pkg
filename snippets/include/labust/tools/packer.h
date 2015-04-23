@@ -65,7 +65,8 @@ namespace labust
 		 * Decodes all messages that have a pack/unpack interface.
 		 */
 		template <class VectorType, class Packable>
-		inline void decodePackable(const std::vector< VectorType >& binary, Packable* data)
+		inline bool decodePackable(const std::vector< VectorType >& binary, Packable* data)
+		try
 		{
 			using namespace boost::iostreams;
 			array_source source(reinterpret_cast<const char*>(binary.data()),
@@ -73,6 +74,11 @@ namespace labust
 		  stream<array_source> is(source);
 			boost::archive::binary_iarchive inser(is, boost::archive::no_header);
 			data->unpack(inser);
+			return true;
+		}
+		catch (std::exception& e)
+		{
+			return false;
 		}
 	}
 }

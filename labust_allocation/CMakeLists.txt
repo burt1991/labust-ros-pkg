@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
   snippets
   roscpp
+  cmake_modules
+  pluginlib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -27,9 +29,9 @@ find_package(Eigen REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES labust_allocation
+#  LIBRARIES labust_allocation
 #  CATKIN_DEPENDS auv_msgs nodelet roscpp
-  DEPENDS eigen
+#  DEPENDS eigen
 )
 
 ###########
@@ -50,16 +52,22 @@ file(GLOB HPP include/labust/allocation/*.hpp)
 add_library(labust_allocation ${SRC} ${HPP})
 
 ## Declare a cpp executable
-# add_executable(labust_allocation_node src/labust_allocation_node.cpp)
+add_executable(allocation_node src/allocation_node/allocation_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(labust_allocation_node labust_allocation_generate_messages_cpp)
+if (DEFINED catkin_EXPORTED_TARGETS)
+ add_dependencies(allocation_node ${catkin_EXPORTED_TARGETS})
+endif()
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(labust_allocation_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(allocation_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(labust_allocation
+   ${catkin_LIBRARIES}
+)
 
 ##########
 ## Docs ##

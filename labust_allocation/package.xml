@@ -18,15 +18,16 @@
   <build_depend>nodelet</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>snippets</build_depend>
-  <run_depend>std_msgs</run_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>cmake_modules</build_depend>
   
   <run_depend>std_msgs</run_depend>
   <run_depend>auv_msgs</run_depend>
   <run_depend>nodelet</run_depend>
+  <run_depend>pluginlib</run_depend>
   <run_depend>roscpp</run_depend>
 
   <export>
-      <rosdoc config="{prefix}/rosdoc.yaml" />
-      <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+      <labust_allocation plugin="${prefix}/allocation_plugin.xml" />
   </export>
 </package>

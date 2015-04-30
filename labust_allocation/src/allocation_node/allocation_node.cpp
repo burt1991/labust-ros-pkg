@@ -83,7 +83,6 @@ void AllocationNode::onTau(const auv_msgs::BodyForceReq::ConstPtr tau)
 	labust::tools::pointToVector(tau->wrench.torque, tauv, AllocationInterface::K);
 	//Perform allocation
 	const std::vector<double>& pwm = alloc->allocate(tauv);
-	ROS_INFO("Finished allocate.");
 
 	//Publish PWM data
 	std_msgs::Float32MultiArray::Ptr pwmd(new std_msgs::Float32MultiArray());
@@ -93,15 +92,12 @@ void AllocationNode::onTau(const auv_msgs::BodyForceReq::ConstPtr tau)
 	//Publish the achieved tau
 	auv_msgs::BodyForceReq::Ptr tau_ach(new auv_msgs::BodyForceReq());
 	const Eigen::VectorXd& tauA = alloc->tauA();
-	ROS_INFO("Load tauA.");
 	labust::tools::vectorToPoint(tauA, tau_ach->wrench.force);
 	labust::tools::vectorToPoint(tauA, tau_ach->wrench.torque, AllocationInterface::K);
 	const std::vector<bool>& wdp = alloc->windup();
-	ROS_INFO("Load windup.");
 	labust::tools::vectorToPoint(wdp, tau_ach->disable_axis);
 	labust::tools::vectorToRPY(wdp, tau_ach->disable_axis, AllocationInterface::K);
 	//Backward compatibility
-	ROS_INFO("Backward");
 	Eigen::VectorXd tsgn(tauA);
 	for (int i=0; i<tsgn.size(); ++i)	tsgn(i)=((tsgn(i)>0)?wdp[i]:-wdp[i]);
 	labust::tools::vectorToPoint(tsgn, tau_ach->windup);

@@ -85,6 +85,7 @@ namespace labust
 			///Handle supply voltage
 			void onSupplyVoltage(const std_msgs::Float32::ConstPtr& voltage)
 			{
+				if (voltage->data <= 0) return;
 				this->Us = voltage->data;
 				this->updateMinMax();
 			}
@@ -104,8 +105,10 @@ namespace labust
 
 			///The current supply voltage
 			double Us;
-			///The nominal supply voltage
+			///The nominal motor voltage
 			double Un;
+			///The pwm adaptation flag
+			bool adapt;
 			///The pwm output
 			std::vector<double> pwm_out;
 			///The achieved thrust forces after all coercions

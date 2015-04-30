@@ -120,7 +120,7 @@ const std::vector<double>& X2dAdaptive::allocate(const Eigen::VectorXd& tau)
 	    satXY = saturateXY(tXY, txymin, txymax);
 	}
 	Eigen::VectorXd tT = tXY+tN;
-	Eigen::VectorXd tauA= thrusters.B()*tT;
+	Eigen::VectorXd tauA = thrusters.B()*tT;
 
 	//Make a second run if nothing was achieved
 	if (daisy_chain && (satXY || satN))
@@ -162,22 +162,6 @@ void X2dAdaptive::recalcOpLimits(Eigen::Vector4d& used, Eigen::Vector4d& pmax,
           (*cmax)(i) += pmax(i);
       }
   }
-  /*Eigen::Vector4d delta(0,0,0,0);
-    for (int i=0; i<delta.size(); ++i)
-    {
-        if (tXY(i) >= 0)
-        {
-            delta(i) = txymax(i) - tXY(i);
-            tnmax(i) = tnmax(i) + delta(i);
-            tnmin(i) = tnmin(i) + txymin(i);
-        }
-        else
-        {
-            delta(i) = txymin(i) - tXY(i);
-            tnmin(i) = tnmin(i) + delta(i);
-            tnmax(i) = tnmax(i) + txymax(i);
-        }
-    }*/
 }
 
 bool X2dAdaptive::saturateN(Eigen::Vector4d& t,
@@ -259,10 +243,10 @@ bool X2dAdaptive::secondRun(const Eigen::VectorXd& tau,
 				}
 			}
 		}
-		ROS_INFO("Second run. 3");
-		if (notsat.size() < (tT->size()-1))
+
+		if (notsat.size() < (tT->size()-2))
 		{
-			ROS_DEBUG("Less than %d are saturated. Daisy chain allocation complete.", tT->size()-1);
+			ROS_DEBUG("Less than %d are saturated. Daisy chain allocation complete.", tT->size()-2);
 			retVal = true;
 			break;
 		}
@@ -273,7 +257,29 @@ bool X2dAdaptive::secondRun(const Eigen::VectorXd& tau,
 			Bd.col(i) = thrusters.B().col(notsat[i]);
 		}
 
-		Eigen::VectorXd tTd = Bd.transpose()*(Bd*Bd.transpose()).inverse()*tauR;
+		Eigen::MatrixXd Bdinv;
+		if (notsat.size() == (tT->size()-2))
+		{
+			Bdinv = (Bd.transpose()*Bd).inverse()*Bd.transpose();
+		}
+		else
+		{
+			Bdinv = Bd.transpose()*(Bd*Bd.transpose()).inverse();
+		}
+
+		//Sanity check
+		if (isnan(Bdinv.norm()))
+		{
+			ROS_ERROR("Singular inverse allocation matrix. Aborting daisy chain.");
+			retVal = true;
+			break;
+		}
+
+		Eigen::VectorXd tTd = Bdinv*tauR;
+
+		//std::stringstream out;
+		//out<<tTd;
+		//ROS_ERROR("Td (%d): %s",tTd.size(),out.str().c_str());
 
 		double scalef(1.0),scale(0.0);
     for (int i=0; i< tTd.size(); ++i)
@@ -287,19 +293,35 @@ bool X2dAdaptive::secondRun(const Eigen::VectorXd& tau,
     }
     tTd = tTd/scalef;
 
+    Eigen::VectorXd tTn(*tT);
     for (int i=0; i< notsat.size(); ++i)
     {
-    	(*tT)(notsat[i]) += tTd(i);
+    	tTn(notsat[i]) += tTd(i);
+    }
+    Eigen::VectorXd tauf = thrusters.B()*(tTn);
+
+    enum {Xi=0,Yi=1,Ni=2};
+    //Test if we gained a monotonous increase (scaling will be perserved then)
+    bool limit = fabs(tauf(Xi)) - fabs((*tauA)(Xi)) < -sm_th;
+    limit = limit || (fabs(tauf(Yi)) - fabs((*tauA)(Yi)) < -sm_th);
+		limit = limit || (fabs(tauf(Ni)) - fabs((*tauA)(Ni)) < -sm_th);
+
+    if (limit)
+    {
+    	ROS_DEBUG("Scaling or yaw contract broken. Skipping this contribution.");
+    	retVal = true;
+    	break;
     }
 
-    (*tauA) = thrusters.B()*(*tT);
-
-    if (tTd.norm() < sm_th)
+    if ((tTd.norm() < sm_th))
     {
     	ROS_DEBUG("The daisy chain allocation is not contributing any change.");
     	retVal = true;
     	break;
     }
+
+    (*tT) = tTn;
+    (*tauA) = tauf;
 	}
 
 	return retVal;

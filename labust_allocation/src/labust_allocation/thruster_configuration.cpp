@@ -21,7 +21,7 @@
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  FOR A PARTICULAR PURPOSE ARROS paketiE DISCLAIMED. IN NO EVENT SHALL THE
  *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
  *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
  *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -42,13 +42,16 @@ using namespace labust::allocation;
 
 ThrusterConfiguration::ThrusterConfiguration():
 	Us(1),
-	Un(1){}
+	Un(1),
+	adapt(true){}
 
 bool ThrusterConfiguration::configure(ros::NodeHandle& nh, ros::NodeHandle& ph)
 {
 	//Get the supply voltage
 	ph.param("Us",Us,Us);
 	ph.param("Un",Un,Un);
+	ph.param("adapt_pwm",adapt,adapt);
+
 	//Read thruster gains
 	std::vector<double> Kp,Kn;
 	ph.param("K", Kp, Kp);
@@ -168,6 +171,12 @@ void ThrusterConfiguration::updateMinMax()
 	for(int i=0; i<thrusters.size(); ++i)
 	{
 		EThruster& t(thrusters[i]);
+		if (adapt)
+		{
+			//Adapt to achieved nominal voltage
+			t.pwm_max = labust::math::coerce(Un/Us,-1.0,1.0);
+			t.pwm_min = labust::math::coerce(-Un/Us,-1.0,1.0);
+		}
 		F_max[i] = t.F(t.pwm_max,Us);
 		F_min[i] = t.F(t.pwm_min,Us);
 	};

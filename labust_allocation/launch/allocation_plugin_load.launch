@@ -5,7 +5,8 @@
     <!-- Allocator type -->
     <param name="allocation_plugin" value="labust::allocation::X2dAdaptive" />
     <!-- Allocator parameter -->
-    <param name="minN" value="2" />
+    <param name="min_torque" value="2" />
+    <param name="adapt" value="true" />
   </node>
   
   <node pkg="labust_allocation" name="alloc_nd" type="allocation_node">

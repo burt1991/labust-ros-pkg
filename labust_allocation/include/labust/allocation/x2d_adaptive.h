@@ -114,6 +114,8 @@ namespace labust
 			double minN;
 			///Flag to control if the daisy chain step should be applied
 			bool daisy_chain;
+			///Flag to control multi-level daisy chain
+			bool multi_chain;
 			///Maximum thrust reserved for torque
 			Eigen::Vector4d tnmax;
 			///Minimum thrust reserved for torque

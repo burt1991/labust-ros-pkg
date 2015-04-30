@@ -50,6 +50,7 @@ X2dAdaptive::X2dAdaptive():
 		_windup(6,false),
 		minN(1),
 		daisy_chain(true),
+		multi_chain(true),
 		tau_ach(Eigen::VectorXd::Zero(6)){}
 
 bool X2dAdaptive::configure(ros::NodeHandle& nh, ros::NodeHandle& ph)
@@ -60,6 +61,7 @@ bool X2dAdaptive::configure(ros::NodeHandle& nh, ros::NodeHandle& ph)
 	//Read the minimum torque
 	ph.param("min_torque", minN, minN);
 	ph.param("daisy_chain", daisy_chain, daisy_chain);
+	ph.param("multi_chain", multi_chain, multi_chain);
 	Eigen::Vector3d tn(0,0,minN);
 	tnmax = (thrusters.Binv()*tn).cwiseAbs();
 	tnmin = -tnmax;
@@ -244,9 +246,9 @@ bool X2dAdaptive::secondRun(const Eigen::VectorXd& tau,
 			}
 		}
 
-		if (notsat.size() < (tT->size()-2))
+		if (!multi_chain && (notsat.size() < (tT->size()-1)))
 		{
-			ROS_DEBUG("Less than %d are saturated. Daisy chain allocation complete.", tT->size()-2);
+			ROS_DEBUG("Less than %d are saturated. Daisy chain allocation complete.", int(tT->size()-1));
 			retVal = true;
 			break;
 		}
@@ -258,7 +260,7 @@ bool X2dAdaptive::secondRun(const Eigen::VectorXd& tau,
 		}
 
 		Eigen::MatrixXd Bdinv;
-		if (notsat.size() == (tT->size()-2))
+		if (notsat.size() <= (tT->size()-2))
 		{
 			Bdinv = (Bd.transpose()*Bd).inverse()*Bd.transpose();
 		}

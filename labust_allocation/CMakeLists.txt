@@ -7,7 +7,6 @@ project(labust_allocation)
 find_package(catkin REQUIRED COMPONENTS
   std_msgs
   auv_msgs
-  nodelet
   snippets
   roscpp
   cmake_modules
@@ -47,9 +46,9 @@ include_directories(
 )
 
 ## The main project 
-file(GLOB SRC src/${PROJECT_NAME}/*.cpp)
-file(GLOB HPP include/labust/allocation/*.hpp) 
-add_library(labust_allocation ${SRC} ${HPP})
+add_library(labust_allocation 
+   src/labust_allocation/thruster_configuration.cpp
+   src/labust_allocation/x2d_adaptive.cpp)
 
 ## Declare a cpp executable
 add_executable(allocation_node src/allocation_node/allocation_node.cpp)

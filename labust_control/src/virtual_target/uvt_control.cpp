@@ -36,7 +36,6 @@
  *********************************************************************/
 #include <labust/control/HLControl.hpp>
 #include <labust/control/EnablePolicy.hpp>
-#include <labust/control/WindupPolicy.hpp>
 #include <labust/control/PIFFController.h>
 #include <labust/control/IPFFController.h>
 #include <labust/math/NumberManipulation.hpp>
@@ -45,102 +44,103 @@
 
 #include <Eigen/Dense>
 #include <auv_msgs/BodyForceReq.h>
+#include <auv_msgs/FSPathInfo.h>
 #include <ros/ros.h>
 
 namespace labust
 {
 	namespace control{
-		///The heading controller
-		struct HDGControl : DisableAxis
+		///The underactuated virtual target controller
+		struct UVTControl : DisableAxis
 		{
-			enum {N=5};
+			enum {u=0,r=5};
 
-			HDGControl():Ts(0.1){};
+			UVTControl():
+				Ts(0.1),
+				k1(1.0),
+				k2(1.0),
+				kpsi(1.0),
+				psia(M_PI/4){};
 
 			void init()
 			{
-				ros::NodeHandle nh;
-				initialize_controller();
+				initializeController();
 			}
 
-			void windup(const auv_msgs::BodyForceReq& tauAch)
-			{
-				//Copy into controller
-				con.extWindup = tauAch.windup.yaw;
-			};
+			void idle(const auv_msgs::FSPathInfo& ref, const auv_msgs::NavSts& state,
+							const auv_msgs::BodyVelocityReq& track){};
 
-			void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
-					const auv_msgs::BodyVelocityReq& track)
-			{
-				//Tracking external commands while idle (bumpless)
-				con.desired = state.orientation.yaw;
-				con.state = unwrap(state.orientation.yaw);
-				con.track = track.twist.angular.z;
+			void reset(const auv_msgs::FSPathInfo& ref, const auv_msgs::NavSts& state){};
 
-				float werror = labust::math::wrapRad(con.desired - con.state);
-				float wperror = labust::math::wrapRad(con.b*con.desired - con.state);
-				PIFF_wffIdle(&con, Ts, werror, wperror, ref.orientation_rate.yaw);
-			};
-
-			void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
+			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::FSPathInfo& ref,
+							const auv_msgs::NavSts& state)
 			{
-				//UNUSED
-			};
-
-			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
-					const auv_msgs::NavSts& state)
-			{
-				//Populate variables
 				con.desired = ref.orientation.yaw;
-				con.state = unwrap(state.orientation.yaw);
+				con.state = (useIP?unwrap(state.orientation.yaw):state.orientation.yaw);
 				con.track = state.orientation_rate.yaw;
 
-				//Calculate errors and stepTracking external commands while idle (bumpless)
-				float werror = labust::math::wrapRad(con.desired - con.state);
-				float wperror = labust::math::wrapRad(con.desired - con.state);
-				PIFF_wffStep(&con,Ts, werror, wperror, ref.orientation_rate.yaw);
+				float errorWrap = labust::math::wrapRad(
+								con.desired - con.state);
+				//Zero feed-forward
+				if (useIP)
+				{
+					IPFF_wffStep(&con,Ts, errorWrap, ref.orientation_rate.yaw);
+				}
+				else
+				{
+					PIFF_wffStep(&con,Ts, errorWrap, ref.orientation_rate.yaw);
+				}
 
-				//Publish output
+
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
-				nu->header.stamp = ros::Time::now();
-				nu->goal.requester = "hdg_controller";
 				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
-				nu->twist.angular.z = con.output;
+				nu->header.stamp = ros::Time::now();
+				nu->goal.requester = "uvt_controller";
+
+				double ddelta = -psia*kpsi*(-ref.curvature* sdot * s1 + vt*sin(psi))/cosh(kpsi*y1)^2;
+				nu->twist.angular.z = ddelta - k1*(psi-delta) + 1/radius*sdot;
 
 				return nu;
 			}
 
-			void initialize_controller()
+			void initializeController()
 			{
-				ROS_INFO("Initializing heading controller...");
-
 				ros::NodeHandle nh;
-				double closedLoopFreq(1);
-				nh.param("hdg_controller/closed_loop_freq", closedLoopFreq, closedLoopFreq);
-				nh.param("hdg_controller/sampling",Ts,Ts);
+				nh.param("uvt_controller/closed_loop_freq", closedLoopFreq, closedLoopFreq);
+				nh.param("uvt_controller/sampling",Ts,Ts);
 
-				disable_axis[N] = 0;
-
-				PIDBase_init(&con);
-				PIFF_tune(&con, float(closedLoopFreq));
+				disable_axis[r] = 0;
+				disable_axis[u] = 0;
 
 				ROS_INFO("Heading controller initialized.");
 			}
 
 		private:
-			PIDBase con;
+			///Sampling time
 			double Ts;
-			labust::math::unwrap unwrap;
+			///S1 parameter
+			double k1;
+			///Y1 parameter
+			double k2;
+			///Psi tracking parameter
+			double kpsi;
+			///The attack angle
+			double psia;
 		};
 	}}
 
 int main(int argc, char* argv[])
 {
-	ros::init(argc,argv,"hdg_control");
+	ros::init(argc,argv,"uvt_control");
 
-	labust::control::HLControl<labust::control::HDGControl,
+	labust::control::HLControl<labust::control::UVTControl,
 	labust::control::EnableServicePolicy,
-	labust::control::WindupPolicy<auv_msgs::BodyForceReq> > controller;
+	labust::control::NoWindup,
+	auv_msgs::BodyVelocityReq,
+	auv_msgs::NavSts,
+	auv_msgs::SFPathInfo> controller;
+
+
 	ros::spin();
 
 	return 0;

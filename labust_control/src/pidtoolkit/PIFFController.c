@@ -43,6 +43,10 @@ void PIFF_modelTune(PIDBase* self,
 	self->Ki = model->alpha*w*w;
 	self->Kd = self->Kt = self->Tf = 0;
 
+	//The empirical parameter for overshoot ~5%
+	float a=1.5;
+	self->b = a*self->Ki/(self->Kp*w);
+
 	self->model.alpha = model->alpha;
 	self->model.beta = model->beta;
 	self->model.betaa = model->betaa;
@@ -56,18 +60,24 @@ void PIFF_tune(PIDBase* self, float w)
 	self->Kp = 2*w;
 	self->Ki = w*w;
 	self->Kd = self->Kt = self->Tf = 0;
+	//The empirical parameter for overshoot ~5%
+	float a=1.5;
+	self->b = a*self->Ki/(self->Kp*w);
 
 	self->w = w;
 }
 
-void PIFF_wffIdle(PIDBase* self, float Ts, float error, float ff)
+void PIFF_wffIdle(PIDBase* self, float Ts, float error, float perror, float ff)
 {
 	self->lastError = error;
+	self->lastPError = perror;
 	self->lastRef = self->desired;
 	self->lastFF = ff;
+	self->lastState = self->state;
+	self->output = self->internalState = self->track;
 }
 
-void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
+void PIFF_wffStep(PIDBase* self, float Ts, float error, float perror, float ff)
 {
 	//Perform windup test if automatic mode is enabled.
 	if (self->autoWindup == 1)
@@ -100,9 +110,8 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	}
 
 	//Proportional term
-	self->internalState += self->Kp*(error-self->lastError);
-	//self->internalState += self->Kp*(self->b*labust::math::wrapRad(self->desired - self->lastRef)
-	//				- labust::math::wrapRad(self->state - self->lastState));
+	//self->internalState += self->Kp*(error-self->lastError);
+	self->internalState += self->Kp*(perror - self->lastPError);
 	//Integral term
 	//Disabled if windup is in progress.
 	if (!self->windup) self->internalState += (self->lastI = self->Ki*Ts*error);
@@ -118,6 +127,7 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	}
 
 	self->lastError = error;
+	self->lastPError = perror;
 	self->lastRef = self->desired;
 	self->lastFF = ff;
 	self->lastState = self->state;

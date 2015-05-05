@@ -305,9 +305,9 @@ bool X2dAdaptive::secondRun(const Eigen::VectorXd& tau,
 
     enum {Xi=0,Yi=1,Ni=2};
     //Test if we gained a monotonous increase (scaling will be perserved then)
-    bool limit = fabs(tauRf(Xi)) - fabs(tauR(Xi)) < -sm_th;
-    limit = limit || (fabs(tauRf(Yi)) - fabs(tauR(Yi)) < -sm_th);
-		limit = limit || (fabs(tauRf(Ni)) - fabs(tauR(Ni)) < -sm_th);
+    bool limit = fabs(tauR(Xi)) - fabs(tauRf(Xi)) < -sm_th;
+    limit = limit || (fabs(tauR(Yi)) - fabs(tauRf(Yi)) < -sm_th);
+		limit = limit || (fabs(tauR(Ni)) - fabs(tauRf(Ni)) < -sm_th);
 
     if (limit)
     {

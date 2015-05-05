@@ -130,8 +130,10 @@ const std::vector<double>& X2dAdaptive::allocate(const Eigen::VectorXd& tau)
 		Eigen::VectorXd tauS(3);
 		tauS<<tau(X),tau(Y),tau(N);
 		bool ssat = this->secondRun(tauS, tmax, tmin, &tauA, &tT);
-		satXY = satXY && ssat;
-		satN = satN && ssat;
+		Eigen::VectorXd arem = (tauS - tauA).cwiseAbs();
+		const double sm_th(0.001);
+		satXY = (arem(X) > sm_th) || (arem(Y) > sm_th);
+		satN = (arem(Z) > sm_th);
 	}
 
 	_windup[X] = _windup[Y] = satXY;

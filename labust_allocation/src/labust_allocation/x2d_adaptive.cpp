@@ -301,12 +301,13 @@ bool X2dAdaptive::secondRun(const Eigen::VectorXd& tau,
     	tTn(notsat[i]) += tTd(i);
     }
     Eigen::VectorXd tauf = thrusters.B()*(tTn);
+    Eigen::VectorXd tauRf= tau - tauf;
 
     enum {Xi=0,Yi=1,Ni=2};
     //Test if we gained a monotonous increase (scaling will be perserved then)
-    bool limit = fabs(tauf(Xi)) - fabs((*tauA)(Xi)) < -sm_th;
-    limit = limit || (fabs(tauf(Yi)) - fabs((*tauA)(Yi)) < -sm_th);
-		limit = limit || (fabs(tauf(Ni)) - fabs((*tauA)(Ni)) < -sm_th);
+    bool limit = fabs(tauRf(Xi)) - fabs(tauR(Xi)) < -sm_th;
+    limit = limit || (fabs(tauRf(Yi)) - fabs(tauR(Yi)) < -sm_th);
+		limit = limit || (fabs(tauRf(Ni)) - fabs(tauR(Ni)) < -sm_th);
 
     if (limit)
     {

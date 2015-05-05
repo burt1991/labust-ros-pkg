@@ -134,8 +134,9 @@ bool ThrusterConfiguration::configure(ros::NodeHandle& nh, ros::NodeHandle& ph)
 
 const std::vector<double>& ThrusterConfiguration::pwm(const Eigen::VectorXd& F)
 {
+	bool nofail(false);
 	//Sanity check
-	if (F.size() == thrusters.size())
+	if ((nofail = (F.size() == thrusters.size())))
 	{
 		for(int i=0; i<thrusters.size(); ++i)
 		{
@@ -148,9 +149,16 @@ const std::vector<double>& ThrusterConfiguration::pwm(const Eigen::VectorXd& F)
 			F_a(i) = t.F(pwmi, Us);
 			//Assign the pwm output
 			pwm_out[t.pwm_id] = t.pwm_dir * pwmi;
+			//Sanity check
+			if (isnan(pwm_out[t.pwm_id]))
+			{
+				nofail = false;
+				break;
+			}
 		}
 	}
-	else
+
+	if (!nofail)
 	{
 		//Zero all
 		for(int i=0; i<pwm_out.size(); ++i)

@@ -55,13 +55,7 @@ namespace labust
 		///The altitude/depth controller
 		struct ALTControl : DisableAxis
 		{
-			enum {x=0,y};
-
-			ALTControl():Ts(0.1),
-					useIP(false),
-					minAltitude(5),
-					trimOffset(0),
-					lastRef(0){};
+			ALTControl():Ts(0.1){};
 
 			void init()
 			{
@@ -72,8 +66,7 @@ namespace labust
   		void windup(const auv_msgs::BodyForceReq& tauAch)
 			{
 				//Copy into controller
-				//con.windup = tauAch.disable_axis.z;
-  				con.extWindup = -tauAch.windup.z;
+  			con.extWindup = tauAch.windup.z;
 			};
 
   		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
@@ -81,16 +74,14 @@ namespace labust
   		{
   			//Tracking external commands while idle (bumpless)
   			con.desired = state.altitude;
-  			con.output = con.internalState = track.twist.linear.z;
-  			con.lastState = con.state = state.altitude;
-  			con.track = state.body_velocity.z;
-  			if (!useIP) PIFF_idle(&con, Ts);
+  			con.state = state.altitude;
+  			con.track = -track.twist.linear.z;
+  			PIFF_ffIdle(&con, Ts, -ref.body_velocity.z);
   		};
 
   		void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
   		{
-  			con.internalState = 0;
-  			con.lastState = state.altitude;
+  			//UNUSED
   		};
 
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
@@ -99,80 +90,43 @@ namespace labust
 				con.desired = ref.altitude;
 				con.state = state.altitude;
 				con.track = -state.body_velocity.z;
-
-				//Zero feed-forward
-				//PIFF_ffStep(&con,Ts,0);
-				//\todo Check the derivative sign
-				if (useIP)
-				{
-					IPFF_ffStep(&con, Ts, ref.body_velocity.z);
-					//IPFF_ffStep(&con, Ts, 0);
-					ROS_INFO("Current state=%f, desired=%f, windup=%d", con.state, con.desired, con.windup);
-				}
-				else
-				{
-					PIFF_ffStep(&con,Ts, ref.body_velocity.z);
-					//PSatD_dStep(&con, Ts, 0);
-					ROS_INFO("Current state=%f, desired=%f", con.state, con.desired);
-				}
-
+				//Step
+				PIFF_ffStep(&con,Ts, -ref.body_velocity.z);
+				//Publish
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
 				nu->header.stamp = ros::Time::now();
 				nu->goal.requester = "alt_controller";
 				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
 
-				nu->twist.linear.z = trimOffset - con.output;
-
-				//Safety
-				if (state.altitude < minAltitude)
-				{
-					con.internalState = 0;
-					nu->twist.linear.z = 0;
-				}
+				nu->twist.linear.z = -con.output;
 
 				return nu;
 			}
 
 			void initialize_controller()
 			{
-				ROS_INFO("Initializing depth/altitude controller...");
+				ROS_INFO("Initializing altitude controller...");
 
 				ros::NodeHandle nh;
 				double closedLoopFreq(1);
 				nh.param("alt_controller/closed_loop_freq", closedLoopFreq, closedLoopFreq);
 				nh.param("alt_controller/sampling",Ts,Ts);
-				nh.param("alt_controller/use_ip",useIP,useIP);
-				nh.param("alt_controller/min_altitude",minAltitude,minAltitude);
-				nh.param("alt_controller/trim_offset",trimOffset,trimOffset);
 
 				disable_axis[2] = 0;
 
 				PIDBase_init(&con);
-				//PIFF_tune(&con, float(closedLoopFreq));
-				if (useIP)
-				{
-					IPFF_tune(&con, float(closedLoopFreq));
-				}
-				else
-				{
-					//PSatD_tune(&con, float(closedLoopFreq), 0, 1);
-					IPFF_tune(&con, float(closedLoopFreq));
-					con.outputLimit = 1;
-				}
+				PIFF_tune(&con, float(closedLoopFreq));
 
-				ROS_INFO("Depth/Altitude controller initialized.");
+				ROS_INFO("Altitude controller initialized.");
 			}
 
 		private:
 			ros::Subscriber alt_sub;
 			PIDBase con;
 			double Ts;
-			bool useIP;
-			double lastRef;
-			double minAltitude;
-			double trimOffset;
 		};
-	}}
+	}
+}
 
 int main(int argc, char* argv[])
 {

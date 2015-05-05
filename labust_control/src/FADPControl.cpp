@@ -57,7 +57,7 @@ namespace labust
 		{
 			enum {x=0,y};
 
-			FADPControl():Ts(0.1), useIP(false){};
+			FADPControl():Ts(0.1){};
 
 			void init()
 			{
@@ -68,9 +68,6 @@ namespace labust
 			void windup(const auv_msgs::BodyForceReq& tauAch)
 			{
 				//Copy into controller
-				//con[x].windup = tauAch.disable_axis.x;
-				//con[y].windup = tauAch.disable_axis.y;
-				//TODO Windup through rotation matrix ?
 				bool joint_windup = tauAch.windup.x || tauAch.windup.y;
 				con[x].extWindup = joint_windup;
 				con[y].extWindup = joint_windup;
@@ -82,47 +79,10 @@ namespace labust
 				//Tracking external commands while idle (bumpless)
 				con[x].desired = state.position.north;
 				con[y].desired = state.position.east;
-				con[x].output = con[x].internalState = track.twist.linear.x;
-				con[y].output = con[y].internalState = track.twist.linear.y;
-				con[x].lastState = con[x].state = state.position.north;
-				con[y].lastState = con[y].state = state.position.east;
-				if (!useIP)
-				{
-					PIFF_idle(&con[x], Ts);
-					PIFF_idle(&con[y], Ts);
-				}
-			};
-
-			void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
-			{
-				Eigen::Vector2f out, in;
-				Eigen::Matrix2f R;
-				//				in<<0.5,0;
-				//				double yaw(state.orientation.yaw);
-				//				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
-				//				out = R*in;
-				//  			con[x].internalState = out(0);
-				//  			con[y].internalState = out(1);
-				con[x].internalState = 0;
-				con[y].internalState = 0;
-				con[x].lastState = state.position.north;
-				con[y].lastState = state.position.east;
-				con[x].lastRef = ref.position.north;
-				con[y].lastRef = ref.position.east;
-				con[x].lastError = ref.position.north - state.position.north;
-				con[y].lastError = ref.position.east - state.position.east;
-				ROS_INFO("Reset: %f %f %f %f", con[x].internalState, con[y].internalState,
-								state.position.north, state.position.east);
-			};
-
-			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
-							const auv_msgs::NavSts& state)
-			{
-				con[x].desired = ref.position.north;
-				con[y].desired = ref.position.east;
-
-				ROS_INFO("Position desired: %f %f", ref.position.north, ref.position.east);
-
+				con[x].track = track.twist.linear.x;
+				con[y].track = track.twist.linear.y;
+				con[x].state = state.position.north;
+				con[y].state = state.position.east;
 				///\todo There are more options for this ?
 				Eigen::Vector2f out, in;
 				Eigen::Matrix2f R;
@@ -130,42 +90,50 @@ namespace labust
 				double yaw(ref.orientation.yaw);
 				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
 				out = R*in;
-				double uff = out(x);
-				double vff = out(y);
+				PIFF_ffIdle(&con[x],Ts, float(out(x)));
+				PIFF_ffIdle(&con[y],Ts, float(out(y)));
+			};
 
+			void reset(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state)
+			{
+				//UNUSED
+			};
+
+			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
+							const auv_msgs::NavSts& state)
+			{
+
+				con[x].desired = ref.position.north;
+				con[y].desired = ref.position.east;
 				con[x].state = state.position.north;
 				con[y].state = state.position.east;
-
+				//Calculate tracking values
+				Eigen::Vector2f out, in;
+				Eigen::Matrix2f R;
 				in<<state.body_velocity.x,state.body_velocity.y;
-				yaw = state.orientation.yaw;
+				double yaw(state.orientation.yaw);
 				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
 				out = R*in;
 				con[x].track = out(x);
 				con[y].track = out(y);
+				//Calculate feed forward
+				in<<ref.body_velocity.x,ref.body_velocity.y;
+				yaw = ref.orientation.yaw;
+				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+				out = R*in;
+				//Make step
+				PIFF_ffStep(&con[x], Ts, float(out(x)));
+				PIFF_ffStep(&con[y], Ts, float(out(y)));
 
-				if (useIP)
-				{
-					IPFF_ffStep(&con[x],Ts, uff);
-					IPFF_ffStep(&con[y],Ts, vff);
-				}
-				else
-				{
-					PIFF_ffStep(&con[x],Ts, uff);
-					PIFF_ffStep(&con[y],Ts, vff);
-				}
-
+				//Publish commands
 				auv_msgs::BodyVelocityReqPtr nu(new auv_msgs::BodyVelocityReq());
 				nu->header.stamp = ros::Time::now();
 				nu->goal.requester = "fadp_controller";
 				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
-
-				//ROS_ERROR("Output %f %f %f %f",uff,vff,con[x].output, con[y].output);
-
 				in<<con[x].output,con[y].output;
 				yaw = state.orientation.yaw;
 				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
 				out = R.transpose()*in;
-
 				nu->twist.linear.x = out[0];
 				nu->twist.linear.y = out[1];
 
@@ -180,12 +148,10 @@ namespace labust
 				Eigen::Vector3d closedLoopFreq(Eigen::Vector3d::Ones());
 				labust::tools::getMatrixParam(nh,"dp_controller/closed_loop_freq", closedLoopFreq);
 				nh.param("dp_controller/sampling",Ts,Ts);
-				nh.param("dp_controller/use_ip",useIP,useIP);
 
 				disable_axis[x] = 0;
 				disable_axis[y] = 0;
 
-				enum {Kp=0, Ki, Kd, Kt};
 				for (size_t i=0; i<2;++i)
 				{
 					PIDBase_init(&con[i]);
@@ -198,7 +164,6 @@ namespace labust
 		private:
 			PIDBase con[2];
 			double Ts;
-			bool useIP;
 		};
 	}}
 

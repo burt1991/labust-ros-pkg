@@ -232,6 +232,9 @@ namespace labust {
 					continue;
 				}
 
+				ROS_ERROR("Evaluation %s: %f", (*it).c_str(),primitiveMap[*it]);
+
+
 				evalExpr.request.expression = (*(it+1)).c_str();
 				primitiveMap[*it] =  (labust::utilities::callService(srvExprEval, evalExpr)).response.result;
 			}
@@ -318,6 +321,11 @@ namespace labust {
 	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
 	    		setTimeout(receivedPrimitive.event.timeout);
 
+	    	ROS_ERROR("ISO: %f, %f", primitiveMap["dof"], primitiveMap["command"]);
+
+	    	/** Evaluate primitive data with current values */
+			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+			/** Activate primitive */
 			CM.ISOprimitive(true, primitiveMap["dof"], primitiveMap["command"], primitiveMap["hysteresis"], primitiveMap["reference"], primitiveMap["sampling_rate"]);
 	    }
 

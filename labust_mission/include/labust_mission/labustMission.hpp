@@ -117,7 +117,7 @@ struct PrimitiveParams{
 		primitive_params.insert(std::pair<int,std::vector<std::string> >(go2point_UA,tmp));
 
 		tmp.clear();
-		 for(i = 0; strcmp(pl_dynamic_positioning[i],"\0") == !0; i++){
+		 for(i = 0; strcmp(pl_dynamic_positioning[i],"\0") !=0; i++){
 			 tmp_str.assign(pl_dynamic_positioning[i]);
 			 tmp.push_back(tmp_str);
 		 }
@@ -131,7 +131,7 @@ struct PrimitiveParams{
 		primitive_params.insert(std::pair<int,std::vector<std::string> >(course_keeping_FA,tmp));
 
 		tmp.clear();
-		 for(i = 0; strcmp(pl_course_keeping_UA[i],"\0") != 0; ++i){
+		 for(i = 0; strcmp(pl_course_keeping_UA[i],"\0") != 0; i++){
 			 tmp_str.assign(pl_course_keeping_UA[i]);
 			 tmp.push_back(tmp_str);
 		 }
@@ -143,7 +143,7 @@ struct PrimitiveParams{
 			 tmp_str.assign(pl_iso[i]);
 			 tmp.push_back(tmp_str);
 		 }
-		primitive_params[iso] = tmp;
+		 primitive_params.insert(std::pair<int,std::vector<std::string> >(iso,tmp));
 
 		tmp.clear();
 		 for(i = 0; strcmp(pl_path_following[i],"\0") != 0; i++){

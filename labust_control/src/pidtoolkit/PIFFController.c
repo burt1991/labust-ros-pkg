@@ -32,6 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 #include <labust/control/PIFFController.h>
+#include <labust/math/NumberManipulation.hpp>
 #include <math.h>
 
 void PIFF_modelTune(PIDBase* self,
@@ -45,6 +46,7 @@ void PIFF_modelTune(PIDBase* self,
 	self->model.alpha = model->alpha;
 	self->model.beta = model->beta;
 	self->model.betaa = model->betaa;
+	self->b = 0.75;
 
 	self->w = w;
 }
@@ -98,9 +100,9 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float ff)
 	}
 
 	//Proportional term
-	//self->internalState += self->Kp*(error-self->lastError);
-	self->internalState += self->Kp*(self->b*(self->desired - self->lastRef)
-					- (self->state - self->lastState));
+	self->internalState += self->Kp*(error-self->lastError);
+	//self->internalState += self->Kp*(self->b*labust::math::wrapRad(self->desired - self->lastRef)
+	//				- labust::math::wrapRad(self->state - self->lastState));
 	//Integral term
 	//Disabled if windup is in progress.
 	if (!self->windup) self->internalState += (self->lastI = self->Ki*Ts*error);

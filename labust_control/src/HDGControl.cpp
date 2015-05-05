@@ -75,10 +75,10 @@ namespace labust
   				const auv_msgs::BodyVelocityReq& track)
   		{
   			//Tracking external commands while idle (bumpless)
-  			con.desired = ref.orientation.yaw;
-			con.desired = state.orientation.yaw;			
+  			con.desired = labust::math::wrapRad(ref.orientation.yaw);
+			con.desired = labust::math::wrapRad(state.orientation.yaw);			
   			con.output = con.internalState = track.twist.angular.z;
-  			con.lastState = con.state = useIP?unwrap(state.orientation.yaw):state.orientation.yaw;
+  			con.lastState = con.state = useIP?unwrap(state.orientation.yaw):labust::math::wrapRad(state.orientation.yaw);
   			float errorWrap = labust::math::wrapRad(
   								con.desired - con.state);
   			if (!useIP) PIFF_wffIdle(&con,Ts, errorWrap, ref.orientation_rate.yaw);
@@ -93,7 +93,7 @@ namespace labust
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
 					const auv_msgs::NavSts& state)
 			{
-				con.desired = ref.orientation.yaw;
+				con.desired = labust::math::wrapRad(ref.orientation.yaw);
 				con.state = (useIP?unwrap(state.orientation.yaw):state.orientation.yaw);
 				con.track = state.orientation_rate.yaw;
 

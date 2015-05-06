@@ -58,7 +58,7 @@ namespace labust
 			stream<smsink> os(sink);
 			boost::archive::binary_oarchive outser(os, boost::archive::no_header);
 			data.pack(outser);
-			os.close();
+			os.flush();
 		}
 
 		/**

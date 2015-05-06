@@ -209,6 +209,7 @@ namespace labust {
 			primitiveMap.insert(std::pair<string, double>("reference", 0.0));
 			primitiveMap.insert(std::pair<string, double>("sampling_rate", 0.0));
 			primitiveMap.insert(std::pair<string, double>("victory_radius", 0.0));
+			primitiveMap.insert(std::pair<string, double>("timeout", 0.0));
 
 			primitiveStringMap.insert(std::pair<string, string>("radius_topic", ""));
 			primitiveStringMap.insert(std::pair<string, string>("center_topic", ""));
@@ -218,6 +219,9 @@ namespace labust {
 		}
 
 	    void MissionExecution::evaluatePrimitive(string primitiveString){
+
+	    	/*** Reset data ***/
+	    	primitiveMap["timeout"] = 0;
 
 			misc_msgs::EvaluateExpression evalExpr;
 			primitiveStrContainer = labust::utilities::split(primitiveString, ':');
@@ -246,18 +250,16 @@ namespace labust {
 
 	    void MissionExecution::dynamic_postitioning_state(){
 
-	    	/** Activate primitive timeout */
-	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-	    		setTimeout(receivedPrimitive.event.timeout);
-
 	    	/** Evaluate primitive data with current values */
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+	    	if(!timeoutActive && primitiveMap["timeout"] > 0)
+	    		setTimeout(primitiveMap["timeout"]);
 			/** Activate primitive */
 			CM.dynamic_positioning(true, primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
 			oldPosition.north = primitiveMap["north"];
 			oldPosition.east = primitiveMap["east"];
-
-			ROS_ERROR("DP: %f. %f, %f",primitiveMap["north"], primitiveMap["east"], primitiveMap["heading"]);
+			oldPosition.depth = primitiveMap["depth"];
 
 			/** Activate primitive reference refresh */
 			if(!refreshActive && refreshRate > 0)
@@ -266,13 +268,17 @@ namespace labust {
 
 	    void MissionExecution::go2point_FA_state(){
 
-	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-	    		setTimeout(receivedPrimitive.event.timeout);
 
+	    	/** Evaluate primitive data with current values */
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+			if(!timeoutActive && primitiveMap["timeout"] > 0)
+				setTimeout(primitiveMap["timeout"]);
+			/** Activate primitive */
 			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
 			oldPosition.north = primitiveMap["north"];
 			oldPosition.east = primitiveMap["east"];
+			oldPosition.depth = primitiveMap["depth"];
 
 			if(!refreshActive && refreshRate > 0)
 				setRefreshRate(refreshRate, boost::bind(&MissionExecution::go2point_FA_state, this));
@@ -280,10 +286,10 @@ namespace labust {
 
 	    void MissionExecution::go2point_UA_state(){
 
-	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-	    		setTimeout(receivedPrimitive.event.timeout);
-
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+			if(!timeoutActive && primitiveMap["timeout"] > 0)
+				setTimeout(primitiveMap["timeout"]);
 			CM.go2point_UA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["victory_radius"]);
 			oldPosition.north = primitiveMap["north"];
 			oldPosition.east = primitiveMap["east"];
@@ -294,10 +300,10 @@ namespace labust {
 
 	    void MissionExecution::course_keeping_FA_state(){
 
-	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-	    		setTimeout(receivedPrimitive.event.timeout);
-
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+			if(!timeoutActive && primitiveMap["timeout"] > 0)
+				setTimeout(primitiveMap["timeout"]);
 			CM.course_keeping_FA(true, primitiveMap["course"], primitiveMap["speed"], primitiveMap["heading"]);
 
 			if(!refreshActive && refreshRate > 0)
@@ -306,10 +312,10 @@ namespace labust {
 
 	    void MissionExecution::course_keeping_UA_state(){
 
-	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-	    		setTimeout(receivedPrimitive.event.timeout);
-
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+			if(!timeoutActive && primitiveMap["timeout"] > 0)
+				setTimeout(primitiveMap["timeout"]);
 			CM.course_keeping_UA(true, primitiveMap["course"], primitiveMap["speed"]);
 
 			if(!refreshActive && refreshRate > 0)
@@ -318,21 +324,21 @@ namespace labust {
 
 	    void MissionExecution::iso_state(){
 
-	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-	    		setTimeout(receivedPrimitive.event.timeout);
-
 	    	/** Evaluate primitive data with current values */
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+			if(!timeoutActive && primitiveMap["timeout"] > 0)
+				setTimeout(primitiveMap["timeout"]);
 			/** Activate primitive */
 			CM.ISOprimitive(true, primitiveMap["dof"], primitiveMap["command"], primitiveMap["hysteresis"], primitiveMap["reference"], primitiveMap["sampling_rate"]);
 	    }
 
 	    void MissionExecution::path_following_state(){
-
-//	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-//	    		setTimeout(receivedPrimitive.event.timeout);
 //
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+			if(!timeoutActive && primitiveMap["timeout"] > 0)
+				setTimeout(primitiveMap["timeout"]);
 //			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
 //			oldPosition.north = primitiveMap["north"];
 //			oldPosition.east = primitiveMap["east"];
@@ -343,10 +349,10 @@ namespace labust {
 
 	    void MissionExecution::pointer_state(){
 
-//	    	if(!timeoutActive && receivedPrimitive.event.timeout > 0)
-//	    		setTimeout(receivedPrimitive.event.timeout);
-//
 			evaluatePrimitive(receivedPrimitive.primitiveString.data);
+	    	/** Activate primitive timeout */
+			if(!timeoutActive && primitiveMap["timeout"] > 0)
+				setTimeout(primitiveMap["timeout"]);
 //			CM.go2point_FA(true, oldPosition.north, oldPosition.east, primitiveMap["north"], primitiveMap["east"], primitiveMap["speed"], primitiveMap["heading"], primitiveMap["victory_radius"]);
 //			oldPosition.north = primitiveMap["north"];
 //			oldPosition.east = primitiveMap["east"];

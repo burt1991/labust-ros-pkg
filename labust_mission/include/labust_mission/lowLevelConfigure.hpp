@@ -119,7 +119,7 @@ namespace labust {
 			if(velConConf.request.desired_mode[4] = pitch){ nuAxis.pitch = true;}
 			if(velConConf.request.desired_mode[5] = yaw){nuAxis.yaw = true;}
 
-			AXESconfigure(nuAxis);
+			/*** AXESconfigure(nuAxis); *** Deprecated ***/
 			utilities::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
 		} else {
 
@@ -135,21 +135,21 @@ namespace labust {
 			nuAxis.roll = false;
 			nuAxis.yaw = false;
 
-			AXESconfigure(nuAxis);
+			/*** AXESconfigure(nuAxis); *** Deprecated ***/
 			utilities::callService<navcon_msgs::ConfigureVelocityController>(clientConfigureVelocitiyController,velConConf);
 		}
 	}
 
 	/*
-	 * Configure axes to control
+	 * Configure axes to control DEPRECATED
 	 */
 
-	void LowLevelConfigure::AXESconfigure(auv_msgs::Bool6Axis& nu_bool){
+/*	void LowLevelConfigure::AXESconfigure(auv_msgs::Bool6Axis& nu_bool){
 
 		navcon_msgs::ConfigureAxes nu_cfg;
 		nu_cfg.request.disable_axis = nu_bool;
 		utilities::callService<navcon_msgs::ConfigureAxes>(clientConfigureAxes, nu_cfg);
-	}
+	}*/
 
 }
 

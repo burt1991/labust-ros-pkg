@@ -79,6 +79,7 @@ void Estimator3D::onInit()
 	stateMeas = nh.advertise<auv_msgs::NavSts>("meas",1);
 	currentsHat = nh.advertise<geometry_msgs::TwistStamped>("currentsHat",1);
 	buoyancyHat = nh.advertise<std_msgs::Float32>("buoyancy",1);
+	turns_pub = nh.advertise<std_msgs::Float32>("turns",1);
 	//Subscribers
 	tauAch = nh.subscribe<auv_msgs::BodyForceReq>("tauAch", 1, &Estimator3D::onTau,this);
 	depth = nh.subscribe<std_msgs::Float32>("depth", 1,	&Estimator3D::onDepth, this);
@@ -450,6 +451,10 @@ void Estimator3D::publishState()
 	std_msgs::Float32::Ptr buoyancy(new std_msgs::Float32());
 	buoyancy->data = estimate(KFNav::buoyancy);
 	buoyancyHat.publish(buoyancy);
+
+	std_msgs::Float32::Ptr turns(new std_msgs::Float32());
+	turns->data = estimate(KFNav::psi)/(2*M_PI);
+	turns_pub.publish(turns);
 }
 
 void Estimator3D::start()

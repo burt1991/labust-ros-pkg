@@ -74,11 +74,11 @@ namespace labust
 			{
 				//Tracking external commands while idle (bumpless)
 				con.desired = labust::math::wrapRad(state.orientation.yaw);
-				con.state = labust::math::wrapRad(unwrap(state.orientation.yaw));
+				con.state = unwrap(state.orientation.yaw);
 				con.track = track.twist.angular.z;
 
-				float werror = labust::math::wrapRad(con.desired - con.state);
-				float wperror = labust::math::wrapRad(con.b*con.desired - con.state);
+				float werror = con.desired - con.state;
+				float wperror = con.b*con.desired - con.state;
 				PIFF_wffIdle(&con, Ts, werror, wperror, ref.orientation_rate.yaw);
 			};
 
@@ -92,12 +92,11 @@ namespace labust
 			{
 				//Populate variables
 				con.desired = labust::math::wrapRad(ref.orientation.yaw);
-				con.state = labust::math::wrapRad(unwrap(state.orientation.yaw));
+				con.state = unwrap(state.orientation.yaw);
 				con.track = state.orientation_rate.yaw;
 
 				float werror = labust::math::wrapRad(con.desired - con.state);
-				float wperror = labust::math::wrapRad(con.b*con.desired - con.state);
-				ROS_ERROR("Werror:  %f, Wperror: %f", werror, wperror);
+				float wperror = con.b*werror + (con.b-1)*con.state;
 				PIFF_wffStep(&con,Ts, werror, wperror, ref.orientation_rate.yaw);
 
 				//Publish output

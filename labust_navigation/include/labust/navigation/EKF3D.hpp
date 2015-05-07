@@ -142,6 +142,8 @@ namespace labust
 			 * Estimated and measured state publisher.
 			 */
 			ros::Publisher stateMeas, stateHat, currentsHat, buoyancyHat;
+			///Turn count publisher
+			ros::Publisher turns_pub;
 			/**
 			 * Sensors and input subscribers.
 			 */

@@ -76,6 +76,9 @@ void PIFF_wffIdle(PIDBase* self, float Ts, float error, float perror, float ff)
 	self->lastRef = self->desired;
 	self->lastFF = ff;
 	self->lastState = self->state;
+	self->internalState = self->Kp*perror;
+	self->internalState += ff;
+	self->I = self->track - self->internalState;
 	self->output = self->internalState = self->track;
 }
 
@@ -105,21 +108,26 @@ void PIFF_wffStep(PIDBase* self, float Ts, float error, float perror, float ff)
 	if ((self->lastI != 0) && self->windup && self->useBackward)
 	{
 		//Calculate the proportional influence
-		float diff = self->track - self->internalState + self->lastI;
+		//float diff = self->track - self->internalState + self->lastI;
+		float diff = self->track - self->internalState + self->I;
 		//If the proportional part is already in windup remove the whole last integral
 		//Otherwise recalculate the integral to be on the edge of windup
-		self->internalState -= ((diff*self->track <= 0)?self->lastI:(self->lastI - diff));
+		//self->internalState -= ((diff*self->track <= 0)?self->lastI:(self->lastI - diff));
+		self->I -= ((diff*self->track <= 0)?self->lastI:(self->I - diff));
 	}
 
 	//Proportional term
 	//self->internalState += self->Kp*(error-self->lastError);
-	self->internalState += self->Kp*(perror - self->lastPError);
+	//self->internalState += self->Kp*(perror - self->lastPError);
+	self->internalState = self->Kp*perror;
 	//Integral term
 	//Disabled if windup is in progress.
-	if (!self->windup) self->internalState += (self->lastI = self->Ki*Ts*error);
+	if (!self->windup) self->I += (self->lastI = self->Ki*Ts*error);
 	else self->lastI = 0;
+	self->internalState += self->I;
 	//Feed forward term
-	self->internalState += ff - self->lastFF;
+	//self->internalState += ff - self->lastFF;
+	self->internalState += ff;
 	//Set final output
 	self->output = self->internalState;
 

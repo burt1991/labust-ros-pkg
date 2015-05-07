@@ -80,34 +80,31 @@ namespace labust
   		void idle(const auv_msgs::NavSts& ref, const auv_msgs::NavSts& state,
   				const auv_msgs::BodyVelocityReq& track)
   		{
-  			//Tracking external commands while idle (bumpless)
-			/*	geometry_msgs::TransformStamped dH;
-				dH = buffer.lookupTransform("course_frame", "base_link", ros::Time(0));
-				double roll, pitch, gamma;
-				labust::tools::eulerZYXFromQuaternion(dH.transform.rotation,
-						roll, pitch, gamma);
-  			con.desired = ref.position.east;
-  			con.state = dH.transform.translation.y;
+  			//Tracking external commands while idle (bumpless)ž
+  			if (!underactuated)
+  			{
+  				try
+  				{
+  					geometry_msgs::TransformStamped dH;
+  					dH = buffer.lookupTransform("course_frame", "base_link", ros::Time(0));
+  					double roll, pitch, gamma;
+  					labust::tools::eulerZYXFromQuaternion(dH.transform.rotation,
+  							roll, pitch, gamma);
 
-  			if (underactuated)
-  			{
-					PSatD_tune(&con,wh,aAngle,ref.body_velocity.x);
-					double dd = -ref.body_velocity.x*sin(gamma);
-					PSatD_dIdle(&con,Ts,dd);
-					con.output = con.internalState = track.twist.angular.z;
+  					con.desired = ref.position.east;
+  					con.state = dH.transform.translation.y;
+  					Eigen::Vector2f out, in;
+  					Eigen::Matrix2f R;
+  					in<<state.body_velocity.x,state.body_velocity.y;
+  					out = R*in;
+  					con.track = out(1);
+  					PIFF_ffIdle(&con, Ts, 0);
+  				}
+  				catch (tf2::TransformException& ex)
+  				{
+  					ROS_WARN("%s",ex.what());
+  				}
   			}
-  			else
-  			{
-					PIFF_idle(&con,Ts);
-					//\todo Internalize this into the idle mode?
-					PIFF_step(&con,Ts);
-					Eigen::Vector2f out, in;
-					Eigen::Matrix2f R;
-					in<<track.twist.linear.x,track.twist.linear.y;
-					R<<cos(gamma),sin(gamma),-sin(gamma),cos(gamma);
-					out = R.transpose()*in;
-					con.output = con.internalState = out(1);
-  			} */
   		};
 
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
@@ -137,28 +134,31 @@ namespace labust
 						double dd = -ref.body_velocity.x*sin(gamma);
 						PSatD_dStep(&con,Ts,dd);
 						//PSatD_step(&con,Ts);
-						ROS_INFO("Limiter: %f", con.outputLimit);
+						ROS_DEBUG("Limiter: %f", con.outputLimit);
 						nu->twist.angular.z = con.output;
 						nu->twist.linear.x = ref.body_velocity.x;
 					}
 					else
 					{
-						PIFF_step(&con,Ts);
-						double ul = ref.body_velocity.x;
-						double vl = con.output;
-						ROS_INFO("Command output: ul=%f, vl=%f", ul, vl);
-
 						Eigen::Vector2f out, in;
 						Eigen::Matrix2f R;
-						in<<ul,vl;
-						R<<cos(gamma),sin(gamma),-sin(gamma),cos(gamma);
-						ROS_INFO("Gamma: %f", gamma);
+						in<<state.body_velocity.x,state.body_velocity.y;
+						R<<cos(gamma),-sin(gamma),sin(gamma),cos(gamma);
 						out = R*in;
+						con.track = out(1);
+						PIFF_ffStep(&con,Ts,0);
+						double ul = ref.body_velocity.x;
+						double vl = con.output;
+						ROS_DEBUG("Command output: ul=%f, vl=%f", ul, vl);
+
+						in<<ul,vl;
+						ROS_DEBUG("Gamma: %f", gamma);
+						out = R.transpose()*in;
 						nu->twist.linear.x = out(0);
 						nu->twist.linear.y = out(1);
 					}
 
-					ROS_INFO("Command output: cmd=%f, dH=%f, ac=%f", con.output, dH.transform.translation.y,
+					ROS_DEBUG("Command output: cmd=%f, dH=%f, ac=%f", con.output, dH.transform.translation.y,
 							dH.transform.translation.x);
 				}
 				catch (tf2::TransformException& ex)

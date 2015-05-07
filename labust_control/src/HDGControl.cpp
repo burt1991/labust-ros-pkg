@@ -77,8 +77,8 @@ namespace labust
 				con.state = unwrap(state.orientation.yaw);
 				con.track = track.twist.angular.z;
 
-				float werror = con.desired - con.state;
-				float wperror = con.b*con.desired - con.state;
+				float werror = labust::math::wrapRad(con.desired - con.state);
+				float wperror = con.b*werror + (con.b-1)*con.state;
 				PIFF_wffIdle(&con, Ts, werror, wperror, ref.orientation_rate.yaw);
 			};
 

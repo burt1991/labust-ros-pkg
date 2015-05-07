@@ -77,17 +77,21 @@ namespace labust
 							const auv_msgs::BodyVelocityReq& track)
 			{
 				//Tracking external commands while idle (bumpless)
-				con[x].desired = state.position.north;
-				con[y].desired = state.position.east;
-				con[x].track = track.twist.linear.x;
-				con[y].track = track.twist.linear.y;
-				con[x].state = state.position.north;
-				con[y].state = state.position.east;
-				///\todo There are more options for this ?
 				Eigen::Vector2f out, in;
 				Eigen::Matrix2f R;
+				in<<track.twist.linear.x,track.twist.linear.y;
+				double yaw(state.orientation.yaw);
+				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+				out = R*in;
+				con[x].desired = state.position.north;
+				con[y].desired = state.position.east;
+				con[x].track = out(0);
+				con[y].track = out(1);
+				con[x].state = state.position.north;
+				con[y].state = state.position.east;
+
 				in<<ref.body_velocity.x,ref.body_velocity.y;
-				double yaw(ref.orientation.yaw);
+				yaw = ref.orientation.yaw;
 				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
 				out = R*in;
 				PIFF_ffIdle(&con[x],Ts, float(out(x)));
@@ -109,18 +113,18 @@ namespace labust
 				con[y].state = state.position.east;
 				//Calculate tracking values
 				Eigen::Vector2f out, in;
-				Eigen::Matrix2f R;
+				Eigen::Matrix2f Rb,Rr;
 				in<<state.body_velocity.x,state.body_velocity.y;
 				double yaw(state.orientation.yaw);
-				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
-				out = R*in;
+				Rb<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+				out = Rb*in;
 				con[x].track = out(x);
 				con[y].track = out(y);
 				//Calculate feed forward
 				in<<ref.body_velocity.x,ref.body_velocity.y;
 				yaw = ref.orientation.yaw;
-				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
-				out = R*in;
+				Rr<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
+				out = Rr*in;
 				//Make step
 				PIFF_ffStep(&con[x], Ts, float(out(x)));
 				PIFF_ffStep(&con[y], Ts, float(out(y)));
@@ -131,9 +135,7 @@ namespace labust
 				nu->goal.requester = "fadp_controller";
 				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
 				in<<con[x].output,con[y].output;
-				yaw = state.orientation.yaw;
-				R<<cos(yaw),-sin(yaw),sin(yaw),cos(yaw);
-				out = R.transpose()*in;
+				out = Rb.transpose()*in;
 				nu->twist.linear.x = out[0];
 				nu->twist.linear.y = out[1];
 

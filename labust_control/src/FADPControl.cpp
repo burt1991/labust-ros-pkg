@@ -106,7 +106,6 @@ namespace labust
 			auv_msgs::BodyVelocityReqPtr step(const auv_msgs::NavSts& ref,
 							const auv_msgs::NavSts& state)
 			{
-
 				con[x].desired = ref.position.north;
 				con[y].desired = ref.position.east;
 				con[x].state = state.position.north;
@@ -136,6 +135,7 @@ namespace labust
 				labust::tools::vectorToDisableAxis(disable_axis, nu->disable_axis);
 				in<<con[x].output,con[y].output;
 				out = Rb.transpose()*in;
+
 				nu->twist.linear.x = out[0];
 				nu->twist.linear.y = out[1];
 

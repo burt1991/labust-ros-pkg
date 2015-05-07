@@ -34,6 +34,7 @@
 #include <labust/control/PIFFController.h>
 #include <labust/math/NumberManipulation.hpp>
 #include <math.h>
+#include <ros/ros.h>
 
 void PIFF_modelTune(PIDBase* self,
 		const PT1Model* const model,
@@ -46,11 +47,11 @@ void PIFF_modelTune(PIDBase* self,
 	//The empirical parameter for overshoot ~5%
 	float a=1.5;
 	self->b = a*self->Ki/(self->Kp*w);
+	ROS_ERROR("b-value dyn: %f %f",self->b,w);
 
 	self->model.alpha = model->alpha;
 	self->model.beta = model->beta;
 	self->model.betaa = model->betaa;
-	self->b = 0.75;
 
 	self->w = w;
 }
@@ -63,6 +64,7 @@ void PIFF_tune(PIDBase* self, float w)
 	//The empirical parameter for overshoot ~5%
 	float a=1.5;
 	self->b = a*self->Ki/(self->Kp*w);
+	ROS_ERROR("b-value kin: %f %f",self->b,w);
 
 	self->w = w;
 }

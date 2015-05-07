@@ -73,8 +73,8 @@ namespace labust
 					const auv_msgs::BodyVelocityReq& track)
 			{
 				//Tracking external commands while idle (bumpless)
-				con.desired = state.orientation.yaw;
-				con.state = unwrap(state.orientation.yaw);
+				con.desired = labust::math::wrapRad(state.orientation.yaw);
+				con.state = labust::math::wrapRad(unwrap(state.orientation.yaw));
 				con.track = track.twist.angular.z;
 
 				float werror = labust::math::wrapRad(con.desired - con.state);
@@ -91,13 +91,13 @@ namespace labust
 					const auv_msgs::NavSts& state)
 			{
 				//Populate variables
-				con.desired = ref.orientation.yaw;
-				con.state = unwrap(state.orientation.yaw);
+				con.desired = labust::math::wrapRad(ref.orientation.yaw);
+				con.state = labust::math::wrapRad(unwrap(state.orientation.yaw));
 				con.track = state.orientation_rate.yaw;
 
-				//Calculate errors and stepTracking external commands while idle (bumpless)
 				float werror = labust::math::wrapRad(con.desired - con.state);
-				float wperror = labust::math::wrapRad(con.desired - con.state);
+				float wperror = labust::math::wrapRad(con.b*con.desired - con.state);
+				ROS_ERROR("Werror:  %f, Wperror: %f", werror, wperror);
 				PIFF_wffStep(&con,Ts, werror, wperror, ref.orientation_rate.yaw);
 
 				//Publish output

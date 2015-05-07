@@ -107,19 +107,19 @@ const std::vector<double>& X2dAdaptive::allocate(const Eigen::VectorXd& tau)
 	{
 	    ROS_DEBUG("Yaw DoF is saturated.");
 	    this->recalcOpLimits(tXY,txymax,txymin,&tnmax,&tnmin);
-	    satN = saturateN(tN, tnmin, tnmax);
+	    satN = saturate(tN, tnmin, tnmax);
 	}
 	else if (satXY && !satN)
 	{
 	    ROS_DEBUG("XY DoF are saturated.");
 	    this->recalcOpLimits(tN,tnmax,tnmin,&txymax,&txymin);
-	    satXY = saturateXY(tXY, txymin, txymax);
+	    satXY = saturate(tXY, txymin, txymax);
 	}
 	else if (satXY && satN)
 	{
 	    ROS_DEBUG("All DoFs are saturated.");
-	    satN = saturateN(tN, tnmin, tnmax);
-	    satXY = saturateXY(tXY, txymin, txymax);
+	    satN = saturate(tN, tnmin, tnmax);
+	    satXY = saturate(tXY, txymin, txymax);
 	}
 	Eigen::VectorXd tT = tXY+tN;
 	Eigen::VectorXd tauA = thrusters.B()*tT;
@@ -181,7 +181,7 @@ bool X2dAdaptive::saturateN(Eigen::Vector4d& t,
   return retVal;
 }
 
-bool X2dAdaptive::saturateXY(Eigen::Vector4d& t,
+bool X2dAdaptive::saturate(Eigen::Vector4d& t,
 		const Eigen::Vector4d& pmin, const Eigen::Vector4d& pmax)
 {
 	double scalef(1.0), scale(0.0);
